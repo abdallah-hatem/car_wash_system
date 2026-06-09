@@ -20,6 +20,21 @@ Per feature, in order — do not skip steps:
 
 Never push to `production` without explicit permission.
 
+## UI Conventions (REQUIRED for every screen)
+
+- **Responsive, tablet-first.** Every screen must work at mobile (~375px) and tablet
+  (~768–1024px): no horizontal overflow, tap targets ≥ 44px, readable type.
+- **Internationalized.** No hardcoded user-facing strings — all text comes from the i18n
+  locale files (`src/i18n/locales/{en,ar}.json`) via `useTranslation()`. `en` and `ar`
+  must have identical key sets (enforced by `src/i18n/locales.test.ts`).
+- **RTL-correct.** Use logical Tailwind utilities (`ps-/pe-/ms-/me-/text-start/text-end/
+  start-/end-/rounded-s-/rounded-e-`), not physical ones (`pl-/pr-/ml-/mr-/left-/right-`),
+  so layouts mirror under Arabic. CSS transforms (e.g. `translateX`) don't auto-flip —
+  add a `[dir="rtl"]` keyframe/override when needed.
+- **Verify in BOTH directions.** New/changed screens must be checked at mobile + tablet in
+  LTR (English) AND RTL (Arabic) before merging — mirroring can break layouts the LTR pass
+  misses.
+
 ## Local Testing
 
 - Local Supabase runs in Docker via the Supabase CLI (`npx supabase start`).
