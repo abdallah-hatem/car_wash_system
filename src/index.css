@@ -1,6 +1,75 @@
+@import "@fontsource-variable/geist";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  }
+  html {
+    font-family: var(--font-sans);
+  }
+}
+
+/* Login-screen atmosphere: drifting droplets + a single chrome shine sweep. */
+@keyframes cw-drift {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--cw-drop-opacity, 0.5);
+  }
+  90% {
+    opacity: var(--cw-drop-opacity, 0.5);
+  }
+  100% {
+    transform: translateY(-120px) translateX(18px) scale(1.15);
+    opacity: 0;
+  }
+}
+
+@keyframes cw-shine {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  100% {
+    transform: translateX(320%) skewX(-18deg);
+  }
+}
+
+@keyframes cw-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cw-droplet {
+  animation: cw-drift linear infinite;
+}
+
+.cw-shine {
+  animation: cw-shine 6.5s ease-in-out infinite;
+}
+
+.cw-rise {
+  animation: cw-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cw-droplet,
+  .cw-shine,
+  .cw-rise {
+    animation: none;
+  }
+}
 
 @layer base {
   :root {
