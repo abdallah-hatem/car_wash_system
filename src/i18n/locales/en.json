@@ -1,0 +1,15 @@
+{
+  "common": { "appName": "Sudsly", "signOut": "Sign out", "language": "Language" },
+  "auth": {
+    "tagline": "The cleanest way to run your car wash.",
+    "signInTitle": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "signInButton": "Sign in",
+    "signingIn": "Signing in…"
+  },
+  "noAccess": {
+    "title": "No workspace assigned",
+    "body": "Your account isn't linked to a business yet. Please contact your administrator."
+  }
+}
