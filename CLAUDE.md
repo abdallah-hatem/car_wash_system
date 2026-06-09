@@ -38,3 +38,11 @@ Never push to `production` without explicit permission.
 - Frontend uses the Supabase anon key only; service_role key and DB password never touch client code.
 - Multi-tenancy is enforced by Postgres RLS keyed on the `tenant_id` JWT claim. Every new
   operational table MUST carry `tenant_id` and get a `tenant_isolation` RLS policy + an isolation test.
+
+### ⚠️ Pending: rotate the Supabase DB password before production
+
+The original Supabase DB password was shared in a chat transcript and must be considered
+compromised. **Before going to production**, rotate it in the Supabase dashboard
+(Settings → Database → reset password) and update any deploy env accordingly. The
+`.env.local` anon key and the seeded `owner@demo.test` / `password123` login are
+local-Docker-only and not production secrets.
