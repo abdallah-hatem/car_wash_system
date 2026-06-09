@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import type { Session } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase"
-import { parseClaims, type AppClaims } from "./claims"
+import { decodeClaims, type AppClaims } from "./claims"
 
 interface AuthState {
   session: Session | null
@@ -9,19 +9,7 @@ interface AuthState {
   loading: boolean
 }
 
-const EMPTY_CLAIMS: AppClaims = { tenantId: null, role: null, isPlatformAdmin: false }
-
 const AuthContext = createContext<AuthState | undefined>(undefined)
-
-function decodeClaims(session: Session | null): AppClaims {
-  if (!session) return EMPTY_CLAIMS
-  try {
-    const payload = JSON.parse(atob(session.access_token.split(".")[1]))
-    return parseClaims(payload)
-  } catch {
-    return EMPTY_CLAIMS
-  }
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
