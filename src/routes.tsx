@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router-dom"
 import LoginPage from "./pages/LoginPage"
+import NoAccessPage from "./pages/NoAccessPage"
 import { RequireAuth, RequireAdmin, RequireTenant } from "./auth/guards"
 
 export const router = createBrowserRouter([
@@ -29,6 +30,10 @@ export const router = createBrowserRouter([
             element: <div className="p-6">Tenant app (coming in Plan 3)</div>,
           },
         ],
+      },
+      {
+        path: "/no-access",
+        element: <NoAccessPage />,
       },
       {
         path: "/",

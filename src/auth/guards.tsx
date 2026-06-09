@@ -11,13 +11,15 @@ export function RequireAuth() {
 export function RequireAdmin() {
   const { claims, loading } = useAuth()
   if (loading) return null
-  if (!claims.isPlatformAdmin) return <Navigate to="/app" replace />
+  if (!claims.isPlatformAdmin)
+    return <Navigate to={claims.tenantId ? "/app" : "/no-access"} replace />
   return <Outlet />
 }
 
 export function RequireTenant() {
   const { claims, loading } = useAuth()
   if (loading) return null
-  if (!claims.tenantId) return <Navigate to="/admin" replace />
+  if (!claims.tenantId)
+    return <Navigate to={claims.isPlatformAdmin ? "/admin" : "/no-access"} replace />
   return <Outlet />
 }
