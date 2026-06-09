@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom"
 import LoginPage from "./pages/LoginPage"
 import NoAccessPage from "./pages/NoAccessPage"
+import BusinessesPage from "./pages/admin/BusinessesPage"
 import { AppHeader } from "./components/AppHeader"
 import { RequireAuth, RequireAdmin, RequireTenant } from "./auth/guards"
 
@@ -21,7 +22,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 index: true,
-                element: <div className="p-6">Admin console (coming in Plan 2)</div>,
+                element: <BusinessesPage />,
               },
             ],
           },

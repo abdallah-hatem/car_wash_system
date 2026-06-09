@@ -19,5 +19,38 @@
   "noAccess": {
     "title": "No workspace assigned",
     "body": "Your account isn't linked to a business yet. Please contact your administrator."
+  },
+  "admin": {
+    "title": "Businesses",
+    "newBusiness": "New business",
+    "colName": "Name",
+    "colStatus": "Status",
+    "colCreated": "Created",
+    "colActions": "Actions",
+    "statusActive": "Active",
+    "statusSuspended": "Suspended",
+    "suspend": "Suspend",
+    "activate": "Activate",
+    "empty": "No businesses yet.",
+    "loading": "Loading…",
+    "create": {
+      "title": "Onboard new business",
+      "businessName": "Business name",
+      "ownerEmail": "Owner email",
+      "ownerName": "Owner full name",
+      "submit": "Create",
+      "cancel": "Cancel",
+      "creating": "Creating…",
+      "successTitle": "Business created",
+      "tempPasswordLabel": "Temporary password",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "done": "Done"
+    },
+    "errors": {
+      "email_exists": "An account with that email already exists.",
+      "missing_fields": "Please fill in all required fields with valid values.",
+      "generic": "Something went wrong. Please try again."
+    }
   }
 }
