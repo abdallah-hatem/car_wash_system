@@ -1,10 +1,12 @@
 import { useMemo, useState, type FormEvent } from "react"
 import { useNavigate } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { Droplets, Loader2, LockKeyhole, Mail, Sparkles } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { cn } from "@/lib/utils"
 
 /**
@@ -21,7 +23,7 @@ const DROPLETS = Array.from({ length: 14 }, (_, i) => {
   const seed = (i * 9301 + 49297) % 233280
   const r = seed / 233280
   return {
-    left: `${(r * 100).toFixed(2)}%`,
+    inset: `${(r * 100).toFixed(2)}%`,
     size: 4 + Math.round(r * 14),
     duration: `${(7 + r * 9).toFixed(2)}s`,
     delay: `${(r * 8).toFixed(2)}s`,
@@ -37,7 +39,7 @@ function DropletField() {
           key={i}
           className="cw-droplet absolute bottom-[-24px] rounded-full bg-white/70 shadow-[0_0_12px_rgba(255,255,255,0.45)]"
           style={{
-            left: d.left,
+            insetInlineStart: d.inset,
             width: d.size,
             height: d.size,
             animationDuration: d.duration,
@@ -52,6 +54,7 @@ function DropletField() {
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -78,7 +81,7 @@ export default function LoginPage() {
   return (
     <div className="grid min-h-screen w-full lg:grid-cols-[1.05fr_1fr]">
       {/* Brand canvas — full-bleed background everywhere, content shown on lg+ */}
-      <div className="relative overflow-hidden bg-[radial-gradient(120%_120%_at_15%_0%,#0c5b63_0%,#083f4d_42%,#06222e_100%)] lg:rounded-r-[2.5rem]">
+      <div className="relative overflow-hidden bg-[radial-gradient(120%_120%_at_15%_0%,#0c5b63_0%,#083f4d_42%,#06222e_100%)] lg:rounded-e-[2.5rem]">
         {/* faint grid texture */}
         <div
           aria-hidden="true"
@@ -87,12 +90,12 @@ export default function LoginPage() {
         {/* soft cyan glow */}
         <div
           aria-hidden="true"
-          className="absolute -left-24 top-1/4 h-96 w-96 rounded-full bg-cyan-400/20 blur-3xl"
+          className="absolute -start-24 top-1/4 h-96 w-96 rounded-full bg-cyan-400/20 blur-3xl"
         />
         <DropletField />
         {/* chrome shine sweep */}
         <div aria-hidden="true" className="absolute inset-0 overflow-hidden">
-          <div className="cw-shine absolute -inset-y-10 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+          <div className="cw-shine absolute -inset-y-10 start-0 w-1/3 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
         </div>
 
         <div className="relative z-10 hidden h-full flex-col justify-between p-12 text-white lg:flex">
@@ -100,7 +103,7 @@ export default function LoginPage() {
             <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/25 backdrop-blur">
               <Droplets className="h-6 w-6 text-cyan-200" />
             </span>
-            <span className="text-lg font-semibold tracking-tight">Sudsly</span>
+            <span className="text-lg font-semibold tracking-tight">{t("common.appName")}</span>
           </div>
 
           <div className="max-w-md">
@@ -108,24 +111,23 @@ export default function LoginPage() {
               className="cw-rise inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-cyan-100 ring-1 ring-white/15"
               style={{ animationDelay: "120ms" }}
             >
-              <Sparkles className="h-3.5 w-3.5" /> Carwash, run beautifully
+              <Sparkles className="h-3.5 w-3.5" /> {t("auth.brandBadge")}
             </p>
             <h1
               className="cw-rise mt-6 text-balance text-5xl font-semibold leading-[1.05] tracking-tight"
               style={{ animationDelay: "180ms" }}
             >
-              Every wash,
+              {t("auth.brandHeadlineLead")}
               <br />
               <span className="bg-gradient-to-r from-cyan-200 to-white bg-clip-text text-transparent">
-                spotlessly managed.
+                {t("auth.brandHeadlineAccent")}
               </span>
             </h1>
             <p
               className="cw-rise mt-5 text-pretty text-base leading-relaxed text-cyan-50/80"
               style={{ animationDelay: "240ms" }}
             >
-              Bookings, bays, staff and payments — one calm console for your whole
-              operation. Sign in to pick up right where you left off.
+              {t("auth.brandBody")}
             </p>
           </div>
 
@@ -133,17 +135,21 @@ export default function LoginPage() {
             className="cw-rise flex items-center gap-6 text-sm text-cyan-50/70"
             style={{ animationDelay: "300ms" }}
           >
-            <span className="font-medium text-white">Fast checkouts</span>
+            <span className="font-medium text-white">{t("auth.featureFastCheckouts")}</span>
             <span className="h-1 w-1 rounded-full bg-cyan-200/60" />
-            <span className="font-medium text-white">Live bay status</span>
+            <span className="font-medium text-white">{t("auth.featureLiveBayStatus")}</span>
             <span className="h-1 w-1 rounded-full bg-cyan-200/60" />
-            <span className="font-medium text-white">Multi-branch</span>
+            <span className="font-medium text-white">{t("auth.featureMultiBranch")}</span>
           </div>
         </div>
       </div>
 
       {/* Form panel */}
       <div className="relative flex items-center justify-center bg-slate-50 px-5 py-10 sm:px-8">
+        {/* Language switcher — reachable on mobile where the brand panel is hidden */}
+        <div className="absolute end-4 top-4">
+          <LanguageSwitcher />
+        </div>
         <div
           className="cw-rise w-full max-w-md rounded-3xl border border-slate-200/80 bg-white/90 p-7 shadow-xl shadow-slate-900/5 backdrop-blur sm:p-10"
           style={{ animationDelay: "80ms" }}
@@ -153,27 +159,27 @@ export default function LoginPage() {
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-teal-600 to-cyan-700 text-white shadow">
               <Droplets className="h-5 w-5" />
             </span>
-            <span className="text-lg font-semibold tracking-tight text-slate-900">Sudsly</span>
+            <span className="text-lg font-semibold tracking-tight text-slate-900">
+              {t("common.appName")}
+            </span>
           </div>
 
           <div className="mb-7">
             <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-              Welcome back
+              {t("auth.signInTitle")}
             </h2>
-            <p className="mt-1.5 text-sm text-slate-500">
-              Sign in to your carwash workspace.
-            </p>
+            <p className="mt-1.5 text-sm text-slate-500">{t("auth.tagline")}</p>
           </div>
 
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-slate-700">
-                Email
+                {t("auth.email")}
               </Label>
               <div className="relative">
                 <Mail
                   aria-hidden="true"
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                  className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
                 />
                 <Input
                   id="email"
@@ -186,19 +192,19 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={submitting}
                   aria-invalid={error ? true : undefined}
-                  className="h-11 bg-white pl-9 text-slate-900 focus-visible:ring-teal-600"
+                  className="h-11 bg-white ps-9 text-slate-900 focus-visible:ring-teal-600"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-slate-700">
-                Password
+                {t("auth.password")}
               </Label>
               <div className="relative">
                 <LockKeyhole
                   aria-hidden="true"
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                  className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
                 />
                 <Input
                   id="password"
@@ -211,7 +217,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={submitting}
                   aria-invalid={error ? true : undefined}
-                  className="h-11 bg-white pl-9 text-slate-900 focus-visible:ring-teal-600"
+                  className="h-11 bg-white ps-9 text-slate-900 focus-visible:ring-teal-600"
                 />
               </div>
             </div>
@@ -238,16 +244,16 @@ export default function LoginPage() {
               {submitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Signing in…
+                  {t("auth.signingIn")}
                 </>
               ) : (
-                "Sign in"
+                t("auth.signInButton")
               )}
             </Button>
           </form>
 
           <p className="mt-8 text-center text-xs text-slate-400">
-            © {year} Sudsly · Carwash operations platform
+            {t("auth.footer", { year, appName: t("common.appName") })}
           </p>
         </div>
       </div>

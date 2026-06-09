@@ -6,7 +6,15 @@
     "email": "Email",
     "password": "Password",
     "signInButton": "Sign in",
-    "signingIn": "Signing in…"
+    "signingIn": "Signing in…",
+    "brandBadge": "Carwash, run beautifully",
+    "brandHeadlineLead": "Every wash,",
+    "brandHeadlineAccent": "spotlessly managed.",
+    "brandBody": "Bookings, bays, staff and payments — one calm console for your whole operation. Sign in to pick up right where you left off.",
+    "featureFastCheckouts": "Fast checkouts",
+    "featureLiveBayStatus": "Live bay status",
+    "featureMultiBranch": "Multi-branch",
+    "footer": "© {{year}} {{appName}} · Carwash operations platform"
   },
   "noAccess": {
     "title": "No workspace assigned",

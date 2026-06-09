@@ -6,7 +6,15 @@
     "email": "البريد الإلكتروني",
     "password": "كلمة المرور",
     "signInButton": "تسجيل الدخول",
-    "signingIn": "جارٍ تسجيل الدخول…"
+    "signingIn": "جارٍ تسجيل الدخول…",
+    "brandBadge": "إدارة مغسلة السيارات بأناقة",
+    "brandHeadlineLead": "كل غسلة،",
+    "brandHeadlineAccent": "تُدار بإتقان لا تشوبه شائبة.",
+    "brandBody": "الحجوزات والمواقف والموظفون والمدفوعات — لوحة تحكم واحدة هادئة لإدارة عملك بالكامل. سجّل الدخول لتكمل من حيث توقفت.",
+    "featureFastCheckouts": "دفع سريع",
+    "featureLiveBayStatus": "حالة المواقف مباشرة",
+    "featureMultiBranch": "فروع متعددة",
+    "footer": "© {{year}} {{appName}} · منصة إدارة مغاسل السيارات"
   },
   "noAccess": {
     "title": "لا توجد مساحة عمل مخصصة",

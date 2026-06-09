@@ -43,6 +43,19 @@
   }
 }
 
+/* Mirror the shine sweep under RTL so it travels across the panel
+   in the reading direction instead of overflowing the inline-end edge.
+   The element is anchored with `start-0`, which sits at the right edge
+   under RTL, so the sweep needs to run from there toward the left. */
+@keyframes cw-shine-rtl {
+  0% {
+    transform: translateX(120%) skewX(18deg);
+  }
+  100% {
+    transform: translateX(-320%) skewX(18deg);
+  }
+}
+
 @keyframes cw-rise {
   from {
     opacity: 0;
@@ -60,6 +73,10 @@
 
 .cw-shine {
   animation: cw-shine 6.5s ease-in-out infinite;
+}
+
+[dir="rtl"] .cw-shine {
+  animation-name: cw-shine-rtl;
 }
 
 .cw-rise {
