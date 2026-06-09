@@ -37,6 +37,16 @@ create policy tenant_admin_manage on public.tenants for all
   using (public.is_platform_admin())
   with check (public.is_platform_admin());
 
+-- platform_admins: ordinary users get NO access. service_role/table owner bypass RLS
+-- for backend provisioning; SECURITY DEFINER helpers (is_platform_admin, auth hook) still read it.
+alter table public.platform_admins enable row level security;
+revoke all on public.platform_admins from anon, authenticated;
+create policy platform_admins_self_read on public.platform_admins
+  for select using (public.is_platform_admin());
+create policy platform_admins_manage on public.platform_admins
+  for all using (public.is_platform_admin())
+       with check (public.is_platform_admin());
+
 -- audit_log: read within tenant or as platform admin; no client writes (trigger only)
 alter table public.audit_log enable row level security;
 create policy audit_read on public.audit_log for select
