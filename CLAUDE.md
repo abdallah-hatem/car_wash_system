@@ -4,6 +4,17 @@ Multi-tenant carwash SaaS. Stack: React + Vite + TypeScript, Tailwind + shadcn/u
 Supabase (Postgres + Auth + RLS), PWA. See `docs/superpowers/specs/` and
 `docs/superpowers/plans/` for the design and implementation plans.
 
+## Business Logic Doc (REQUIRED to maintain)
+
+`docs/BUSINESS_LOGIC.md` is the living source of truth for the domain model, roles,
+security model, and all business flows. **Read it at the start of work to recover context.**
+
+Whenever a change touches business logic, a flow, the data model, roles/permissions, the
+tenancy/security model, or scope (features added/removed/deferred), you **MUST update
+`docs/BUSINESS_LOGIC.md` in the same change** and bump its "Last updated" line. Keep it
+accurate to what the code actually does; mark not-yet-built items as **Planned**. Treat a PR
+that changes behavior without updating this file as incomplete.
+
 ## Branching & Shipping Workflow (REQUIRED)
 
 Branches:
