@@ -61,3 +61,30 @@ compromised. **Before going to production**, rotate it in the Supabase dashboard
 (Settings → Database → reset password) and update any deploy env accordingly. The
 `.env.local` anon key and the seeded `owner@demo.test` / `password123` login are
 local-Docker-only and not production secrets.
+
+## Admin bootstrap
+
+### Local development
+
+`supabase/seed.sql` runs automatically on `npx supabase db reset` and inserts the platform
+admin row for `admin@sudsly.test` (user id `00000000-0000-0000-0000-0000000ad617`) into
+`public.platform_admins`. No manual step needed locally.
+
+### Production (first platform admin)
+
+There is no sign-up flow for platform admins — they must be promoted after account creation:
+
+1. Create your account via the normal app sign-up or Supabase Auth dashboard.
+2. Find your Auth user ID in the Supabase dashboard → Authentication → Users.
+3. Open the **SQL Editor** (use the service_role context, not the anon key) and run:
+
+```sql
+insert into public.platform_admins (user_id)
+values ('<your-auth-user-id>');
+```
+
+Once that row exists the user's next login JWT will carry `is_platform_admin: true` (injected
+by the `custom_access_token_hook`) and the `/admin` route will become accessible.
+
+**Never expose the service_role key to the client.** Run this SQL only from the Supabase
+dashboard SQL editor or a trusted server-side script.
