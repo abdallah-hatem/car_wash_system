@@ -1,14 +1,18 @@
-import { StrictMode } from "react"
-import { createRoot } from "react-dom/client"
+import React from "react"
+import ReactDOM from "react-dom/client"
 import { RouterProvider } from "react-router-dom"
+import "./i18n"
+import { I18nDirection } from "./i18n/I18nDirection"
+import { AuthProvider } from "@/auth/AuthProvider"
+import { router } from "@/routes"
 import "./index.css"
-import { AuthProvider } from "./auth/AuthProvider"
-import { router } from "./routes"
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
-  </StrictMode>,
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <I18nDirection>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </I18nDirection>
+  </React.StrictMode>,
 )
