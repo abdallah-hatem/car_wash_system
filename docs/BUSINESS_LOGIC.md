@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-11 (after Plan 3A — Tenant App Shell + Shop Setup).
+Last updated: 2026-06-11 (after auth fix — app role moved to `app_role` claim; PostgREST role-claim collision resolved).
 
 ---
 
@@ -24,7 +24,7 @@ Edge Functions), PWA. Bilingual **English + Arabic (RTL)**, tablet-first respons
 | Actor | What they are | Where they work | How identified |
 |---|---|---|---|
 | **Platform admin** | Us, the SaaS operator | `/admin` console | row in `platform_admins`; JWT claim `is_platform_admin: true` |
-| **Tenant owner** | Owner of one carwash business | `/app` (tenant app) | `profiles.role = 'owner'`; JWT claim `tenant_id` + `role` |
+| **Tenant owner** | Owner of one carwash business | `/app` (tenant app) | `profiles.role = 'owner'`; JWT claims `tenant_id` + `app_role` |
 | **Tenant manager** | Day-to-day operator of a business | `/app` | `profiles.role = 'manager'` |
 | **Employee (washer)** | Staff who perform washes | — (not a login) | a row in `employees`; **not** an auth user |
 
@@ -34,16 +34,18 @@ counter. Washers are tracked as records and assigned to washes; they do not log 
 ## 3. Tenancy & security model (the backbone)
 
 - Every operational row carries a **`tenant_id`**. Branch-scoped rows also carry `branch_id`.
-- A Supabase **auth hook** (`custom_access_token_hook`) injects `tenant_id`, `role`, and
+- A Supabase **auth hook** (`custom_access_token_hook`) injects `tenant_id`, `app_role`, and
   `is_platform_admin` into the user's JWT at token-issue time, read from `profiles` /
-  `platform_admins`.
+  `platform_admins`. The app role is carried under **`app_role`** (not `role`): the JWT
+  `role` claim is left as GoTrue's default (`authenticated`) so PostgREST's role switching
+  (`jwt-role-claim-key` = `role`) sets a valid Postgres role.
 - **Postgres RLS** enforces isolation on every table: `tenant_id = current_tenant_id()`
   where `current_tenant_id()` reads the `tenant_id` JWT claim. A tenant physically cannot
   read or write another tenant's rows.
 - **`platform_admins`** is RLS-locked and revoked from `anon`/`authenticated` — only
   `service_role` / SECURITY DEFINER functions touch it (prevents privilege escalation).
 - **Suspension is enforced in the auth hook:** if the user's tenant `status <> 'active'`,
-  the hook withholds the `tenant_id`/`role` claims. With no tenant claim, RLS returns
+  the hook withholds the `tenant_id`/`app_role` claims. With no tenant claim, RLS returns
   nothing and the user is routed to `/no-access`. Effective on the next token refresh
   (≤ ~1h) for already-logged-in users.
 - Secrets: frontend uses the **anon key only**; `service_role` key and DB password never
@@ -139,15 +141,17 @@ The counter workflows for tenant owners:
 - **Dashboard:** today's revenue, wash counts by status, live queue, per-branch filter.
 - **Customers & vehicles** management.
 
-### 6.6 Known tech debt — JWT role claim conflict
-The `custom_access_token_hook` currently writes `role = "owner" | "manager"` into the JWT
-claims to carry the app role. PostgREST's default `jwt-role-claim-key = ".role"` means it
-tries to `SET ROLE owner` on every tenant-authenticated request, but `owner` is not a
-Postgres role → `22023` error. RLS-scoped reads therefore fail in the browser. The fix is
-to rename the app-role JWT claim to `app_role` (update hook + `src/auth/claims.ts`) so
-that PostgREST continues to use `"authenticated"` as the Postgres role. This is tracked as
-tech debt and must be addressed before tenant CRUD is functional end-to-end in the browser.
-(API-layer CRUD via service_role and pgTAP tests are unaffected.)
+### 6.6 JWT role claim conflict — RESOLVED (2026-06-11)
+**Was:** the `custom_access_token_hook` wrote `role = "owner" | "manager"` into the JWT
+claims to carry the app role. PostgREST's default `jwt-role-claim-key = ".role"` then tried
+to `SET ROLE owner` on every tenant-authenticated request, but `owner` is not a Postgres
+role → `22023` error, so all RLS-scoped reads/writes failed in the browser.
+**Fix (migration `0011_auth_hook_app_role.sql`):** the hook now injects the app role under
+**`app_role`** and never touches the `role` claim, so `role` stays GoTrue's default
+(`authenticated`) and PostgREST sets a valid Postgres role. `src/auth/claims.ts` reads
+`payload.app_role` (the public `AppClaims.role` field is unchanged). Verified at the token
+level (owner token: `role="authenticated"`, `app_role="owner"`, `tenant_id` present) and
+end-to-end (`GET /rest/v1/branches` with the owner bearer token → HTTP 200).
 
 ## 7. Cross-cutting conventions
 
@@ -167,8 +171,8 @@ tech debt and must be addressed before tenant CRUD is functional end-to-end in t
 - **Plan 2 — Admin Console:** DONE. Seed/bootstrap, `create-business` Edge Function,
   enforced suspend, businesses list + create dialog.
 - **Plan 3A — Tenant App Shell + Shop Setup:** DONE. Sidebar shell, branches/packages/
-  employees CRUD, i18n/RTL/responsive, pgTAP RLS isolation tests. Tech debt: JWT role
-  claim conflict (see 6.6) makes browser data-fetch fail until fixed.
+  employees CRUD, i18n/RTL/responsive, pgTAP RLS isolation tests. (The JWT role-claim
+  conflict that previously blocked browser data-fetch is now RESOLVED — see 6.6.)
 - **Plan 3B — Customers, Vehicles & Counter Ops:** PLANNED (see 6.5).
 
 **Deferred (not in MVP):** inventory/chemicals, assets/machines/depreciation,
@@ -179,11 +183,9 @@ multi-owner-per-tenant, editing an owner's email/password from admin.
 
 ## 9. Known follow-ups / tech debt
 
-- **JWT role claim conflict (HIGH):** `custom_access_token_hook` sets `role = "owner" |
-  "manager"` in JWT claims; PostgREST interprets this as the Postgres role and throws
-  `22023 role "owner" does not exist`. Fix: rename claim to `app_role`, update hook +
-  `src/auth/claims.ts`. All tenant browser data-fetches are blocked until this is resolved.
-  See section 6.6 for full description.
+- ~~**JWT role claim conflict (HIGH):**~~ **RESOLVED 2026-06-11** — the hook now carries the
+  app role under `app_role` (migration `0011_auth_hook_app_role.sql`) and leaves the JWT
+  `role` claim as `authenticated`, so PostgREST sets a valid Postgres role. See section 6.6.
 - Rotate the Supabase **DB password** before production (was shared in chat). See CLAUDE.md.
 - `create-business` duplicate-email detection relies on GoTrue error-string matching
   (fails closed to 500 if wording changes) — consider checking the error code/status.

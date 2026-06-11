@@ -11,7 +11,7 @@ export const EMPTY_CLAIMS: AppClaims = { tenantId: null, role: null, isPlatformA
 export function parseClaims(payload: Record<string, unknown>): AppClaims {
   return {
     tenantId: (payload.tenant_id as string) ?? null,
-    role: (payload.role as TenantRole) ?? null,
+    role: (payload.app_role as TenantRole) ?? null,
     isPlatformAdmin: payload.is_platform_admin === true,
   }
 }

@@ -5,7 +5,7 @@ describe("parseClaims", () => {
   it("extracts tenant_id, role, and admin flag from a decoded JWT payload", () => {
     const payload = {
       tenant_id: "00000000-0000-0000-0000-00000000aaaa",
-      role: "owner",
+      app_role: "owner",
       is_platform_admin: false,
     }
     expect(parseClaims(payload)).toEqual({
@@ -26,7 +26,7 @@ describe("parseClaims", () => {
   it("returns safe defaults when claim fields are undefined", () => {
     // parseClaims itself is pure — no atob/JSON.parse — so we just verify
     // that unknown/unexpected values don't blow up and return safe defaults
-    expect(parseClaims({ tenant_id: undefined, role: undefined, is_platform_admin: undefined })).toEqual({
+    expect(parseClaims({ tenant_id: undefined, app_role: undefined, is_platform_admin: undefined })).toEqual({
       tenantId: null,
       role: null,
       isPlatformAdmin: false,
@@ -42,7 +42,7 @@ describe("decodeClaims", () => {
   it("correctly parses claims from a valid JWT-shaped token", () => {
     const payloadJson = JSON.stringify({
       tenant_id: "00000000-0000-0000-0000-00000000bbbb",
-      role: "owner",
+      app_role: "owner",
       is_platform_admin: false,
     })
     const payload = btoa(payloadJson)

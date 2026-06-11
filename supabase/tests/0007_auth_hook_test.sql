@@ -32,9 +32,9 @@ select is(
       'user_id', '00000000-0000-0000-0000-0000000000f1',
       'claims', '{}'::jsonb
     )
-  ) -> 'claims' ->> 'role',
+  ) -> 'claims' ->> 'app_role',
   'owner',
-  'hook injects role claim from profile'
+  'hook injects app_role claim from profile'
 );
 
 -- Edge case: a user with NO profile (e.g. a platform admin).
