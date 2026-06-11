@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-10 (after Plan 2 — Admin Console).
+Last updated: 2026-06-11 (after Plan 3A — Tenant App Shell + Shop Setup).
 
 ---
 
@@ -114,13 +114,40 @@ Guard targeting avoids redirect loops: a user with no tenant and not an admin la
 ### 6.3 Sign in & land in the right place — BUILT
 - Platform admin → `/admin`. Tenant owner/manager → `/app`. Orphan/suspended → `/no-access`.
 
-### 6.4 Tenant operations — PLANNED (Plan 3)
-The actual product for tenants. Intended flow:
-- **New wash (counter):** find/create customer → plate-search/create vehicle → pick package
+### 6.4 Tenant app shell + shop setup — BUILT (Plan 3A)
+Tenant owners log in and land on `/app/branches` inside a sidebar shell. The shell renders
+a permanent left sidebar at `lg` (1024 px +) breakpoints and a hamburger → drawer on mobile.
+The sidebar mirrors to the right in RTL (Arabic). Nav links: Branches, Packages, Staff;
+Queue and Dashboard are placeholders marked "coming soon".
+
+**Shop setup CRUD (fully built):**
+- **Branches** (`/app/branches`): list, create, edit, delete. "Main Branch" seeded by
+  onboarding. Delete blocked if branch has associated wash orders.
+- **Packages** (`/app/packages`): list, create, edit, activate/deactivate, delete.
+  Fields: name, price, optional duration (minutes), is_active.
+- **Staff** (`/app/staff`): list, create, edit, activate/deactivate, delete. Fields:
+  name, optional phone, optional branch assignment, is_active.
+
+All three tables are RLS-isolated per tenant (enforced by `current_tenant_id()` claim).
+All pages are i18n/RTL/responsive (375 px mobile through 1280 px desktop, en + ar).
+
+### 6.5 Tenant operations — PLANNED (Plan 3B+)
+The counter workflows for tenant owners:
+- **New wash:** find/create customer → plate-search/create vehicle → pick package
   → car enters the **queue** (`waiting`) → assign an employee + mark `in_progress` →
   `done` → record a manual **payment**.
 - **Dashboard:** today's revenue, wash counts by status, live queue, per-branch filter.
-- Plus management of customers, vehicles, packages, employees, branches.
+- **Customers & vehicles** management.
+
+### 6.6 Known tech debt — JWT role claim conflict
+The `custom_access_token_hook` currently writes `role = "owner" | "manager"` into the JWT
+claims to carry the app role. PostgREST's default `jwt-role-claim-key = ".role"` means it
+tries to `SET ROLE owner` on every tenant-authenticated request, but `owner` is not a
+Postgres role → `22023` error. RLS-scoped reads therefore fail in the browser. The fix is
+to rename the app-role JWT claim to `app_role` (update hook + `src/auth/claims.ts`) so
+that PostgREST continues to use `"authenticated"` as the Postgres role. This is tracked as
+tech debt and must be addressed before tenant CRUD is functional end-to-end in the browser.
+(API-layer CRUD via service_role and pgTAP tests are unaffected.)
 
 ## 7. Cross-cutting conventions
 
@@ -139,7 +166,10 @@ The actual product for tenants. Intended flow:
 - **Arabic/RTL + responsiveness:** DONE.
 - **Plan 2 — Admin Console:** DONE. Seed/bootstrap, `create-business` Edge Function,
   enforced suspend, businesses list + create dialog.
-- **Plan 3 — Tenant Operations:** PLANNED (see 6.4).
+- **Plan 3A — Tenant App Shell + Shop Setup:** DONE. Sidebar shell, branches/packages/
+  employees CRUD, i18n/RTL/responsive, pgTAP RLS isolation tests. Tech debt: JWT role
+  claim conflict (see 6.6) makes browser data-fetch fail until fixed.
+- **Plan 3B — Customers, Vehicles & Counter Ops:** PLANNED (see 6.5).
 
 **Deferred (not in MVP):** inventory/chemicals, assets/machines/depreciation,
 payroll/commission, analytics suite, ratings/performance, appointments/booking, push
@@ -149,13 +179,18 @@ multi-owner-per-tenant, editing an owner's email/password from admin.
 
 ## 9. Known follow-ups / tech debt
 
+- **JWT role claim conflict (HIGH):** `custom_access_token_hook` sets `role = "owner" |
+  "manager"` in JWT claims; PostgREST interprets this as the Postgres role and throws
+  `22023 role "owner" does not exist`. Fix: rename claim to `app_role`, update hook +
+  `src/auth/claims.ts`. All tenant browser data-fetches are blocked until this is resolved.
+  See section 6.6 for full description.
 - Rotate the Supabase **DB password** before production (was shared in chat). See CLAUDE.md.
 - `create-business` duplicate-email detection relies on GoTrue error-string matching
   (fails closed to 500 if wording changes) — consider checking the error code/status.
 - Temp password is returned in the function response body (by design) — could move to an
   email-invite/reset-link flow later.
 - Suspension takes effect on next token refresh (≤ ~1h) for live sessions, not instantly.
-- Bundle is a single ~630 kB chunk — code-split as the app grows.
+- Bundle is a single ~704 kB chunk (post 3A) — code-split as the app grows.
 
 ---
 
