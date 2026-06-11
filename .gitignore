@@ -6,3 +6,6 @@ dist/
 
 # Deno test artifact (edge function tests run via deno; lock is noise here)
 deno.lock
+
+# Playwright MCP screenshot artifacts
+.playwright-mcp/
