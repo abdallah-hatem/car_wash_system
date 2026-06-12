@@ -3,11 +3,14 @@ import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { useBranch } from "@/lib/tenant/branch-context"
 import { listQueue, type QueueOrder } from "@/lib/tenant/wash-orders"
+import { isPaid } from "@/lib/tenant/operations"
 import { WashCard } from "@/components/tenant/WashCard"
 import { NewWashDialog } from "@/components/tenant/NewWashDialog"
 
+// Compare on the LOCAL calendar day (both sides), so an operator outside UTC
+// still sees washes finished after local midnight. en-CA gives YYYY-MM-DD.
 function isToday(iso: string): boolean {
-  return iso.slice(0, 10) === new Date().toISOString().slice(0, 10)
+  return new Date(iso).toLocaleDateString("en-CA") === new Date().toLocaleDateString("en-CA")
 }
 
 export default function QueuePage() {
@@ -37,14 +40,17 @@ export default function QueuePage() {
     void fetchQueue()
   }, [fetchQueue])
 
-  // Partition orders per review flags:
+  // Partition orders:
   // - Waiting: status === 'waiting'
   // - In Progress: status === 'in_progress'
-  // - Done: status === 'done' AND created_at is today
+  // - Done: status === 'done' AND (created today OR still unpaid) — unpaid done
+  //   orders stay visible regardless of day so their payment can still be recorded.
   // - Cancelled: excluded from board
   const waiting = orders.filter((o) => o.status === "waiting")
   const inProgress = orders.filter((o) => o.status === "in_progress")
-  const done = orders.filter((o) => o.status === "done" && isToday(o.created_at))
+  const done = orders.filter(
+    (o) => o.status === "done" && (isToday(o.created_at) || !isPaid(o.price, o.payments)),
+  )
 
   if (branchLoading) {
     return (
