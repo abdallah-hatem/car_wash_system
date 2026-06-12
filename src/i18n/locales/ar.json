@@ -124,6 +124,66 @@
     "price_invalid": "يجب أن يكون السعر رقمًا موجبًا.",
     "plate_required": "رقم اللوحة مطلوب."
   },
+  "status": {
+    "waiting": "في الانتظار",
+    "in_progress": "جارٍ الغسيل",
+    "done": "مكتمل",
+    "cancelled": "ملغى"
+  },
+  "queue": {
+    "title": "قائمة الانتظار",
+    "newWash": "غسيل جديد",
+    "waiting": "في الانتظار",
+    "inProgress": "جارٍ الغسيل",
+    "done": "مكتمل",
+    "emptyWaiting": "لا توجد طلبات في الانتظار.",
+    "emptyInProgress": "لا توجد طلبات قيد التنفيذ.",
+    "emptyDone": "لا توجد طلبات مكتملة اليوم.",
+    "branch": "الفرع",
+    "errors": {
+      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+    }
+  },
+  "wash": {
+    "plate": "رقم اللوحة",
+    "findOrAddVehicle": "ابحث عن مركبة أو أضف جديدة",
+    "newVehicle": "مركبة جديدة",
+    "customer": "العميل",
+    "customerName": "اسم العميل",
+    "customerPhone": "هاتف العميل",
+    "package": "الباقة",
+    "price": "السعر",
+    "notes": "ملاحظات",
+    "assignEmployee": "تعيين موظف",
+    "noEmployee": "بدون موظف",
+    "start": "بدء",
+    "complete": "إتمام",
+    "cancel": "إلغاء",
+    "cancelConfirm": "هل أنت متأكد أنك تريد إلغاء هذا الغسيل؟",
+    "unpaid": "غير مدفوع",
+    "paid": "مدفوع",
+    "remaining": "المتبقي",
+    "assignedTo": "مُعيَّن إلى",
+    "create": "إنشاء غسيل",
+    "errors": {
+      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+      "package_required": "يرجى اختيار باقة.",
+      "price_invalid": "يجب أن يكون السعر رقمًا موجبًا.",
+      "plate_required": "رقم اللوحة مطلوب."
+    }
+  },
+  "payment": {
+    "title": "تسجيل دفعة",
+    "amount": "المبلغ",
+    "method": "طريقة الدفع",
+    "cash": "نقداً",
+    "card": "بطاقة",
+    "transfer": "تحويل",
+    "record": "تسجيل الدفعة",
+    "errors": {
+      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+    }
+  },
   "admin": {
     "title": "الشركات",
     "newBusiness": "شركة جديدة",

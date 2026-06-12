@@ -124,6 +124,66 @@
     "price_invalid": "Price must be a positive number.",
     "plate_required": "Plate number is required."
   },
+  "status": {
+    "waiting": "Waiting",
+    "in_progress": "In Progress",
+    "done": "Done",
+    "cancelled": "Cancelled"
+  },
+  "queue": {
+    "title": "Queue",
+    "newWash": "New Wash",
+    "waiting": "Waiting",
+    "inProgress": "In Progress",
+    "done": "Done",
+    "emptyWaiting": "No orders waiting.",
+    "emptyInProgress": "No orders in progress.",
+    "emptyDone": "No completed orders today.",
+    "branch": "Branch",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "wash": {
+    "plate": "Plate number",
+    "findOrAddVehicle": "Find or add vehicle",
+    "newVehicle": "New vehicle",
+    "customer": "Customer",
+    "customerName": "Customer name",
+    "customerPhone": "Customer phone",
+    "package": "Package",
+    "price": "Price",
+    "notes": "Notes",
+    "assignEmployee": "Assign employee",
+    "noEmployee": "No employee",
+    "start": "Start",
+    "complete": "Complete",
+    "cancel": "Cancel",
+    "cancelConfirm": "Are you sure you want to cancel this wash?",
+    "unpaid": "Unpaid",
+    "paid": "Paid",
+    "remaining": "Remaining",
+    "assignedTo": "Assigned to",
+    "create": "Create wash",
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "package_required": "Please select a package.",
+      "price_invalid": "Price must be a positive number.",
+      "plate_required": "Plate number is required."
+    }
+  },
+  "payment": {
+    "title": "Record payment",
+    "amount": "Amount",
+    "method": "Method",
+    "cash": "Cash",
+    "card": "Card",
+    "transfer": "Transfer",
+    "record": "Record payment",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
   "admin": {
     "title": "Businesses",
     "newBusiness": "New business",
