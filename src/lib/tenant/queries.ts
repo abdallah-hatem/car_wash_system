@@ -7,6 +7,7 @@ import * as vehicles from "./vehicles"
 import * as washOrders from "./wash-orders"
 import * as payments from "./payments"
 import * as dashboard from "./dashboard"
+import { listWashes, type WashFilters } from "./washes"
 
 export const keys = {
   branches: ["branches"] as const,
@@ -17,6 +18,7 @@ export const keys = {
   plateSearch: (term: string) => ["vehicles", "search", term] as const,
   queue: (branchId: string) => ["queue", branchId] as const,
   dashboard: (branchId: string) => ["dashboard", branchId] as const,
+  washes: ["washes"] as const,
 }
 
 // ─── Query hooks ────────────────────────────────────────────────────────────
@@ -59,6 +61,10 @@ export function useQueue(branchId: string | null) {
     queryFn: () => washOrders.listQueue(branchId!),
     enabled: !!branchId,
   })
+}
+
+export function useWashes(filters: WashFilters) {
+  return useQuery({ queryKey: [...keys.washes, filters], queryFn: () => listWashes(filters) })
 }
 
 export function useDashboard(branchId: string | null) {
@@ -201,6 +207,7 @@ export function useWashOrderMutations(branchId: string | null) {
     return Promise.all([
       qc.invalidateQueries({ queryKey: keys.queue(bid) }),
       qc.invalidateQueries({ queryKey: keys.dashboard(bid) }),
+      qc.invalidateQueries({ queryKey: keys.washes }),
     ])
   }
   return {
@@ -232,6 +239,7 @@ export function usePaymentMutations(branchId: string | null) {
     return Promise.all([
       qc.invalidateQueries({ queryKey: keys.queue(bid) }),
       qc.invalidateQueries({ queryKey: keys.dashboard(bid) }),
+      qc.invalidateQueries({ queryKey: keys.washes }),
     ])
   }
   return {
