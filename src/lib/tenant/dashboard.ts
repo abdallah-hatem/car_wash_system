@@ -21,35 +21,31 @@ export interface DayStats {
   counts: Record<WashStatus, number>
 }
 
-// Revenue query approach: FALLBACK — fetch today's order ids for the branch,
-// then query payments filtered by those ids and sum. This avoids the
-// nested `.eq("wash_orders.branch_id", …)` filter which is awkward with the
-// generated types and may not be supported as a filtering inner join in
-// supabase-js v2. This guarantees correct, branch-scoped revenue.
 export async function getTodayStats(branchId: string): Promise<DayStats> {
   const since = startOfDay(new Date()).toISOString()
 
-  // Step 1: today's orders for this branch → count + status breakdown
+  // Revenue = payments RECORDED today (paid_at >= local midnight) for this branch.
+  // We embed wash_orders(branch_id) and filter by branch client-side, rather than a
+  // server-side nested `.eq("wash_orders.branch_id", …)` (awkward/untyped in supabase-js v2).
+  // Filtering by paid_at (not order date) correctly captures payments made today on
+  // older unpaid-done orders — which 3C keeps payable across days.
+  const { data: pays, error: pErr } = await supabase
+    .from("payments")
+    .select("amount,wash_orders!inner(branch_id)")
+    .gte("paid_at", since)
+  if (pErr) throw pErr
+  const branchPays = ((pays ?? []) as unknown as { amount: number; wash_orders: { branch_id: string } | null }[])
+    .filter((p) => p.wash_orders?.branch_id === branchId)
+  const revenue = sumPayments(branchPays)
+
+  // Today's orders for this branch → count + status breakdown
   const { data: orders, error: oErr } = await supabase
     .from("wash_orders")
-    .select("id,status")
+    .select("status,created_at")
     .eq("branch_id", branchId)
     .gte("created_at", since)
   if (oErr) throw oErr
-
-  const list = (orders ?? []) as { id: string; status: WashStatus }[]
-  const orderIds = list.map((o) => o.id)
-
-  // Step 2: revenue — today's payments for those order ids
-  let revenue = 0
-  if (orderIds.length > 0) {
-    const { data: pays, error: pErr } = await supabase
-      .from("payments")
-      .select("amount")
-      .in("wash_order_id", orderIds)
-    if (pErr) throw pErr
-    revenue = sumPayments((pays ?? []) as unknown as { amount: number }[])
-  }
+  const list = (orders ?? []) as { status: WashStatus }[]
 
   return { revenue, washesToday: list.length, counts: summarizeStatuses(list) }
 }
