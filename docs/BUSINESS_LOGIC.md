@@ -352,6 +352,17 @@ queue's dialogs, now prevented by dedupe.
 - **Responsive:** tablet-first; every screen works at mobile (~375px) and tablet
   (~768–1024px) in both LTR and RTL.
 - **Audit:** key tables are audit-logged via DB triggers.
+- **Data fetching (reactive):** the frontend uses **TanStack Query**. Components read data
+  via query hooks (`src/lib/tenant/queries.ts`, `src/lib/admin-queries.ts`); mutations
+  **invalidate the related query keys** on success, so any add/edit/delete refreshes all
+  related views automatically (e.g. creating a branch updates the navbar dropdown; recording
+  a payment updates the dashboard) — no manual refresh. The branch context
+  (`branch-context.tsx`) is a `useBranches()` consumer, so the navbar branch selector is
+  reactive. Realtime/multi-client sync is deferred.
+- **Confirmations:** destructive actions use a custom `ConfirmDialog` (shadcn AlertDialog,
+  `src/components/ui/confirm-dialog.tsx`) — no native `window.confirm`.
+- **Session resilience:** a `401` from the data/functions API signs the user out and the
+  guards redirect to `/login` (avoids cryptic errors from an expired/revoked session).
 
 ## 8. Build status & scope
 
