@@ -10,6 +10,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
     { to: "/app/branches", label: t("nav.branches") },
     { to: "/app/packages", label: t("nav.packages") },
     { to: "/app/staff", label: t("nav.staff") },
+    { to: "/app/customers", label: t("nav.customers") },
   ]
   return (
     <nav className="space-y-1">

@@ -5,6 +5,7 @@ import BusinessesPage from "./pages/admin/BusinessesPage"
 import BranchesPage from "./pages/tenant/BranchesPage"
 import PackagesPage from "./pages/tenant/PackagesPage"
 import StaffPage from "./pages/tenant/StaffPage"
+import CustomersPage from "./pages/tenant/CustomersPage"
 import { AppHeader } from "./components/AppHeader"
 import { TenantLayout } from "./components/tenant/TenantLayout"
 import { RequireAuth, RequireAdmin, RequireTenant } from "./auth/guards"
@@ -54,6 +55,10 @@ export const router = createBrowserRouter([
               {
                 path: "staff",
                 element: <StaffPage />,
+              },
+              {
+                path: "customers",
+                element: <CustomersPage />,
               },
             ],
           },
