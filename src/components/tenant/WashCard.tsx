@@ -185,6 +185,7 @@ export function WashCard({ order, branchId }: Props) {
         open={assignOpen}
         onOpenChange={setAssignOpen}
         onConfirm={(empId) => void handleStart(empId)}
+        branchId={branchId}
         loading={acting}
       />
 

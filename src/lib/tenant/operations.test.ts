@@ -1,5 +1,24 @@
 import { describe, it, expect } from "vitest"
-import { canTransition, amountPaid, isPaid, remaining, validateNewWash } from "./operations"
+import {
+  canTransition,
+  amountPaid,
+  isPaid,
+  remaining,
+  validateNewWash,
+  availableEmployees,
+} from "./operations"
+
+describe("availableEmployees", () => {
+  const e = (id: string, branch_id: string | null, is_active = true) => ({ id, branch_id, is_active })
+  it("keeps active staff for the branch + unassigned floaters; drops other branches and inactive", () => {
+    const list = [e("a", "b1"), e("b", "b2"), e("c", null), e("d", "b1", false), e("f", null, false)]
+    expect(availableEmployees(list, "b1").map((x) => x.id)).toEqual(["a", "c"])
+  })
+  it("with no branch selected, returns only floaters", () => {
+    const list = [e("a", "b1"), e("c", null)]
+    expect(availableEmployees(list, null).map((x) => x.id)).toEqual(["c"])
+  })
+})
 
 describe("canTransition", () => {
   it("allows the legal moves", () => {

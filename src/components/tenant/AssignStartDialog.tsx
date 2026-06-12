@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Play } from "lucide-react"
 import {
@@ -17,7 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { listEmployees, type Employee } from "@/lib/tenant/employees"
+import { useEmployees } from "@/lib/tenant/queries"
+import { availableEmployees } from "@/lib/tenant/operations"
 
 const NO_EMPLOYEE_VALUE = "__none__"
 
@@ -25,28 +26,24 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   onConfirm: (employeeId: string | null) => void
+  branchId: string
   loading?: boolean
 }
 
-export function AssignStartDialog({ open, onOpenChange, onConfirm, loading = false }: Props) {
+export function AssignStartDialog({ open, onOpenChange, onConfirm, branchId, loading = false }: Props) {
   const { t } = useTranslation()
-  const [employees, setEmployees] = useState<Employee[]>([])
+  const { data: all = [], isLoading } = useEmployees()
   const [selected, setSelected] = useState<string>(NO_EMPLOYEE_VALUE)
-  const [fetching, setFetching] = useState(false)
+
+  // Only active staff for the selected branch (plus unassigned floaters).
+  const employees = availableEmployees(all, branchId)
 
   useEffect(() => {
-    if (!open) return
-    setSelected(NO_EMPLOYEE_VALUE)
-    setFetching(true)
-    listEmployees()
-      .then((all) => setEmployees(all.filter((e) => e.is_active)))
-      .catch(() => setEmployees([]))
-      .finally(() => setFetching(false))
+    if (open) setSelected(NO_EMPLOYEE_VALUE)
   }, [open])
 
   function handleConfirm() {
-    const empId = selected === NO_EMPLOYEE_VALUE ? null : selected
-    onConfirm(empId)
+    onConfirm(selected === NO_EMPLOYEE_VALUE ? null : selected)
   }
 
   return (
@@ -59,7 +56,7 @@ export function AssignStartDialog({ open, onOpenChange, onConfirm, loading = fal
         <div className="flex flex-col gap-4 py-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="assign-employee">{t("wash.assignEmployee")}</Label>
-            <Select value={selected} onValueChange={setSelected} disabled={fetching || loading}>
+            <Select value={selected} onValueChange={setSelected} disabled={isLoading || loading}>
               <SelectTrigger id="assign-employee" className="min-h-[44px]">
                 <SelectValue placeholder={t("wash.noEmployee")} />
               </SelectTrigger>
@@ -72,6 +69,9 @@ export function AssignStartDialog({ open, onOpenChange, onConfirm, loading = fal
                 ))}
               </SelectContent>
             </Select>
+            {!isLoading && employees.length === 0 && (
+              <p className="text-xs text-muted-foreground">{t("wash.noStaffAtBranch")}</p>
+            )}
           </div>
         </div>
 
@@ -87,7 +87,7 @@ export function AssignStartDialog({ open, onOpenChange, onConfirm, loading = fal
           <Button
             type="button"
             onClick={handleConfirm}
-            disabled={fetching || loading}
+            disabled={isLoading || loading}
             className="gap-1.5"
           >
             {!loading && <Play className="h-4 w-4" />}

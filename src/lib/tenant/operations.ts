@@ -23,3 +23,16 @@ export function validateNewWash(input: { package_id?: string; price?: number }):
   if (input.price == null || Number.isNaN(input.price) || input.price <= 0) return "price_invalid"
   return null
 }
+
+/**
+ * Staff selectable for a wash at a given branch: active employees assigned to that
+ * branch, plus unassigned "floater" staff (branch_id null) who can work anywhere.
+ */
+export function availableEmployees<T extends { is_active: boolean; branch_id: string | null }>(
+  employees: T[],
+  branchId: string | null,
+): T[] {
+  return employees.filter(
+    (e) => e.is_active && (e.branch_id === branchId || e.branch_id === null),
+  )
+}

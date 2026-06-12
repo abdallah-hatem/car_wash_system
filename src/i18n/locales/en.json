@@ -179,7 +179,8 @@
       "package_required": "Please select a package.",
       "price_invalid": "Price must be a positive number.",
       "plate_required": "Plate number is required."
-    }
+    },
+    "noStaffAtBranch": "No staff assigned to this branch — start without one or add staff."
   },
   "payment": {
     "title": "Record payment",
