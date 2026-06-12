@@ -184,6 +184,17 @@
       "generic": "Something went wrong. Please try again."
     }
   },
+  "dashboard": {
+    "title": "Dashboard",
+    "revenueToday": "Revenue today",
+    "washesToday": "Washes today",
+    "byStatus": "By status",
+    "empty": "No activity today. Start a new wash to see stats.",
+    "refresh": "Refresh",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
   "admin": {
     "title": "Businesses",
     "newBusiness": "New business",
