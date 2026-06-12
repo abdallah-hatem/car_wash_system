@@ -5,9 +5,11 @@ import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { SidebarNav } from "./SidebarNav"
+import { BranchSelector } from "./BranchSelector"
+import { BranchProvider } from "@/lib/tenant/branch-context"
 import { Menu } from "lucide-react"
 
-export function TenantLayout() {
+function TenantLayoutInner() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -24,6 +26,7 @@ export function TenantLayout() {
           <span className="font-semibold">{t("common.appName")}</span>
         </div>
         <div className="flex items-center gap-1">
+          <BranchSelector />
           <LanguageSwitcher />
           <Button type="button" variant="ghost" size="sm" className="min-h-[44px]" onClick={() => void signOut()}>
             {t("common.signOut")}
@@ -50,5 +53,13 @@ export function TenantLayout() {
         </main>
       </div>
     </div>
+  )
+}
+
+export function TenantLayout() {
+  return (
+    <BranchProvider>
+      <TenantLayoutInner />
+    </BranchProvider>
   )
 }
