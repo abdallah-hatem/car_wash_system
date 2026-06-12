@@ -48,6 +48,7 @@
     "staff": "الموظفون",
     "customers": "العملاء",
     "queue": "قائمة الانتظار",
+    "washes": "سجل الغسيل",
     "dashboard": "لوحة التحكم",
     "comingSoon": "قريباً",
     "menu": "فتح القائمة"
@@ -190,6 +191,33 @@
     "card": "بطاقة",
     "transfer": "تحويل",
     "record": "تسجيل الدفعة",
+    "errors": {
+      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+    }
+  },
+  "washes": {
+    "title": "سجل الغسيل",
+    "from": "من",
+    "to": "إلى",
+    "status": "الحالة",
+    "employee": "الموظف",
+    "branch": "الفرع",
+    "allStatuses": "جميع الحالات",
+    "allEmployees": "جميع الموظفين",
+    "allBranches": "جميع الفروع",
+    "colQueued": "وقت الإضافة",
+    "colPlate": "اللوحة",
+    "colCustomer": "العميل",
+    "colPackage": "الباقة",
+    "colBranch": "الفرع",
+    "colStatus": "الحالة",
+    "colEmployee": "الموظف",
+    "colWait": "وقت الانتظار",
+    "colService": "وقت الخدمة",
+    "colPrice": "السعر",
+    "colPaid": "الدفع",
+    "empty": "لا توجد غسيلات تطابق الفلاتر المحددة.",
+    "capped": "يتم عرض أحدث {{n}} غسيلة. قلّل نطاق الفلاتر لرؤية المزيد.",
     "errors": {
       "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
     }

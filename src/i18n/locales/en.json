@@ -48,6 +48,7 @@
     "staff": "Staff",
     "customers": "Customers",
     "queue": "Queue",
+    "washes": "Washes",
     "dashboard": "Dashboard",
     "comingSoon": "coming soon",
     "menu": "Open menu"
@@ -190,6 +191,33 @@
     "card": "Card",
     "transfer": "Transfer",
     "record": "Record payment",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "washes": {
+    "title": "Washes",
+    "from": "From",
+    "to": "To",
+    "status": "Status",
+    "employee": "Employee",
+    "branch": "Branch",
+    "allStatuses": "All statuses",
+    "allEmployees": "All employees",
+    "allBranches": "All branches",
+    "colQueued": "Queued",
+    "colPlate": "Plate",
+    "colCustomer": "Customer",
+    "colPackage": "Package",
+    "colBranch": "Branch",
+    "colStatus": "Status",
+    "colEmployee": "Employee",
+    "colWait": "Wait",
+    "colService": "Service",
+    "colPrice": "Price",
+    "colPaid": "Paid",
+    "empty": "No washes found for the selected filters.",
+    "capped": "Showing the {{n}} most recent washes. Narrow your filters to see more.",
     "errors": {
       "generic": "Something went wrong. Please try again."
     }
