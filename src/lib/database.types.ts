@@ -329,6 +329,8 @@ export type Database = {
           id: string
           make: string | null
           model: string | null
+          plate_digits: string | null
+          plate_letters: string | null
           plate_number: string
           tenant_id: string
         }
@@ -339,6 +341,8 @@ export type Database = {
           id?: string
           make?: string | null
           model?: string | null
+          plate_digits?: string | null
+          plate_letters?: string | null
           plate_number: string
           tenant_id: string
         }
@@ -349,6 +353,8 @@ export type Database = {
           id?: string
           make?: string | null
           model?: string | null
+          plate_digits?: string | null
+          plate_letters?: string | null
           plate_number?: string
           tenant_id?: string
         }

@@ -148,3 +148,14 @@ where not exists (
   where tenant_id = '00000000-0000-0000-0000-00000000de70'
     and name = 'Main Branch'
 );
+
+-- ── Demo customer + structured Egyptian plate vehicle ─────────
+
+insert into public.customers (id, tenant_id, name, phone)
+  values ('00000000-0000-0000-0000-00000000cc01', '00000000-0000-0000-0000-00000000de70', 'Demo Customer', '0100000000')
+  on conflict (id) do nothing;
+
+insert into public.vehicles (id, tenant_id, customer_id, plate_letters, plate_digits, plate_number, make, model, color)
+  values ('00000000-0000-0000-0000-00000000ee01', '00000000-0000-0000-0000-00000000de70',
+          '00000000-0000-0000-0000-00000000cc01', 'أبج', '123', 'أبج 123', 'Toyota', 'Corolla', 'White')
+  on conflict (id) do nothing;
