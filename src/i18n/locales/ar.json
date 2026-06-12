@@ -170,6 +170,17 @@
     "complete": "إتمام",
     "cancel": "إلغاء",
     "cancelConfirm": "هل أنت متأكد أنك تريد إلغاء هذا الغسيل؟",
+    "cancelTitle": "إلغاء الغسيل",
+    "cancelReasonLabel": "سبب الإلغاء",
+    "cancelReasonPlaceholder": "اكتب سبب الإلغاء…",
+    "cancelReasonRequired": "يرجى تحديد سبب قبل الإلغاء.",
+    "confirmCancel": "تأكيد الإلغاء",
+    "cancelPresets": {
+      "customerLeft": "العميل غادر",
+      "vehicleIssue": "مشكلة في المركبة",
+      "duplicate": "طلب مكرر",
+      "mistake": "أُدخل بالخطأ"
+    },
     "unpaid": "غير مدفوع",
     "paid": "مدفوع",
     "remaining": "المتبقي",
@@ -216,6 +227,7 @@
     "colService": "وقت الخدمة",
     "colPrice": "السعر",
     "colPaid": "الدفع",
+    "colReason": "السبب",
     "empty": "لا توجد غسيلات تطابق الفلاتر المحددة.",
     "capped": "يتم عرض أحدث {{n}} غسيلة. قلّل نطاق الفلاتر لرؤية المزيد.",
     "errors": {

@@ -5,6 +5,7 @@ import {
   isPaid,
   remaining,
   validateNewWash,
+  validateCancelReason,
   availableEmployees,
 } from "./operations"
 
@@ -58,5 +59,12 @@ describe("validateNewWash", () => {
     expect(validateNewWash({ package_id: "", price: 10 })).toBe("package_required")
     expect(validateNewWash({ package_id: "p1", price: 0 })).toBe("price_invalid")
     expect(validateNewWash({ package_id: "p1", price: 25 })).toBeNull()
+  })
+})
+describe("validateCancelReason", () => {
+  it("returns true for non-empty reason, false for empty/whitespace", () => {
+    expect(validateCancelReason("customer left")).toBe(true)
+    expect(validateCancelReason("  ")).toBe(false)
+    expect(validateCancelReason("")).toBe(false)
   })
 })

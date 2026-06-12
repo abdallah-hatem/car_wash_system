@@ -4,12 +4,12 @@ import { Banknote, Check, Play, X } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { canTransition, isPaid, remaining } from "@/lib/tenant/operations"
 import { type QueueOrder } from "@/lib/tenant/wash-orders"
 import { useWashOrderMutations } from "@/lib/tenant/queries"
 import { AssignStartDialog } from "./AssignStartDialog"
 import { PaymentDialog } from "./PaymentDialog"
+import { CancelWashDialog } from "./CancelWashDialog"
 
 interface Props {
   order: QueueOrder
@@ -56,12 +56,12 @@ export function WashCard({ order, branchId }: Props) {
     }
   }
 
-  async function handleCancelConfirmed() {
+  async function handleCancel(reason: string) {
     if (!canTransition(order.status, "cancelled")) return
     setActing(true)
     setError(null)
     try {
-      await cancel.mutateAsync(order.id)
+      await cancel.mutateAsync({ id: order.id, reason })
       setCancelOpen(false)
     } catch {
       setError(t("wash.errors.generic"))
@@ -197,15 +197,11 @@ export function WashCard({ order, branchId }: Props) {
         onRecorded={() => setPayOpen(false)}
       />
 
-      <ConfirmDialog
+      <CancelWashDialog
         open={cancelOpen}
         onOpenChange={setCancelOpen}
-        title={t("wash.cancelConfirm")}
-        confirmLabel={t("wash.cancel")}
-        cancelLabel={t("common.cancel")}
-        destructive
+        onConfirm={(reason) => void handleCancel(reason)}
         loading={acting}
-        onConfirm={() => void handleCancelConfirmed()}
       />
     </Card>
   )

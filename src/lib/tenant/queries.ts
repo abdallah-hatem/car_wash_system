@@ -226,7 +226,7 @@ export function useWashOrderMutations(branchId: string | null) {
       onSuccess: inval,
     }),
     cancel: useMutation({
-      mutationFn: (id: string) => washOrders.cancelWashOrder(id),
+      mutationFn: (a: { id: string; reason: string }) => washOrders.cancelWashOrder(a.id, a.reason),
       onSuccess: inval,
     }),
   }

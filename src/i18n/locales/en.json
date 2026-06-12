@@ -170,6 +170,17 @@
     "complete": "Complete",
     "cancel": "Cancel",
     "cancelConfirm": "Are you sure you want to cancel this wash?",
+    "cancelTitle": "Cancel wash",
+    "cancelReasonLabel": "Reason for cancellation",
+    "cancelReasonPlaceholder": "Describe the reason…",
+    "cancelReasonRequired": "Please provide a reason before cancelling.",
+    "confirmCancel": "Confirm cancel",
+    "cancelPresets": {
+      "customerLeft": "Customer left",
+      "vehicleIssue": "Vehicle issue",
+      "duplicate": "Duplicate order",
+      "mistake": "Entered by mistake"
+    },
     "unpaid": "Unpaid",
     "paid": "Paid",
     "remaining": "Remaining",
@@ -216,6 +227,7 @@
     "colService": "Service",
     "colPrice": "Price",
     "colPaid": "Paid",
+    "colReason": "Reason",
     "empty": "No washes found for the selected filters.",
     "capped": "Showing the {{n}} most recent washes. Narrow your filters to see more.",
     "errors": {

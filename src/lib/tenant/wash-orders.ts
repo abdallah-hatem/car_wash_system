@@ -57,7 +57,9 @@ export async function completeWashOrder(id: string): Promise<void> {
     .update({ status: "done", completed_at: new Date().toISOString() }).eq("id", id)
   if (error) throw error
 }
-export async function cancelWashOrder(id: string): Promise<void> {
-  const { error } = await supabase.from("wash_orders").update({ status: "cancelled" }).eq("id", id)
+export async function cancelWashOrder(id: string, reason: string): Promise<void> {
+  const { error } = await supabase.from("wash_orders")
+    .update({ status: "cancelled", cancellation_reason: reason.trim(), cancelled_at: new Date().toISOString() })
+    .eq("id", id)
   if (error) throw error
 }

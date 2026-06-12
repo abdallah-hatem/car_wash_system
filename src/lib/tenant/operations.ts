@@ -24,6 +24,10 @@ export function validateNewWash(input: { package_id?: string; price?: number }):
   return null
 }
 
+export function validateCancelReason(reason: string): boolean {
+  return reason.trim().length > 0
+}
+
 /**
  * Staff selectable for a wash at a given branch: active employees assigned to that
  * branch, plus unassigned "floater" staff (branch_id null) who can work anywhere.
