@@ -333,8 +333,14 @@ own React copy), the Vite pre-bundle cache in `node_modules/.vite/deps/` became 
 resolved React in `@radix-ui/react-select` from a different instance than `react-dom`. This
 triggered the "Cannot read properties of null (reading 'useMemo')" crash on `/app/queue` —
 the entire route was unmounted by React Router's default error boundary.
-**Fix:** delete `node_modules/.vite` and restart the dev server. Going forward, the vite
-cache clears itself on clean installs; CI should `npm ci` to avoid stale caches.
+**Permanent fix (2026-06-12):** `vite.config.ts` now sets `resolve.dedupe: ["react",
+"react-dom"]`, so Vite always pre-bundles a single React copy even when a stray
+`node_modules/.deno/react` exists — the dual-instance crash can no longer occur. (If a dev
+server was already running from before this fix, restart it once to pick up the config.)
+This was the root cause of the "Start a wash (waiting→in_progress) gives an error" report:
+the operation itself is correct at every layer (verified via REST 204 and a full browser
+run of Start/Complete/Payment); the error was the stale dual-React bundle crashing the
+queue's dialogs, now prevented by dedupe.
 
 ## 7. Cross-cutting conventions
 
