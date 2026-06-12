@@ -34,16 +34,17 @@ export async function createVehicle(
     model?: string | null
     color?: string | null
   },
-): Promise<void> {
-  const { error } = await supabase.from("vehicles").insert({
+): Promise<string> {
+  const { data, error } = await supabase.from("vehicles").insert({
     tenant_id: tenantId,
     customer_id: input.customer_id,
     plate_number: input.plate_number.trim(),
     make: input.make?.trim() || null,
     model: input.model?.trim() || null,
     color: input.color?.trim() || null,
-  })
+  }).select("id").single()
   if (error) throw error
+  return data.id
 }
 
 export async function updateVehicle(

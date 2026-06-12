@@ -7,6 +7,7 @@ const linkBase = "block rounded-md px-3 py-2 text-sm font-medium min-h-[44px] fl
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useTranslation()
   const items = [
+    { to: "/app/queue", label: t("nav.queue") },
     { to: "/app/branches", label: t("nav.branches") },
     { to: "/app/packages", label: t("nav.packages") },
     { to: "/app/staff", label: t("nav.staff") },
@@ -21,7 +22,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         </NavLink>
       ))}
       <div className="pt-2 mt-2 border-t space-y-1">
-        {[t("nav.queue"), t("nav.dashboard")].map((label) => (
+        {[t("nav.dashboard")].map((label) => (
           <span key={label} className={cn(linkBase, "cursor-not-allowed text-muted-foreground")}>
             {label} <span className="ms-2 text-xs">({t("nav.comingSoon")})</span>
           </span>
