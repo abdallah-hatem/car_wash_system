@@ -1,23 +1,53 @@
 import { useState, useEffect, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
+import {
+  Banknote,
+  Car,
+  Clock,
+  Droplets,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  type LucideIcon,
+} from "lucide-react"
 import { useBranch } from "@/lib/tenant/branch-context"
 import { getTodayStats, type DayStats } from "@/lib/tenant/dashboard"
 
 interface StatCardProps {
   label: string
   value: string | number
+  icon: LucideIcon
+  highlight?: boolean
 }
 
-function StatCard({ label, value }: StatCardProps) {
+function StatCard({ label, value, icon: Icon, highlight = false }: StatCardProps) {
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-3xl font-bold">{value}</p>
+    <Card className="transition-shadow duration-200 hover:shadow-md">
+      <CardContent className="flex items-start justify-between gap-3 pt-6">
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-muted-foreground">{label}</span>
+          <span
+            className={cn(
+              "text-3xl font-bold tracking-tight tabular-nums",
+              highlight && "text-primary",
+            )}
+          >
+            {value}
+          </span>
+        </div>
+        <span
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+            highlight
+              ? "bg-primary text-primary-foreground"
+              : "bg-accent text-accent-foreground",
+          )}
+        >
+          <Icon className="h-5 w-5" />
+        </span>
       </CardContent>
     </Card>
   )
@@ -77,10 +107,11 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold">{t("dashboard.title")}</h1>
         <Button
           variant="outline"
-          className="min-h-[44px]"
+          className="gap-1.5"
           onClick={() => void fetchStats()}
           disabled={loading}
         >
+          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           {t("dashboard.refresh")}
         </Button>
       </div>
@@ -109,15 +140,15 @@ export default function DashboardPage() {
       {!loading && !error && stats && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label={t("dashboard.revenueToday")} value={stats.revenue} />
-            <StatCard label={t("dashboard.washesToday")} value={stats.washesToday} />
-            <StatCard label={t("status.waiting")} value={stats.counts.waiting} />
-            <StatCard label={t("status.in_progress")} value={stats.counts.in_progress} />
+            <StatCard label={t("dashboard.revenueToday")} value={stats.revenue} icon={Banknote} highlight />
+            <StatCard label={t("dashboard.washesToday")} value={stats.washesToday} icon={Car} />
+            <StatCard label={t("status.waiting")} value={stats.counts.waiting} icon={Clock} />
+            <StatCard label={t("status.in_progress")} value={stats.counts.in_progress} icon={Droplets} />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <StatCard label={t("status.done")} value={stats.counts.done} />
-            <StatCard label={t("status.cancelled")} value={stats.counts.cancelled} />
+            <StatCard label={t("status.done")} value={stats.counts.done} icon={CheckCircle2} />
+            <StatCard label={t("status.cancelled")} value={stats.counts.cancelled} icon={XCircle} />
           </div>
 
           {isEmpty && (
