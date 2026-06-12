@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-12 (Plan 3 COMPLETE — 3D done: dashboard KPI cards built, revenue cross-day fix, RTL/responsive fix, pgTAP isolation test added).
+Last updated: 2026-06-12 (Plan 3 COMPLETE — Egyptian structured plate model: PlateInput (3 Arabic letters + 1–4 digits), per-tenant DB unique index, numeral-agnostic search, pgTAP uniqueness test `0015`).
 
 ---
 
@@ -61,8 +61,12 @@ Entities (all under Postgres `public`, all tenant-scoped except platform tables)
 - **`profiles`** — links an auth user to a tenant + role. `user_id`, `tenant_id`,
   `role` (`owner` | `manager`), `full_name`.
 - **`customers`** — `tenant_id`, `name`, `phone`.
-- **`vehicles`** — `tenant_id`, `customer_id`, `plate_number` (indexed for search),
-  `make`, `model`, `color`.
+- **`vehicles`** — `tenant_id`, `customer_id`, `plate_letters` (3 Arabic letters),
+  `plate_digits` (1–4 Western digits), `plate_number` (derived canonical form
+  `"<letters> <digits>"`; indexed for `ilike` search), `make`, `model`, `color`.
+  Per-tenant uniqueness enforced by DB unique index
+  `vehicles_tenant_plate_unique(tenant_id, plate_letters, plate_digits)` — the same plate
+  may exist across different tenants but never twice within the same tenant.
 - **`packages`** — wash offerings. `tenant_id`, `name`, `price`, `duration_minutes`,
   `is_active`.
 - **`employees`** — washers (not users). `tenant_id`, `branch_id`, `name`, `phone`,
@@ -147,6 +151,35 @@ live plate search widget.
   `customer_id` set to NULL (via `ON DELETE SET NULL` FK).
 - After any mutation the customer list auto-refreshes.
 
+**Egyptian structured plate model (migration `0012_egyptian_plate.sql`):**
+Vehicles use the **Egyptian licence plate format**: 3 Arabic letters + 1–4 digits.
+
+- **Storage:** `plate_letters` (text, 3 Arabic Unicode letters) + `plate_digits` (text,
+  1–4 Western digits) + derived `plate_number` (`"<letters> <digits>"`, e.g. `"أبج 123"`).
+- **Per-tenant uniqueness:** DB unique index `vehicles_tenant_plate_unique(tenant_id,
+  plate_letters, plate_digits)`. Duplicate within the same tenant → SQLSTATE `23505`
+  (HTTP 409). The same plate can coexist across different tenants (per-tenant, not global).
+  Verified by pgTAP test `0015_plate_unique_test.sql` (3 assertions).
+- **Structured PlateInput component** (`src/components/tenant/PlateInput.tsx`): renders
+  3 individual letter boxes in `dir=rtl` order (rightmost = first letter, matching the
+  physical plate), a digits box with `inputMode="numeric"`, and a live preview showing
+  the formatted plate. Focus advances automatically box-to-box. Min-height ≥ 44 px.
+- **Validation** (`validateEgyptianPlate` in `src/lib/tenant/validators.ts`): exactly 3
+  Arabic letters (non-tatweel) + 1–4 digits required before submitting.
+- **Plate helpers** (`src/lib/tenant/plate.ts`):
+  - `normalizePlateLetters`: strips spaces/tatweel, keeps only Arabic letters.
+  - `normalizePlateDigits`: converts Arabic-Indic digits (٠١٢٣…) to Western and strips
+    non-digit chars; used on the digits input.
+  - `canonicalPlate(letters, digits)`: builds the stored `plate_number` string.
+  - `normalizePlateSearch(term)`: converts Arabic-Indic digits in the search term to
+    Western before querying — enables **numeral-agnostic search** (typing `١٢٣` or `123`
+    both match a vehicle stored as `"أبج 123"`).
+  - `formatPlate(letters, digits, locale)`: display form with spaced letters; in `ar`
+    locale digits are converted back to Arabic-Indic for display.
+- **Duplicate error:** `createVehicle`/`updateVehicle` catch SQLSTATE `23505` and throw
+  `new Error("duplicate")`; VehicleDialog and NewWashDialog surface `t("vehicles.errors.duplicate")`
+  ("A vehicle with this plate already exists.") with the dialog staying open.
+
 **Per-customer vehicles (CustomerDetailDialog):**
 - Opened from the "Vehicles" button in the customer list row, or by clicking a plate
   search result.
@@ -157,8 +190,8 @@ live plate search widget.
 
 **Plate search (PlateSearch component):**
 - Debounced (300 ms) `ilike '%<normalised_term>%'` query against `vehicles.plate_number`.
-- `normalizePlate()` (in `src/lib/tenant/plate.ts`): trims, collapses inner whitespace,
-  uppercases. Applied before building the query term.
+- `normalizePlateSearch()` (in `src/lib/tenant/plate.ts`) converts Arabic-Indic digits to
+  Western before querying — **numeral-agnostic**: entering `١٢٣` finds `أبج 123`.
 - LIKE wildcards (`%`, `_`, `\`) are escaped client-side (`vehicles.ts:searchVehiclesByPlate`)
   before being passed to PostgREST `ilike`, so a literal `%` does **not** match all rows.
 - Results show plate, make+model, and "Owner: <name>" (via PostgREST join to `customers`).
@@ -197,7 +230,11 @@ waiting → in_progress → done
   enforced by the DB state machine via `wash_orders.status` update.
 
 **New wash dialog (NewWashDialog):**
-- Plate number field with debounced plate search — picks an existing vehicle or creates new.
+- Free-text plate search field (debounced, numeral-agnostic via `normalizePlateSearch`) —
+  picks an existing vehicle from results or expands to the **structured PlateInput**
+  (3-box letters + digits, same as VehicleDialog) when "New vehicle" is clicked.
+- A duplicate plate in the new-vehicle path surfaces `t("vehicles.errors.duplicate")`
+  (SQLSTATE `23505`), keeping the dialog open.
 - Optional customer quick-create (name + phone).
 - Package selector: choose from active packages; price auto-fills from the package.
 - Price is overridable (default from package, editable before submit).
@@ -325,6 +362,14 @@ cache clears itself on clean installs; CI should `npm ci` to avoid stale caches.
   isolation test `0012_customers_vehicles_rls_test.sql` (5 assertions: isolation,
   plate search, audit trigger). `CustomerDetailDialog` overflow fix applied
   (`min-w-0` on flex column + table wrapper). See section 6.5.
+- **Egyptian plate model (Task 5):** DONE. Vehicles use Egyptian structured plate:
+  3 Arabic letters + 1–4 digits stored as `plate_letters`/`plate_digits` +
+  derived `plate_number`. Per-tenant uniqueness enforced by DB unique index
+  `vehicles_tenant_plate_unique`. Structured `PlateInput` component (3 RTL letter
+  boxes + digits + preview). Numeral-agnostic search (Arabic-Indic ↔ Western). Duplicate
+  plate shows friendly error; dialog stays open. pgTAP test `0015_plate_unique_test.sql`
+  (3 assertions: duplicate rejected SQLSTATE 23505, same plate coexists across tenants,
+  RLS isolation). All 18 pgTAP files pass (54 assertions); 39 unit tests pass. See section 6.5.
 - **Plan 3C — Operations / Queue / Payments:** DONE. `/app/queue` with 3-column Kanban
   board (Waiting / In Progress / Done), branch context selector, New Wash dialog (plate
   search/create, customer quick-add, package picker, price override, notes), Start +
@@ -340,7 +385,7 @@ cache clears itself on clean installs; CI should `npm ci` to avoid stale caches.
   `0014_dashboard_rls_test.sql` (3 assertions: revenue isolation, count isolation, row
   visibility). See section 6.7.
 
-**Plan 3 — COMPLETE (3A + 3B + 3C + 3D all done).**
+**Plan 3 — COMPLETE (3A + 3B + 3C + 3D + Egyptian plate model all done).**
 
 **Deferred (not in MVP):** inventory/chemicals, assets/machines/depreciation,
 payroll/commission, analytics suite, ratings/performance, appointments/booking, push
