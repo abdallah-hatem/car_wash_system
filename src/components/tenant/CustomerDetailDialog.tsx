@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { Pencil, Plus, Trash2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -103,11 +104,8 @@ export function CustomerDetailDialog({ open, onOpenChange, customer, onChanged }
 
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-semibold text-sm">{t("vehicles.title")}</h2>
-              <Button
-                size="sm"
-                onClick={handleAddVehicle}
-                className="min-h-[44px]"
-              >
+              <Button size="sm" onClick={handleAddVehicle} className="gap-1.5">
+                <Plus className="h-4 w-4" />
                 {t("vehicles.newVehicle")}
               </Button>
             </div>
@@ -140,23 +138,27 @@ export function CustomerDetailDialog({ open, onOpenChange, customer, onChanged }
                         <TableCell>{vehicle.model ?? "—"}</TableCell>
                         <TableCell>{vehicle.color ?? "—"}</TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             <Button
-                              variant="outline"
-                              size="sm"
+                              variant="ghost"
+                              size="icon-sm"
                               onClick={() => handleEditVehicle(vehicle)}
-                              className="min-h-[44px]"
+                              aria-label={t("common.edit")}
+                              title={t("common.edit")}
+                              className="text-muted-foreground hover:text-foreground"
                             >
-                              {t("common.edit")}
+                              <Pencil className="h-4 w-4" />
                             </Button>
                             <Button
-                              variant="destructive"
-                              size="sm"
+                              variant="ghost"
+                              size="icon-sm"
                               disabled={deletingId === vehicle.id}
                               onClick={() => handleDeleteVehicle(vehicle)}
-                              className="min-h-[44px]"
+                              aria-label={t("common.delete")}
+                              title={t("common.delete")}
+                              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             >
-                              {t("common.delete")}
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </TableCell>

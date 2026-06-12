@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
+import { Check } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -137,14 +138,14 @@ export function PaymentDialog({ open, onOpenChange, order, onRecorded }: Props) 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               onClick={() => handleOpenChange(false)}
               disabled={submitting}
-              className="min-h-[44px]"
             >
               {t("common.cancel")}
             </Button>
-            <Button type="submit" disabled={submitting} className="min-h-[44px]">
+            <Button type="submit" disabled={submitting} className="gap-1.5">
+              {!submitting && <Check className="h-4 w-4" />}
               {submitting ? t("common.loading") : t("payment.record")}
             </Button>
           </DialogFooter>

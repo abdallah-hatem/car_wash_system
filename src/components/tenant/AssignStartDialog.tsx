@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
+import { Play } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -77,10 +78,9 @@ export function AssignStartDialog({ open, onOpenChange, onConfirm, loading = fal
         <DialogFooter className="gap-2 sm:gap-0">
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             onClick={() => onOpenChange(false)}
             disabled={loading}
-            className="min-h-[44px]"
           >
             {t("common.cancel")}
           </Button>
@@ -88,8 +88,9 @@ export function AssignStartDialog({ open, onOpenChange, onConfirm, loading = fal
             type="button"
             onClick={handleConfirm}
             disabled={fetching || loading}
-            className="min-h-[44px]"
+            className="gap-1.5"
           >
+            {!loading && <Play className="h-4 w-4" />}
             {t("wash.start")}
           </Button>
         </DialogFooter>

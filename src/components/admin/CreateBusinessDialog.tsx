@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
+import { Plus } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -160,14 +161,14 @@ export function CreateBusinessDialog({ open, onOpenChange, onCreated }: Props) {
             <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => handleOpenChange(false)}
                 disabled={submitting}
-                className="min-h-[44px]"
               >
                 {t("admin.create.cancel")}
               </Button>
-              <Button type="submit" disabled={submitting} className="min-h-[44px]">
+              <Button type="submit" disabled={submitting} className="gap-1.5">
+                {!submitting && <Plus className="h-4 w-4" />}
                 {submitting ? t("admin.create.creating") : t("admin.create.submit")}
               </Button>
             </DialogFooter>
@@ -194,7 +195,7 @@ export function CreateBusinessDialog({ open, onOpenChange, onCreated }: Props) {
                   variant="outline"
                   size="sm"
                   onClick={handleCopy}
-                  className="min-h-[44px] shrink-0"
+                  className="shrink-0"
                 >
                   {copied ? t("admin.create.copied") : t("admin.create.copy")}
                 </Button>
@@ -202,7 +203,7 @@ export function CreateBusinessDialog({ open, onOpenChange, onCreated }: Props) {
             </div>
 
             <DialogFooter>
-              <Button type="button" onClick={handleDone} className="min-h-[44px] w-full">
+              <Button type="button" onClick={handleDone} className="w-full gap-1.5">
                 {t("admin.create.done")}
               </Button>
             </DialogFooter>

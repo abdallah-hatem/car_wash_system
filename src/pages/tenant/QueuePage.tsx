@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { useTranslation } from "react-i18next"
+import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useBranch } from "@/lib/tenant/branch-context"
 import { listQueue, type QueueOrder } from "@/lib/tenant/wash-orders"
@@ -73,10 +74,8 @@ export default function QueuePage() {
       {/* Page header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-bold">{t("queue.title")}</h1>
-        <Button
-          className="min-h-[44px]"
-          onClick={() => setNewWashOpen(true)}
-        >
+        <Button className="gap-1.5" onClick={() => setNewWashOpen(true)}>
+          <Plus className="h-4 w-4" />
           {t("queue.newWash")}
         </Button>
       </div>

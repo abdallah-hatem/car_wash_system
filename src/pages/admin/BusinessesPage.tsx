@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { Ban, CircleCheck, Plus } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -58,10 +59,8 @@ export default function BusinessesPage() {
       {/* Page header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">{t("admin.title")}</h1>
-        <Button
-          onClick={() => setDialogOpen(true)}
-          className="min-h-[44px]"
-        >
+        <Button onClick={() => setDialogOpen(true)} className="gap-1.5">
+          <Plus className="h-4 w-4" />
           {t("admin.newBusiness")}
         </Button>
       </div>
@@ -103,17 +102,33 @@ export default function BusinessesPage() {
                     {new Date(biz.created_at).toLocaleDateString(i18n.language)}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant={biz.status === "active" ? "destructive" : "outline"}
-                      size="sm"
-                      disabled={togglingId === biz.id}
-                      onClick={() => handleToggleStatus(biz)}
-                      className="min-h-[44px]"
-                    >
-                      {biz.status === "active"
-                        ? t("admin.suspend")
-                        : t("admin.activate")}
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      {biz.status === "active" ? (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          disabled={togglingId === biz.id}
+                          onClick={() => handleToggleStatus(biz)}
+                          aria-label={t("admin.suspend")}
+                          title={t("admin.suspend")}
+                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Ban className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          disabled={togglingId === biz.id}
+                          onClick={() => handleToggleStatus(biz)}
+                          aria-label={t("admin.activate")}
+                          title={t("admin.activate")}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <CircleCheck className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

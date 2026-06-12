@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { Pencil, Plus, Power, PowerOff, Trash2 } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -89,7 +90,8 @@ export default function StaffPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">{t("staff.title")}</h1>
-        <Button onClick={handleNew} className="min-h-[44px]">
+        <Button onClick={handleNew} className="gap-1.5">
+          <Plus className="h-4 w-4" />
           {t("staff.newEmployee")}
         </Button>
       </div>
@@ -129,32 +131,52 @@ export default function StaffPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1">
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => handleEdit(employee)}
-                        className="min-h-[44px]"
+                        aria-label={t("common.edit")}
+                        title={t("common.edit")}
+                        className="text-muted-foreground hover:text-foreground"
                       >
-                        {t("common.edit")}
+                        <Pencil className="h-4 w-4" />
                       </Button>
+                      {employee.is_active ? (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          disabled={togglingId === employee.id}
+                          onClick={() => handleToggleActive(employee)}
+                          aria-label={t("common.deactivate")}
+                          title={t("common.deactivate")}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <PowerOff className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          disabled={togglingId === employee.id}
+                          onClick={() => handleToggleActive(employee)}
+                          aria-label={t("common.activate")}
+                          title={t("common.activate")}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <Power className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={togglingId === employee.id}
-                        onClick={() => handleToggleActive(employee)}
-                        className="min-h-[44px]"
-                      >
-                        {employee.is_active ? t("common.deactivate") : t("common.activate")}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
+                        variant="ghost"
+                        size="icon-sm"
                         disabled={deletingId === employee.id}
                         onClick={() => handleDelete(employee)}
-                        className="min-h-[44px]"
+                        aria-label={t("common.delete")}
+                        title={t("common.delete")}
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                       >
-                        {t("common.delete")}
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>

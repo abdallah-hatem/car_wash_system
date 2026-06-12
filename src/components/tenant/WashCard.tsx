@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
+import { Banknote, Check, Play, X } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -130,10 +131,11 @@ export function WashCard({ order, onChanged }: Props) {
         {canTransition(order.status, "in_progress") && (
           <Button
             size="sm"
-            className="min-h-[44px]"
+            className="gap-1.5"
             onClick={() => setAssignOpen(true)}
             disabled={acting}
           >
+            <Play className="h-4 w-4" />
             {t("wash.start")}
           </Button>
         )}
@@ -141,10 +143,11 @@ export function WashCard({ order, onChanged }: Props) {
         {canTransition(order.status, "done") && (
           <Button
             size="sm"
-            className="min-h-[44px]"
+            className="gap-1.5"
             onClick={() => void handleComplete()}
             disabled={acting}
           >
+            <Check className="h-4 w-4" />
             {t("wash.complete")}
           </Button>
         )}
@@ -153,10 +156,11 @@ export function WashCard({ order, onChanged }: Props) {
           <Button
             size="sm"
             variant="outline"
-            className="min-h-[44px]"
+            className="gap-1.5"
             onClick={() => void handleCancel()}
             disabled={acting}
           >
+            <X className="h-4 w-4" />
             {t("wash.cancel")}
           </Button>
         )}
@@ -165,10 +169,11 @@ export function WashCard({ order, onChanged }: Props) {
           <Button
             size="sm"
             variant="secondary"
-            className="min-h-[44px]"
+            className="gap-1.5"
             onClick={() => setPayOpen(true)}
             disabled={acting}
           >
+            <Banknote className="h-4 w-4" />
             {t("payment.record")}
           </Button>
         )}

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react"
 import { useTranslation } from "react-i18next"
+import { Car, Pencil, Plus, Trash2 } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -85,7 +86,8 @@ export default function CustomersPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">{t("customers.title")}</h1>
-        <Button onClick={handleNew} className="min-h-[44px]">
+        <Button onClick={handleNew} className="gap-1.5">
+          <Plus className="h-4 w-4" />
           {t("customers.newCustomer")}
         </Button>
       </div>
@@ -125,31 +127,37 @@ export default function CustomersPage() {
                   <TableCell>{customer.phone ?? "—"}</TableCell>
                   <TableCell>{customer.vehicle_count}</TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => handleManage(customer)}
-                        className="min-h-[44px]"
+                        aria-label={t("vehicles.title")}
+                        title={t("vehicles.title")}
+                        className="text-muted-foreground hover:text-foreground"
                       >
-                        {t("vehicles.title")}
+                        <Car className="h-4 w-4" />
                       </Button>
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => handleEdit(customer)}
-                        className="min-h-[44px]"
+                        aria-label={t("common.edit")}
+                        title={t("common.edit")}
+                        className="text-muted-foreground hover:text-foreground"
                       >
-                        {t("common.edit")}
+                        <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
-                        variant="destructive"
-                        size="sm"
+                        variant="ghost"
+                        size="icon-sm"
                         disabled={deletingId === customer.id}
                         onClick={() => handleDelete(customer)}
-                        className="min-h-[44px]"
+                        aria-label={t("common.delete")}
+                        title={t("common.delete")}
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                       >
-                        {t("common.delete")}
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>
