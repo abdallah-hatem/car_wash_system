@@ -7,6 +7,7 @@ import PackagesPage from "./pages/tenant/PackagesPage"
 import StaffPage from "./pages/tenant/StaffPage"
 import CustomersPage from "./pages/tenant/CustomersPage"
 import QueuePage from "./pages/tenant/QueuePage"
+import DashboardPage from "./pages/tenant/DashboardPage"
 import { AppHeader } from "./components/AppHeader"
 import { TenantLayout } from "./components/tenant/TenantLayout"
 import { RequireAuth, RequireAdmin, RequireTenant } from "./auth/guards"
@@ -43,7 +44,11 @@ export const router = createBrowserRouter([
             children: [
               {
                 index: true,
-                element: <Navigate to="/app/branches" replace />,
+                element: <Navigate to="/app/dashboard" replace />,
+              },
+              {
+                path: "dashboard",
+                element: <DashboardPage />,
               },
               {
                 path: "branches",
