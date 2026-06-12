@@ -9,6 +9,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const items = [
     { to: "/app/dashboard", label: t("nav.dashboard") },
     { to: "/app/queue", label: t("nav.queue") },
+    { to: "/app/washes", label: t("nav.washes") },
     { to: "/app/customers", label: t("nav.customers") },
     { to: "/app/branches", label: t("nav.branches") },
     { to: "/app/packages", label: t("nav.packages") },

@@ -7,6 +7,7 @@ import PackagesPage from "./pages/tenant/PackagesPage"
 import StaffPage from "./pages/tenant/StaffPage"
 import CustomersPage from "./pages/tenant/CustomersPage"
 import QueuePage from "./pages/tenant/QueuePage"
+import WashesPage from "./pages/tenant/WashesPage"
 import DashboardPage from "./pages/tenant/DashboardPage"
 import { AppHeader } from "./components/AppHeader"
 import { TenantLayout } from "./components/tenant/TenantLayout"
@@ -69,6 +70,10 @@ export const router = createBrowserRouter([
               {
                 path: "queue",
                 element: <QueuePage />,
+              },
+              {
+                path: "washes",
+                element: <WashesPage />,
               },
             ],
           },
