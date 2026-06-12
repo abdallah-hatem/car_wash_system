@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-11 (after auth fix — app role moved to `app_role` claim; PostgREST role-claim collision resolved).
+Last updated: 2026-06-12 (Plan 3B complete — customers, vehicles, plate search built; responsive/RTL overflow fix in CustomerDetailDialog).
 
 ---
 
@@ -133,15 +133,55 @@ Queue and Dashboard are placeholders marked "coming soon".
 All three tables are RLS-isolated per tenant (enforced by `current_tenant_id()` claim).
 All pages are i18n/RTL/responsive (375 px mobile through 1280 px desktop, en + ar).
 
-### 6.5 Tenant operations — PLANNED (Plan 3B+)
+### 6.5 Customers & Vehicles — BUILT (Plan 3B)
+
+**`/app/customers`** — full CRUD for customers and per-customer vehicles, plus a
+live plate search widget.
+
+**Customers CRUD:**
+- List view shows name, phone, vehicle count, and action buttons (Vehicles / Edit / Delete).
+- **New customer** dialog: name (required), phone (optional).
+- **Edit customer** dialog: update name / phone.
+- **Delete customer**: `window.confirm` with copy "Deleting this customer will unlink
+  their vehicles. Continue?" — on confirm, customer is deleted and vehicles have their
+  `customer_id` set to NULL (via `ON DELETE SET NULL` FK).
+- After any mutation the customer list auto-refreshes.
+
+**Per-customer vehicles (CustomerDetailDialog):**
+- Opened from the "Vehicles" button in the customer list row, or by clicking a plate
+  search result.
+- Shows customer name + phone, then a table of linked vehicles (plate, make, model,
+  color) with **Add vehicle / Edit vehicle / Delete vehicle** actions.
+- Vehicle count in the customer list row reflects the live count.
+- All vehicle mutations trigger `onChanged()` to refresh the outer customer list.
+
+**Plate search (PlateSearch component):**
+- Debounced (300 ms) `ilike '%<normalised_term>%'` query against `vehicles.plate_number`.
+- `normalizePlate()` (in `src/lib/tenant/plate.ts`): trims, collapses inner whitespace,
+  uppercases. Applied before building the query term.
+- LIKE wildcards (`%`, `_`, `\`) are escaped client-side (`vehicles.ts:searchVehiclesByPlate`)
+  before being passed to PostgREST `ilike`, so a literal `%` does **not** match all rows.
+- Results show plate, make+model, and "Owner: <name>" (via PostgREST join to `customers`).
+- No results → "No vehicles found." state. Blank input → idle (no query).
+- Clicking a result opens the customer's detail dialog.
+- Search is scoped to the tenant by RLS (`tenant_isolation` policy on `vehicles`).
+
+**Tenant isolation:** both `customers` and `vehicles` carry `tenant_id` and are
+protected by the `tenant_isolation` RLS policy (`tenant_id = current_tenant_id()`).
+Verified by pgTAP test `0012_customers_vehicles_rls_test.sql` (5 assertions).
+
+**Audit:** every customer INSERT/UPDATE/DELETE is captured by the `audit_customers`
+trigger (`write_audit` function) into `audit_log`; readable under the `audit_read` RLS
+policy (tenant A reads only its own rows).
+
+### 6.6 Tenant operations — PLANNED (Plan 3C)
 The counter workflows for tenant owners:
 - **New wash:** find/create customer → plate-search/create vehicle → pick package
   → car enters the **queue** (`waiting`) → assign an employee + mark `in_progress` →
   `done` → record a manual **payment**.
 - **Dashboard:** today's revenue, wash counts by status, live queue, per-branch filter.
-- **Customers & vehicles** management.
 
-### 6.6 JWT role claim conflict — RESOLVED (2026-06-11)
+### 6.7 JWT role claim conflict — RESOLVED (2026-06-11)
 **Was:** the `custom_access_token_hook` wrote `role = "owner" | "manager"` into the JWT
 claims to carry the app role. PostgREST's default `jwt-role-claim-key = ".role"` then tried
 to `SET ROLE owner` on every tenant-authenticated request, but `owner` is not a Postgres
@@ -172,8 +212,14 @@ end-to-end (`GET /rest/v1/branches` with the owner bearer token → HTTP 200).
   enforced suspend, businesses list + create dialog.
 - **Plan 3A — Tenant App Shell + Shop Setup:** DONE. Sidebar shell, branches/packages/
   employees CRUD, i18n/RTL/responsive, pgTAP RLS isolation tests. (The JWT role-claim
-  conflict that previously blocked browser data-fetch is now RESOLVED — see 6.6.)
-- **Plan 3B — Customers, Vehicles & Counter Ops:** PLANNED (see 6.5).
+  conflict that previously blocked browser data-fetch is now RESOLVED — see 6.7.)
+- **Plan 3B — Customers, Vehicles & Plate Search:** DONE. `/app/customers` with full
+  customer CRUD, per-customer vehicle CRUD (nested detail dialog), debounced plate search
+  with wildcard-escaped `ilike` query, RTL/responsive at 375 px–820 px, pgTAP RLS
+  isolation test `0012_customers_vehicles_rls_test.sql` (5 assertions: isolation,
+  plate search, audit trigger). `CustomerDetailDialog` overflow fix applied
+  (`min-w-0` on flex column + table wrapper). See section 6.5.
+- **Plan 3C — Operations / Queue / Payments:** NEXT (see 6.6).
 
 **Deferred (not in MVP):** inventory/chemicals, assets/machines/depreciation,
 payroll/commission, analytics suite, ratings/performance, appointments/booking, push

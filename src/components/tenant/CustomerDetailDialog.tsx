@@ -93,7 +93,7 @@ export function CustomerDetailDialog({ open, onOpenChange, customer, onChanged }
             <DialogTitle>{t("customers.detailTitle")}</DialogTitle>
           </DialogHeader>
 
-          <div className="flex flex-col gap-4 py-2">
+          <div className="flex flex-col gap-4 py-2 min-w-0">
             <div className="flex flex-col gap-1 text-sm">
               <span className="font-semibold text-base">{customer.name}</span>
               {customer.phone && (
@@ -121,7 +121,7 @@ export function CustomerDetailDialog({ open, onOpenChange, customer, onChanged }
             ) : vehicles.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("vehicles.empty")}</p>
             ) : (
-              <div className="overflow-x-auto rounded-md border">
+              <div className="w-full min-w-0 overflow-x-auto rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
