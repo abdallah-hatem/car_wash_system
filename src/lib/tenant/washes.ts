@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase"
 import type { WashStatus } from "./operations"
 import { dayRangeToBounds } from "./duration"
+import { pageToRange, PAGE_SIZE } from "@/lib/pagination"
 
 export interface WashFilters {
   branchId: string | "all"
@@ -26,23 +27,25 @@ export interface WashRow {
   payments: { amount: number }[]
 }
 
+/** @deprecated No longer used for fetching; kept for any legacy import references */
 export const WASHES_LIMIT = 200
 
 const SELECT =
   "id,status,price,created_at,started_at,completed_at,cancellation_reason," +
   "vehicles(plate_number),customers(name),packages(name),employees(name),branches(name),payments(amount)"
 
-export async function listWashes(f: WashFilters): Promise<WashRow[]> {
+export async function listWashes(f: WashFilters, page = 0, pageSize = PAGE_SIZE): Promise<{ rows: WashRow[]; total: number }> {
+  const { from, to } = pageToRange(page, pageSize)
   const { fromISO, toISO } = dayRangeToBounds(f.from, f.to)
-  let q = supabase.from("wash_orders").select(SELECT)
+  let q = supabase.from("wash_orders").select(SELECT, { count: "exact" })
     .gte("created_at", fromISO).lte("created_at", toISO)
   if (f.branchId !== "all") q = q.eq("branch_id", f.branchId)
   if (f.status !== "all") q = q.eq("status", f.status)
   if (f.employeeId !== "all") q = q.eq("assigned_employee_id", f.employeeId)
-  q = q.order("created_at", { ascending: false }).limit(WASHES_LIMIT)
-  const { data, error } = await q
+  q = q.order("created_at", { ascending: false }).range(from, to)
+  const { data, count, error } = await q
   if (error) throw error
-  return ((data ?? []) as unknown as Array<{
+  const rows = ((data ?? []) as unknown as Array<{
     id: string
     status: WashStatus
     price: number
@@ -71,4 +74,5 @@ export async function listWashes(f: WashFilters): Promise<WashRow[]> {
     branch_name: o.branches?.name ?? null,
     payments: (o.payments ?? []).map((p) => ({ amount: Number(p.amount) })),
   }))
+  return { rows, total: count ?? 0 }
 }

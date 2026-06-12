@@ -1,10 +1,21 @@
 import { supabase } from "./supabase"
+import { pageToRange, PAGE_SIZE } from "./pagination"
 
 export interface Business {
   id: string
   name: string
   status: "active" | "suspended"
   created_at: string
+}
+
+export async function listBusinessesPaged(page: number, pageSize = PAGE_SIZE): Promise<{ rows: Business[]; total: number }> {
+  const { from, to } = pageToRange(page, pageSize)
+  const { data, error, count } = await supabase
+    .from("tenants")
+    .select("id,name,status,created_at", { count: "exact" })
+    .order("created_at", { ascending: false }).range(from, to)
+  if (error) throw error
+  return { rows: (data as Business[]) ?? [], total: count ?? 0 }
 }
 
 export async function listBusinesses(): Promise<Business[]> {

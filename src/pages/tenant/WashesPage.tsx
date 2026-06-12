@@ -21,7 +21,7 @@ import { useBranch } from "@/lib/tenant/branch-context"
 import { useWashes, useBranches, useEmployees } from "@/lib/tenant/queries"
 import { isPaid } from "@/lib/tenant/operations"
 import { diffMinutes, formatDuration, defaultDateRange } from "@/lib/tenant/duration"
-import { WASHES_LIMIT, type WashFilters } from "@/lib/tenant/washes"
+import type { WashFilters } from "@/lib/tenant/washes"
 import type { WashStatus } from "@/lib/tenant/operations"
 
 const STATUSES: WashStatus[] = ["waiting", "in_progress", "done", "cancelled"]
@@ -47,13 +47,16 @@ export default function WashesPage() {
     to: defaults.to,
   })
 
-  const { data: rows = [], isLoading, isError, refetch } = useWashes(filters)
+  const [page, setPage] = useState(0)
+  const { data: washData = { rows: [], total: 0 }, isLoading, isError, refetch } = useWashes(filters, page)
+  const rows = washData.rows
   const { data: branches = [] } = useBranches()
   const { data: employees = [] } = useEmployees()
 
   const activeEmployees = employees.filter((e) => e.is_active)
 
   function setFilter<K extends keyof WashFilters>(key: K, value: WashFilters[K]) {
+    setPage(0)
     setFilters((prev) => ({ ...prev, [key]: value }))
   }
 
@@ -160,11 +163,6 @@ export default function WashesPage() {
         <p className="text-sm text-muted-foreground">{t("washes.empty")}</p>
       ) : (
         <>
-          {rows.length === WASHES_LIMIT && (
-            <p className="text-sm text-muted-foreground">
-              {t("washes.capped", { n: WASHES_LIMIT })}
-            </p>
-          )}
           <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>

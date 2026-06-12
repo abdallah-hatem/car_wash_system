@@ -1,6 +1,16 @@
 import { supabase } from "@/lib/supabase"
+import { pageToRange, PAGE_SIZE } from "@/lib/pagination"
 
 export interface Package { id: string; name: string; price: number; duration_minutes: number | null; is_active: boolean; created_at: string }
+
+export async function listPackagesPaged(page: number, pageSize = PAGE_SIZE): Promise<{ rows: Package[]; total: number }> {
+  const { from, to } = pageToRange(page, pageSize)
+  const { data, error, count } = await supabase
+    .from("packages").select("id,name,price,duration_minutes,is_active,created_at", { count: "exact" })
+    .order("created_at").range(from, to)
+  if (error) throw error
+  return { rows: (data as unknown as Package[]) ?? [], total: count ?? 0 }
+}
 
 export async function listPackages(): Promise<Package[]> {
   const { data, error } = await supabase.from("packages").select("id,name,price,duration_minutes,is_active,created_at").order("created_at")

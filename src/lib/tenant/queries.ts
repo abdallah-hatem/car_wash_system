@@ -8,6 +8,7 @@ import * as washOrders from "./wash-orders"
 import * as payments from "./payments"
 import * as dashboard from "./dashboard"
 import { listWashes, type WashFilters } from "./washes"
+import { PAGE_SIZE } from "@/lib/pagination"
 
 export const keys = {
   branches: ["branches"] as const,
@@ -39,6 +40,22 @@ export function useCustomers() {
   return useQuery({ queryKey: keys.customers, queryFn: customers.listCustomers })
 }
 
+export function useBranchesPaged(page: number) {
+  return useQuery({ queryKey: ["branches", "page", page] as const, queryFn: () => branches.listBranchesPaged(page, PAGE_SIZE) })
+}
+
+export function usePackagesPaged(page: number) {
+  return useQuery({ queryKey: ["packages", "page", page] as const, queryFn: () => packages.listPackagesPaged(page, PAGE_SIZE) })
+}
+
+export function useEmployeesPaged(page: number) {
+  return useQuery({ queryKey: ["employees", "page", page] as const, queryFn: () => employees.listEmployeesPaged(page, PAGE_SIZE) })
+}
+
+export function useCustomersPaged(page: number) {
+  return useQuery({ queryKey: ["customers", "page", page] as const, queryFn: () => customers.listCustomersPaged(page, PAGE_SIZE) })
+}
+
 export function useVehiclesByCustomer(customerId: string | null) {
   return useQuery({
     queryKey: keys.vehiclesByCustomer(customerId ?? ""),
@@ -63,8 +80,8 @@ export function useQueue(branchId: string | null) {
   })
 }
 
-export function useWashes(filters: WashFilters) {
-  return useQuery({ queryKey: [...keys.washes, filters], queryFn: () => listWashes(filters) })
+export function useWashes(filters: WashFilters, page = 0) {
+  return useQuery({ queryKey: [...keys.washes, filters, page], queryFn: () => listWashes(filters, page, PAGE_SIZE) })
 }
 
 export function useDashboard(branchId: string | null) {
