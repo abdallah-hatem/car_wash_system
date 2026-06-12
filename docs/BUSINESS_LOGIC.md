@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-12 (Plan 3C complete — operations queue, wash-order status flow, manual payments built; vite dep-cache React-duplicate bug fixed).
+Last updated: 2026-06-12 (Plan 3 COMPLETE — 3D done: dashboard KPI cards built, revenue cross-day fix, RTL/responsive fix, pgTAP isolation test added).
 
 ---
 
@@ -243,8 +243,40 @@ at ≥ 1024 px (`lg:grid-cols-3`). RTL mirrors sidebar to right, column order in
 logically (Done on visual-left in RTL = logical-start). New Wash dialog scrolls/fits
 at 375 px. No horizontal overflow at 375 px or 820 px. Cairo font in Arabic.
 
-### 6.7 Dashboard — PLANNED (Plan 3D)
-- **Dashboard:** today's revenue, wash counts by status, live queue, per-branch filter.
+### 6.7 Dashboard — BUILT (Plan 3D)
+
+**`/app/dashboard`** — the default landing page after sign-in (`/app` → redirect to
+`/app/dashboard`). Shows KPI cards for the currently-selected branch scoped to today
+(local calendar day).
+
+**KPI cards:**
+- **Revenue today:** sum of `payments.amount` where `paid_at >= local midnight` for the
+  branch. Payments are joined to `wash_orders` and filtered by `branch_id`. Using
+  `paid_at` (not order date) correctly captures payments made today on older unpaid-done
+  orders — cross-day correct. Revenue = 0 for branches with no payments today.
+- **Washes today:** count of `wash_orders` where `created_at >= local midnight` for the
+  branch, regardless of status.
+- **Status breakdown:** Waiting / In Progress / Done / Cancelled counts from today's orders.
+- **Empty state:** when both revenue and washes are 0, shows "No activity today." message.
+
+**Branch context:** uses the same `BranchProvider`/`BranchSelector` as the queue page.
+Switching branches in the header immediately re-fetches and updates all KPI cards.
+
+**Refresh button:** manual refresh re-fetches all KPI data. 44px min touch-target.
+
+**Tenant isolation:** enforced by RLS (`tenant_isolation` policy on `payments` and
+`wash_orders`). Verified by pgTAP test `0014_dashboard_rls_test.sql` (3 assertions:
+revenue sum scoped to branch A, wash count scoped to branch A, row-level isolation check).
+
+**Responsive/RTL:**
+- KPI cards: `grid-cols-1` at mobile (375 px), `sm:grid-cols-2` at ≥ 640 px,
+  `lg:grid-cols-4` at ≥ 1024 px. No horizontal overflow at 375 px or 820 px.
+- RTL: Arabic labels ("إيرادات اليوم", "غسيل اليوم", etc.), `dir=rtl` on html,
+  Cairo font, header mirrors correctly.
+- RTL 375 px overflow bug **fixed** (2026-06-12): header right-side flex container
+  (`BranchSelector + LanguageSwitcher + SignOut`) was 4 px too wide in RTL; fixed by
+  adding `min-w-0 overflow-hidden` to the container and `shrink` + `max-w-[130px]` to
+  `BranchSelector`. Verified: `body.scrollWidth === body.clientWidth = 375` after fix.
 
 ### 6.8 JWT role claim conflict — RESOLVED (2026-06-11)
 **Was:** the `custom_access_token_hook` wrote `role = "owner" | "manager"` into the JWT
@@ -300,7 +332,15 @@ cache clears itself on clean installs; CI should `npm ci` to avoid stale caches.
   payment support, paid/unpaid + remaining display. RTL/responsive at 375–1280 px, en + ar.
   pgTAP RLS isolation test `0013_operations_rls_test.sql` (5 assertions). Vite dep-cache
   React-duplicate crash found and resolved (see 6.9). Realtime/kanban-drag deferred.
-- **Plan 3D — Dashboard:** NEXT.
+- **Plan 3D — Dashboard:** DONE. `/app/dashboard` as default `/app` landing. KPI cards:
+  Revenue today (sum of `payments.paid_at` today, cross-day correct), Washes today,
+  status breakdown (Waiting / In Progress / Done / Cancelled). Branch-scoped via header
+  selector. Manual Refresh button. RTL/responsive at 375–1280 px, en + ar. RTL 375 px
+  overflow fix applied (header right-side flex container). pgTAP RLS isolation test
+  `0014_dashboard_rls_test.sql` (3 assertions: revenue isolation, count isolation, row
+  visibility). See section 6.7.
+
+**Plan 3 — COMPLETE (3A + 3B + 3C + 3D all done).**
 
 **Deferred (not in MVP):** inventory/chemicals, assets/machines/depreciation,
 payroll/commission, analytics suite, ratings/performance, appointments/booking, push

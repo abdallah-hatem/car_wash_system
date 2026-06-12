@@ -27,7 +27,7 @@ export function BranchSelector() {
   return (
     <Select value={branchId ?? ""} onValueChange={setBranchId}>
       <SelectTrigger
-        className="min-h-[44px] w-auto min-w-[120px] text-sm"
+        className="min-h-[44px] w-auto min-w-[80px] max-w-[130px] text-sm shrink"
         aria-label={t("queue.branch")}
       >
         <SelectValue placeholder={t("queue.branch")} />

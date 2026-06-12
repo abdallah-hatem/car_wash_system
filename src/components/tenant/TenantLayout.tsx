@@ -25,10 +25,10 @@ function TenantLayoutInner() {
           </Button>
           <span className="font-semibold">{t("common.appName")}</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 min-w-0 overflow-hidden">
           <BranchSelector />
           <LanguageSwitcher />
-          <Button type="button" variant="ghost" size="sm" className="min-h-[44px]" onClick={() => void signOut()}>
+          <Button type="button" variant="ghost" size="sm" className="min-h-[44px] shrink-0" onClick={() => void signOut()}>
             {t("common.signOut")}
           </Button>
         </div>
