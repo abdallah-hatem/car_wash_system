@@ -1,29 +1,43 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
-import { listBranches, type Branch } from "@/lib/tenant/branches"
+import { type Branch } from "@/lib/tenant/branches"
+import { useBranches } from "@/lib/tenant/queries"
 
-interface BranchState { branchId: string | null; setBranchId: (id: string) => void; branches: Branch[]; loading: boolean }
+interface BranchState {
+  branchId: string | null
+  setBranchId: (id: string) => void
+  branches: Branch[]
+  loading: boolean
+}
+
 const Ctx = createContext<BranchState | undefined>(undefined)
 const KEY = "branchId"
 
 export function BranchProvider({ children }: { children: ReactNode }) {
-  const [branches, setBranches] = useState<Branch[]>([])
-  const [branchId, setBranchIdState] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { data: branches = [], isLoading } = useBranches()
+  const [branchId, setBranchIdState] = useState<string | null>(() => localStorage.getItem(KEY))
 
   useEffect(() => {
-    listBranches().then((bs) => {
-      setBranches(bs)
-      const stored = localStorage.getItem(KEY)
-      const valid = stored && bs.some((b) => b.id === stored) ? stored : (bs[0]?.id ?? null)
-      setBranchIdState(valid)
-      if (valid) localStorage.setItem(KEY, valid)
-      setLoading(false)
-    }).catch(() => setLoading(false))
-  }, [])
+    if (isLoading) return
+    const valid = branchId && branches.some((b) => b.id === branchId)
+    const next = valid ? branchId : (branches[0]?.id ?? null)
+    if (next !== branchId) {
+      setBranchIdState(next)
+      if (next) localStorage.setItem(KEY, next)
+    }
+  }, [branches, isLoading, branchId])
 
-  function setBranchId(id: string) { setBranchIdState(id); localStorage.setItem(KEY, id) }
-  return <Ctx.Provider value={{ branchId, setBranchId, branches, loading }}>{children}</Ctx.Provider>
+  function setBranchId(id: string) {
+    setBranchIdState(id)
+    localStorage.setItem(KEY, id)
+  }
+
+  return (
+    <Ctx.Provider value={{ branchId, setBranchId, branches, loading: isLoading }}>
+      {children}
+    </Ctx.Provider>
+  )
 }
+
 export function useBranch(): BranchState {
   const c = useContext(Ctx)
   if (!c) throw new Error("useBranch must be used within BranchProvider")
