@@ -49,9 +49,16 @@ Never push to `production` without explicit permission.
 ## Local Testing
 
 - Local Supabase runs in Docker via the Supabase CLI (`npx supabase start`).
-- DB tests: pgTAP via `npx supabase test db`.
-- Frontend unit tests: Vitest (`npm test`).
+- DB tests: pgTAP via `npx supabase test db`. **Note:** these run against the LIVE local DB,
+  not a pristine one — so app-created rows (e.g. from browser integration testing) are
+  visible. A pgTAP test that runs as superuser must **scope its assertions** (by `row_id`,
+  tenant, or a before/after delta), never assert an absolute global count like
+  `count(audit_log …) = 1`. Tests run under a tenant JWT claim are already RLS-scoped.
+- Frontend unit tests: Vitest (`npm test`) — scoped to `src/` (the Deno edge-function tests
+  run via `deno test`, not Vitest).
 - A feature is not "done" until DB tests + unit tests + the full-flow test all pass locally.
+- **Gate pushes on a green suite** — run pgTAP + Vitest + build and only push if all pass
+  (don't run the push unconditionally after the tests).
 
 ## Git Identity
 
