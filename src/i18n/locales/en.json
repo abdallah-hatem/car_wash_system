@@ -234,6 +234,11 @@
       "generic": "Something went wrong. Please try again."
     }
   },
+  "pager": {
+    "range": "{{from}}–{{to}} of {{total}}",
+    "prev": "Previous page",
+    "next": "Next page"
+  },
   "dashboard": {
     "title": "Dashboard",
     "revenueToday": "Revenue today",
