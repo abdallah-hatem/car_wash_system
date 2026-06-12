@@ -23,6 +23,8 @@ import { createCustomer } from "@/lib/tenant/customers"
 import { listPackages, type Package } from "@/lib/tenant/packages"
 import { createWashOrder } from "@/lib/tenant/wash-orders"
 import { validateNewWash } from "@/lib/tenant/operations"
+import { validateEgyptianPlate } from "@/lib/tenant/validators"
+import { PlateInput, type PlateValue } from "@/components/tenant/PlateInput"
 
 interface Props {
   open: boolean
@@ -35,11 +37,14 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
   const { t } = useTranslation()
   const { claims } = useAuth()
 
-  // Vehicle / plate state
+  // Vehicle / plate search state (stays as free-text search)
   const [plateTerm, setPlateTerm] = useState("")
   const [plateResults, setPlateResults] = useState<PlateMatch[]>([])
   const [plateSearching, setPlateSearching] = useState(false)
   const [selectedVehicle, setSelectedVehicle] = useState<PlateMatch | null>(null)
+
+  // New vehicle structured plate input
+  const [newPlate, setNewPlate] = useState<PlateValue>({ letters: "", digits: "" })
 
   // New vehicle details (shown when user doesn't pick from search)
   const [showDetails, setShowDetails] = useState(false)
@@ -109,6 +114,7 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
     setPlateResults([])
     setPlateSearching(false)
     setSelectedVehicle(null)
+    setNewPlate({ letters: "", digits: "" })
     setShowDetails(false)
     setMake("")
     setModel("")
@@ -160,10 +166,13 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
       return
     }
 
-    // If creating a new vehicle (no selected match), plate is required
-    if (!selectedVehicle && !plateTerm.trim()) {
-      setError(t("wash.errors.plate_required"))
-      return
+    // If creating a new vehicle (no selected match), validate structured plate
+    if (!selectedVehicle) {
+      const plateErr = validateEgyptianPlate(newPlate)
+      if (plateErr) {
+        setError(t(`validation.${plateErr}`))
+        return
+      }
     }
 
     if (!claims.tenantId) {
@@ -184,10 +193,11 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
             phone: customerPhone.trim() || null,
           })
         }
-        // Create vehicle
+        // Create vehicle with structured plate
         vehicleId = await createVehicle(claims.tenantId, {
           customer_id: customerId,
-          plate_number: plateTerm.trim(),
+          plate_letters: newPlate.letters,
+          plate_digits: newPlate.digits,
           make: make.trim() || null,
           model: model.trim() || null,
           color: color.trim() || null,
@@ -211,8 +221,12 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
 
       handleOpenChange(false)
       onCreated()
-    } catch {
-      setError(t("wash.errors.generic"))
+    } catch (err) {
+      if (err instanceof Error && err.message === "duplicate") {
+        setError(t("vehicles.errors.duplicate"))
+      } else {
+        setError(t("wash.errors.generic"))
+      }
     } finally {
       setSubmitting(false)
     }
@@ -227,7 +241,7 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
           </DialogHeader>
 
           <div className="flex flex-col gap-4 py-4">
-            {/* Vehicle / Plate */}
+            {/* Vehicle / Plate search box (stays as free-text for searching existing vehicles) */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="new-wash-plate">{t("wash.plate")}</Label>
               <div className="flex gap-2">
@@ -298,6 +312,8 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
 
               {showDetails && !selectedVehicle && (
                 <div className="flex flex-col gap-2 rounded-md border p-3 mt-1">
+                  {/* Structured plate input for new vehicle */}
+                  <PlateInput value={newPlate} onChange={setNewPlate} />
                   <Input
                     value={make}
                     onChange={(e) => setMake(e.target.value)}

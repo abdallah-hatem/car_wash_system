@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/auth/AuthProvider"
 import { createVehicle, updateVehicle, type Vehicle } from "@/lib/tenant/vehicles"
-import { validateVehicle } from "@/lib/tenant/validators"
+import { validateEgyptianPlate } from "@/lib/tenant/validators"
+import { PlateInput, type PlateValue } from "@/components/tenant/PlateInput"
 
 interface Props {
   open: boolean
@@ -26,7 +27,7 @@ export function VehicleDialog({ open, onOpenChange, customerId, vehicle, onSaved
   const { t } = useTranslation()
   const { claims } = useAuth()
 
-  const [plate, setPlate] = useState("")
+  const [plate, setPlate] = useState<PlateValue>({ letters: "", digits: "" })
   const [make, setMake] = useState("")
   const [model, setModel] = useState("")
   const [color, setColor] = useState("")
@@ -35,7 +36,10 @@ export function VehicleDialog({ open, onOpenChange, customerId, vehicle, onSaved
 
   useEffect(() => {
     if (open) {
-      setPlate(vehicle?.plate_number ?? "")
+      setPlate({
+        letters: vehicle?.plate_letters ?? "",
+        digits: vehicle?.plate_digits ?? "",
+      })
       setMake(vehicle?.make ?? "")
       setModel(vehicle?.model ?? "")
       setColor(vehicle?.color ?? "")
@@ -45,7 +49,7 @@ export function VehicleDialog({ open, onOpenChange, customerId, vehicle, onSaved
 
   function handleOpenChange(next: boolean) {
     if (!next) {
-      setPlate("")
+      setPlate({ letters: "", digits: "" })
       setMake("")
       setModel("")
       setColor("")
@@ -58,7 +62,7 @@ export function VehicleDialog({ open, onOpenChange, customerId, vehicle, onSaved
     e.preventDefault()
     setFieldError(null)
 
-    const validationCode = validateVehicle({ plate_number: plate })
+    const validationCode = validateEgyptianPlate(plate)
     if (validationCode) {
       setFieldError(t(`validation.${validationCode}`))
       return
@@ -73,7 +77,8 @@ export function VehicleDialog({ open, onOpenChange, customerId, vehicle, onSaved
     try {
       if (vehicle) {
         await updateVehicle(vehicle.id, {
-          plate_number: plate,
+          plate_letters: plate.letters,
+          plate_digits: plate.digits,
           make: make || null,
           model: model || null,
           color: color || null,
@@ -81,7 +86,8 @@ export function VehicleDialog({ open, onOpenChange, customerId, vehicle, onSaved
       } else {
         await createVehicle(claims.tenantId!, {
           customer_id: customerId,
-          plate_number: plate,
+          plate_letters: plate.letters,
+          plate_digits: plate.digits,
           make: make || null,
           model: model || null,
           color: color || null,
@@ -89,8 +95,12 @@ export function VehicleDialog({ open, onOpenChange, customerId, vehicle, onSaved
       }
       handleOpenChange(false)
       onSaved()
-    } catch {
-      setFieldError(t("vehicles.errors.generic"))
+    } catch (err) {
+      if (err instanceof Error && err.message === "duplicate") {
+        setFieldError(t("vehicles.errors.duplicate"))
+      } else {
+        setFieldError(t("vehicles.errors.generic"))
+      }
     } finally {
       setSubmitting(false)
     }
@@ -107,17 +117,7 @@ export function VehicleDialog({ open, onOpenChange, customerId, vehicle, onSaved
           </DialogHeader>
 
           <div className="flex flex-col gap-4 py-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="vehicle-plate">{t("vehicles.plate")}</Label>
-              <Input
-                id="vehicle-plate"
-                value={plate}
-                onChange={(e) => setPlate(e.target.value)}
-                disabled={submitting}
-                className="min-h-[44px]"
-                autoComplete="off"
-              />
-            </div>
+            <PlateInput value={plate} onChange={setPlate} />
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="vehicle-make">
