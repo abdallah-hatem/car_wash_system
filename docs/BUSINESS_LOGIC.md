@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-12 (Plan 3B complete — customers, vehicles, plate search built; responsive/RTL overflow fix in CustomerDetailDialog).
+Last updated: 2026-06-12 (Plan 3C complete — operations queue, wash-order status flow, manual payments built; vite dep-cache React-duplicate bug fixed).
 
 ---
 
@@ -174,14 +174,79 @@ Verified by pgTAP test `0012_customers_vehicles_rls_test.sql` (5 assertions).
 trigger (`write_audit` function) into `audit_log`; readable under the `audit_read` RLS
 policy (tenant A reads only its own rows).
 
-### 6.6 Tenant operations — PLANNED (Plan 3C)
-The counter workflows for tenant owners:
-- **New wash:** find/create customer → plate-search/create vehicle → pick package
-  → car enters the **queue** (`waiting`) → assign an employee + mark `in_progress` →
-  `done` → record a manual **payment**.
+### 6.6 Tenant operations — BUILT (Plan 3C)
+
+**`/app/queue`** — the counter-operator's main screen. A 3-column Kanban board
+(Waiting / In Progress / Done) scoped to the currently-selected branch.
+
+**Branch context:** the header branch selector (BranchSelector component) persists
+the chosen branch in `localStorage` via BranchProvider. All queue reads/writes use this
+`branchId`. Switching branches re-fetches and filters to that branch only.
+
+**Wash order status flow:**
+```
+waiting → in_progress → done
+       ↘              ↘
+        cancelled      cancelled
+```
+- `waiting`: car arrived, in queue. Actions: **Start** (→ in_progress), **Cancel**.
+- `in_progress`: actively being washed. Actions: **Complete** (→ done), **Cancel**.
+- `done`: finished. No further status changes. Shows **paid/unpaid** + remaining balance.
+- `cancelled`: removed from board (not displayed). Allowed from `waiting` or `in_progress`.
+- Status transitions validated both client-side (`canTransition()` in `operations.ts`) and
+  enforced by the DB state machine via `wash_orders.status` update.
+
+**New wash dialog (NewWashDialog):**
+- Plate number field with debounced plate search — picks an existing vehicle or creates new.
+- Optional customer quick-create (name + phone).
+- Package selector: choose from active packages; price auto-fills from the package.
+- Price is overridable (default from package, editable before submit).
+- Notes optional.
+- On submit: creates vehicle + optional customer if new, then inserts `wash_order` with
+  `status = 'waiting'`.
+
+**Start flow (AssignStartDialog):**
+- "Start" button opens a dialog to optionally assign an active employee.
+- Commits `status = 'in_progress'`, `started_at`, and `assigned_employee_id`.
+
+**Complete:**
+- "Complete" button sets `status = 'done'`, `completed_at = now()`.
+
+**Cancel:**
+- `window.confirm` guard, then sets `status = 'cancelled'`.
+- Cancelled orders leave the board immediately (filter excludes `cancelled`).
+
+**Done column visibility rule:**
+- Shows today's done orders (by local calendar day) PLUS any done orders that are still
+  unpaid (regardless of day) — so unpaid done orders persist until payment is recorded.
+- Realtime / kanban-drag: **deferred** (board refreshes on each action, not live-pushed).
+
+**Manual payments (PaymentDialog):**
+- Accessible on `done` + `unpaid` orders via "Record payment" button.
+- Amount field defaults to the remaining balance (price − sum of prior payments).
+- Method: cash | card | transfer.
+- Multiple partial payments supported: each payment recorded as a `payments` row.
+- `isPaid()` = sum of all `payments.amount` ≥ `wash_orders.price`.
+- Card shows "Paid" badge when fully paid; "Unpaid" + "Remaining: N" when not.
+
+**Tenant isolation:** `wash_orders` and `payments` carry `tenant_id` and `branch_id`;
+RLS (`tenant_isolation` policy) ensures each tenant sees only its own data. Verified by
+pgTAP test `0013_operations_rls_test.sql` (5 assertions: isolation from other tenant,
+status update persistence, audit trigger on both tables).
+
+**Audit:** every `wash_orders` INSERT/UPDATE/DELETE and every `payments` INSERT fires
+the `write_audit` trigger → `audit_log` row. Readable by tenant owner under `audit_read`
+RLS policy.
+
+**Responsive/RTL:** board columns stack at < 1024 px (single column), display side-by-side
+at ≥ 1024 px (`lg:grid-cols-3`). RTL mirrors sidebar to right, column order inverts
+logically (Done on visual-left in RTL = logical-start). New Wash dialog scrolls/fits
+at 375 px. No horizontal overflow at 375 px or 820 px. Cairo font in Arabic.
+
+### 6.7 Dashboard — PLANNED (Plan 3D)
 - **Dashboard:** today's revenue, wash counts by status, live queue, per-branch filter.
 
-### 6.7 JWT role claim conflict — RESOLVED (2026-06-11)
+### 6.8 JWT role claim conflict — RESOLVED (2026-06-11)
 **Was:** the `custom_access_token_hook` wrote `role = "owner" | "manager"` into the JWT
 claims to carry the app role. PostgREST's default `jwt-role-claim-key = ".role"` then tried
 to `SET ROLE owner` on every tenant-authenticated request, but `owner` is not a Postgres
@@ -192,6 +257,15 @@ role → `22023` error, so all RLS-scoped reads/writes failed in the browser.
 `payload.app_role` (the public `AppClaims.role` field is unchanged). Verified at the token
 level (owner token: `role="authenticated"`, `app_role="owner"`, `tenant_id` present) and
 end-to-end (`GET /rest/v1/branches` with the owner bearer token → HTTP 200).
+
+### 6.9 Vite dep-cache React-duplicate bug — RESOLVED (2026-06-12)
+**Was:** after running `supabase test db` (which populates `node_modules/.deno/` with its
+own React copy), the Vite pre-bundle cache in `node_modules/.vite/deps/` became stale and
+resolved React in `@radix-ui/react-select` from a different instance than `react-dom`. This
+triggered the "Cannot read properties of null (reading 'useMemo')" crash on `/app/queue` —
+the entire route was unmounted by React Router's default error boundary.
+**Fix:** delete `node_modules/.vite` and restart the dev server. Going forward, the vite
+cache clears itself on clean installs; CI should `npm ci` to avoid stale caches.
 
 ## 7. Cross-cutting conventions
 
@@ -219,7 +293,14 @@ end-to-end (`GET /rest/v1/branches` with the owner bearer token → HTTP 200).
   isolation test `0012_customers_vehicles_rls_test.sql` (5 assertions: isolation,
   plate search, audit trigger). `CustomerDetailDialog` overflow fix applied
   (`min-w-0` on flex column + table wrapper). See section 6.5.
-- **Plan 3C — Operations / Queue / Payments:** NEXT (see 6.6).
+- **Plan 3C — Operations / Queue / Payments:** DONE. `/app/queue` with 3-column Kanban
+  board (Waiting / In Progress / Done), branch context selector, New Wash dialog (plate
+  search/create, customer quick-add, package picker, price override, notes), Start +
+  Assign Employee dialog, Complete + Cancel actions, manual payment recording with partial-
+  payment support, paid/unpaid + remaining display. RTL/responsive at 375–1280 px, en + ar.
+  pgTAP RLS isolation test `0013_operations_rls_test.sql` (5 assertions). Vite dep-cache
+  React-duplicate crash found and resolved (see 6.9). Realtime/kanban-drag deferred.
+- **Plan 3D — Dashboard:** NEXT.
 
 **Deferred (not in MVP):** inventory/chemicals, assets/machines/depreciation,
 payroll/commission, analytics suite, ratings/performance, appointments/booking, push
@@ -231,7 +312,10 @@ multi-owner-per-tenant, editing an owner's email/password from admin.
 
 - ~~**JWT role claim conflict (HIGH):**~~ **RESOLVED 2026-06-11** — the hook now carries the
   app role under `app_role` (migration `0011_auth_hook_app_role.sql`) and leaves the JWT
-  `role` claim as `authenticated`, so PostgREST sets a valid Postgres role. See section 6.6.
+  `role` claim as `authenticated`, so PostgREST sets a valid Postgres role. See section 6.8.
+- ~~**Vite dep-cache React-duplicate crash:**~~ **RESOLVED 2026-06-12** — stale vite
+  pre-bundle cache after `supabase test db` run caused dual-React instance. Fix: delete
+  `node_modules/.vite` and restart dev server. See section 6.9.
 - Rotate the Supabase **DB password** before production (was shared in chat). See CLAUDE.md.
 - `create-business` duplicate-email detection relies on GoTrue error-string matching
   (fails closed to 500 if wording changes) — consider checking the error code/status.
