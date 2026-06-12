@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Ban, CircleCheck, Plus } from "lucide-react"
 import {
@@ -12,41 +12,23 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { CreateBusinessDialog } from "@/components/admin/CreateBusinessDialog"
-import { listBusinesses, setBusinessStatus, type Business } from "@/lib/admin"
+import { useBusinesses, useBusinessMutations } from "@/lib/admin-queries"
+import type { Business } from "@/lib/admin"
 
 export default function BusinessesPage() {
   const { t, i18n } = useTranslation()
 
-  const [businesses, setBusinesses] = useState<Business[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [togglingId, setTogglingId] = useState<string | null>(null)
 
-  async function fetchBusinesses() {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await listBusinesses()
-      setBusinesses(data)
-    } catch {
-      setError(t("admin.errors.generic"))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    void fetchBusinesses()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const { data: businesses = [], isLoading, isError } = useBusinesses()
+  const { setStatus } = useBusinessMutations()
 
   async function handleToggleStatus(business: Business) {
     const nextStatus = business.status === "active" ? "suspended" : "active"
     setTogglingId(business.id)
     try {
-      await setBusinessStatus(business.id, nextStatus)
-      await fetchBusinesses()
+      await setStatus.mutateAsync({ id: business.id, status: nextStatus })
     } catch {
       /* silently ignore — could show a toast in future */
     } finally {
@@ -66,11 +48,11 @@ export default function BusinessesPage() {
       </div>
 
       {/* Table area */}
-      {loading ? (
+      {isLoading ? (
         <p className="text-sm text-muted-foreground">{t("admin.loading")}</p>
-      ) : error ? (
+      ) : isError ? (
         <p role="alert" className="text-sm text-destructive">
-          {error}
+          {t("admin.errors.generic")}
         </p>
       ) : businesses.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("admin.empty")}</p>
@@ -141,7 +123,7 @@ export default function BusinessesPage() {
       <CreateBusinessDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        onCreated={fetchBusinesses}
+        onCreated={() => setDialogOpen(false)}
       />
     </div>
   )

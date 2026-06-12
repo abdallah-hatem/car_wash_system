@@ -19,8 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useAuth } from "@/auth/AuthProvider"
-import { recordPayment } from "@/lib/tenant/payments"
 import { remaining } from "@/lib/tenant/operations"
+import { usePaymentMutations } from "@/lib/tenant/queries"
 import type { QueueOrder } from "@/lib/tenant/wash-orders"
 
 type Method = "cash" | "card" | "transfer"
@@ -29,10 +29,11 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   order: QueueOrder
+  branchId: string
   onRecorded: () => void
 }
 
-export function PaymentDialog({ open, onOpenChange, order, onRecorded }: Props) {
+export function PaymentDialog({ open, onOpenChange, order, branchId, onRecorded }: Props) {
   const { t } = useTranslation()
   const { claims } = useAuth()
 
@@ -40,6 +41,8 @@ export function PaymentDialog({ open, onOpenChange, order, onRecorded }: Props) 
   const [method, setMethod] = useState<Method>("cash")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const { record } = usePaymentMutations(branchId)
 
   useEffect(() => {
     if (open) {
@@ -76,7 +79,7 @@ export function PaymentDialog({ open, onOpenChange, order, onRecorded }: Props) 
 
     setSubmitting(true)
     try {
-      await recordPayment(claims.tenantId, order.id, { amount: num, method })
+      await record.mutateAsync({ tenantId: claims.tenantId, washOrderId: order.id, input: { amount: num, method } })
       handleOpenChange(false)
       onRecorded()
     } catch {

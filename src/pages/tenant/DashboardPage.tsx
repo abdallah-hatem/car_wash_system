@@ -1,4 +1,3 @@
-import { useState, useEffect, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -14,7 +13,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import { useBranch } from "@/lib/tenant/branch-context"
-import { getTodayStats, type DayStats } from "@/lib/tenant/dashboard"
+import { useDashboard } from "@/lib/tenant/queries"
 
 interface StatCardProps {
   label: string
@@ -57,27 +56,7 @@ export default function DashboardPage() {
   const { t } = useTranslation()
   const { branchId, loading: branchLoading } = useBranch()
 
-  const [stats, setStats] = useState<DayStats | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchStats = useCallback(async () => {
-    if (!branchId) return
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await getTodayStats(branchId)
-      setStats(data)
-    } catch {
-      setError(t("dashboard.errors.generic"))
-    } finally {
-      setLoading(false)
-    }
-  }, [branchId, t])
-
-  useEffect(() => {
-    void fetchStats()
-  }, [fetchStats])
+  const { data: stats, isLoading, isError, isFetching, refetch } = useDashboard(branchId)
 
   if (branchLoading) {
     return (
@@ -108,23 +87,23 @@ export default function DashboardPage() {
         <Button
           variant="outline"
           className="gap-1.5"
-          onClick={() => void fetchStats()}
-          disabled={loading}
+          onClick={() => void refetch()}
+          disabled={isFetching}
         >
-          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+          <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
           {t("dashboard.refresh")}
         </Button>
       </div>
 
       {/* Error state */}
-      {error && (
+      {isError && (
         <div className="flex items-center gap-3">
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-sm text-destructive">{t("dashboard.errors.generic")}</p>
           <Button
             size="sm"
             variant="outline"
             className="min-h-[44px]"
-            onClick={() => void fetchStats()}
+            onClick={() => void refetch()}
           >
             {t("common.retry")}
           </Button>
@@ -132,12 +111,12 @@ export default function DashboardPage() {
       )}
 
       {/* Loading state */}
-      {loading && !error && (
+      {isLoading && !isError && (
         <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
       )}
 
       {/* KPI cards */}
-      {!loading && !error && stats && (
+      {!isLoading && !isError && stats && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard label={t("dashboard.revenueToday")} value={stats.revenue} icon={Banknote} highlight />

@@ -4,22 +4,27 @@ import { Banknote, Check, Play, X } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { canTransition, isPaid, remaining } from "@/lib/tenant/operations"
-import { startWashOrder, completeWashOrder, cancelWashOrder, type QueueOrder } from "@/lib/tenant/wash-orders"
+import { type QueueOrder } from "@/lib/tenant/wash-orders"
+import { useWashOrderMutations } from "@/lib/tenant/queries"
 import { AssignStartDialog } from "./AssignStartDialog"
 import { PaymentDialog } from "./PaymentDialog"
 
 interface Props {
   order: QueueOrder
-  onChanged: () => void
+  branchId: string
 }
 
-export function WashCard({ order, onChanged }: Props) {
+export function WashCard({ order, branchId }: Props) {
   const { t } = useTranslation()
   const [assignOpen, setAssignOpen] = useState(false)
   const [payOpen, setPayOpen] = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(false)
   const [acting, setActing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const { start, complete, cancel } = useWashOrderMutations(branchId)
 
   const paid = isPaid(order.price, order.payments)
   const rem = remaining(order.price, order.payments)
@@ -29,9 +34,8 @@ export function WashCard({ order, onChanged }: Props) {
     setActing(true)
     setError(null)
     try {
-      await startWashOrder(order.id, employeeId)
+      await start.mutateAsync({ id: order.id, employeeId })
       setAssignOpen(false)
-      onChanged()
     } catch {
       setError(t("wash.errors.generic"))
     } finally {
@@ -44,8 +48,7 @@ export function WashCard({ order, onChanged }: Props) {
     setActing(true)
     setError(null)
     try {
-      await completeWashOrder(order.id)
-      onChanged()
+      await complete.mutateAsync(order.id)
     } catch {
       setError(t("wash.errors.generic"))
     } finally {
@@ -53,14 +56,13 @@ export function WashCard({ order, onChanged }: Props) {
     }
   }
 
-  async function handleCancel() {
+  async function handleCancelConfirmed() {
     if (!canTransition(order.status, "cancelled")) return
-    if (!window.confirm(t("wash.cancelConfirm"))) return
     setActing(true)
     setError(null)
     try {
-      await cancelWashOrder(order.id)
-      onChanged()
+      await cancel.mutateAsync(order.id)
+      setCancelOpen(false)
     } catch {
       setError(t("wash.errors.generic"))
     } finally {
@@ -157,7 +159,7 @@ export function WashCard({ order, onChanged }: Props) {
             size="sm"
             variant="outline"
             className="gap-1.5"
-            onClick={() => void handleCancel()}
+            onClick={() => setCancelOpen(true)}
             disabled={acting}
           >
             <X className="h-4 w-4" />
@@ -190,10 +192,19 @@ export function WashCard({ order, onChanged }: Props) {
         open={payOpen}
         onOpenChange={setPayOpen}
         order={order}
-        onRecorded={() => {
-          setPayOpen(false)
-          onChanged()
-        }}
+        branchId={branchId}
+        onRecorded={() => setPayOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={cancelOpen}
+        onOpenChange={setCancelOpen}
+        title={t("wash.cancelConfirm")}
+        confirmLabel={t("wash.cancel")}
+        cancelLabel={t("common.cancel")}
+        destructive
+        loading={acting}
+        onConfirm={() => void handleCancelConfirmed()}
       />
     </Card>
   )

@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useBranch } from "@/lib/tenant/branch-context"
-import { listQueue, type QueueOrder } from "@/lib/tenant/wash-orders"
+import { useQueue } from "@/lib/tenant/queries"
 import { isPaid } from "@/lib/tenant/operations"
 import { WashCard } from "@/components/tenant/WashCard"
 import { NewWashDialog } from "@/components/tenant/NewWashDialog"
@@ -18,28 +18,9 @@ export default function QueuePage() {
   const { t } = useTranslation()
   const { branchId, loading: branchLoading } = useBranch()
 
-  const [orders, setOrders] = useState<QueueOrder[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [newWashOpen, setNewWashOpen] = useState(false)
 
-  const fetchQueue = useCallback(async () => {
-    if (!branchId) return
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await listQueue(branchId)
-      setOrders(data)
-    } catch {
-      setError(t("queue.errors.generic"))
-    } finally {
-      setLoading(false)
-    }
-  }, [branchId, t])
-
-  useEffect(() => {
-    void fetchQueue()
-  }, [fetchQueue])
+  const { data: orders = [], isLoading, isError, refetch } = useQueue(branchId)
 
   // Partition orders:
   // - Waiting: status === 'waiting'
@@ -81,14 +62,14 @@ export default function QueuePage() {
       </div>
 
       {/* Error state */}
-      {error && (
+      {isError && (
         <div className="flex items-center gap-3">
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-sm text-destructive">{t("queue.errors.generic")}</p>
           <Button
             size="sm"
             variant="outline"
             className="min-h-[44px]"
-            onClick={() => void fetchQueue()}
+            onClick={() => void refetch()}
           >
             {t("common.retry")}
           </Button>
@@ -96,12 +77,12 @@ export default function QueuePage() {
       )}
 
       {/* Loading state */}
-      {loading && !error && (
+      {isLoading && !isError && (
         <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
       )}
 
       {/* Board: 3 responsive columns */}
-      {!loading && !error && (
+      {!isLoading && !isError && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Waiting column */}
           <div className="flex flex-col gap-3">
@@ -114,7 +95,7 @@ export default function QueuePage() {
               </p>
             ) : (
               waiting.map((order) => (
-                <WashCard key={order.id} order={order} onChanged={() => void fetchQueue()} />
+                <WashCard key={order.id} order={order} branchId={branchId} />
               ))
             )}
           </div>
@@ -130,7 +111,7 @@ export default function QueuePage() {
               </p>
             ) : (
               inProgress.map((order) => (
-                <WashCard key={order.id} order={order} onChanged={() => void fetchQueue()} />
+                <WashCard key={order.id} order={order} branchId={branchId} />
               ))
             )}
           </div>
@@ -146,7 +127,7 @@ export default function QueuePage() {
               </p>
             ) : (
               done.map((order) => (
-                <WashCard key={order.id} order={order} onChanged={() => void fetchQueue()} />
+                <WashCard key={order.id} order={order} branchId={branchId} />
               ))
             )}
           </div>
@@ -158,10 +139,7 @@ export default function QueuePage() {
         open={newWashOpen}
         onOpenChange={setNewWashOpen}
         branchId={branchId}
-        onCreated={() => {
-          setNewWashOpen(false)
-          void fetchQueue()
-        }}
+        onCreated={() => setNewWashOpen(false)}
       />
     </div>
   )

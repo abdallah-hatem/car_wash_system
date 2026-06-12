@@ -12,10 +12,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-  createBusiness,
   validateCreate,
   type CreateBusinessResult,
 } from "@/lib/admin"
+import { useBusinessMutations } from "@/lib/admin-queries"
 
 interface Props {
   open: boolean
@@ -36,6 +36,8 @@ export function CreateBusinessDialog({ open, onOpenChange, onCreated }: Props) {
   const [view, setView] = useState<ViewState>("form")
   const [result, setResult] = useState<CreateBusinessResult | null>(null)
   const [copied, setCopied] = useState(false)
+
+  const { create } = useBusinessMutations()
 
   function reset() {
     setBusinessName("")
@@ -65,7 +67,7 @@ export function CreateBusinessDialog({ open, onOpenChange, onCreated }: Props) {
 
     setSubmitting(true)
     try {
-      const res = await createBusiness({ businessName, ownerEmail, ownerFullName })
+      const res = await create.mutateAsync({ businessName, ownerEmail, ownerFullName })
       setResult(res)
       setView("success")
     } catch (err) {

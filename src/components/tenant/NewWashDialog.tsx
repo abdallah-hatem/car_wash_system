@@ -19,13 +19,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useAuth } from "@/auth/AuthProvider"
-import { searchVehiclesByPlate, createVehicle, type PlateMatch } from "@/lib/tenant/vehicles"
-import { createCustomer } from "@/lib/tenant/customers"
+import { searchVehiclesByPlate, type PlateMatch } from "@/lib/tenant/vehicles"
 import { listPackages, type Package } from "@/lib/tenant/packages"
-import { createWashOrder } from "@/lib/tenant/wash-orders"
 import { validateNewWash } from "@/lib/tenant/operations"
 import { validateEgyptianPlate } from "@/lib/tenant/validators"
 import { PlateInput, type PlateValue } from "@/components/tenant/PlateInput"
+import { useWashOrderMutations, useCustomerMutations, useVehicleMutations } from "@/lib/tenant/queries"
 
 interface Props {
   open: boolean
@@ -68,6 +67,10 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
   const [error, setError] = useState<string | null>(null)
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const { create: createWash } = useWashOrderMutations(branchId)
+  const { create: createCustomer } = useCustomerMutations()
+  const { create: createVehicle } = useVehicleMutations()
 
   // Load active packages when dialog opens
   useEffect(() => {
@@ -189,35 +192,47 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
       if (!selectedVehicle) {
         // Create customer first if name is provided
         if (customerName.trim()) {
-          customerId = await createCustomer(claims.tenantId, {
-            name: customerName.trim(),
-            phone: customerPhone.trim() || null,
+          customerId = await createCustomer.mutateAsync({
+            tenantId: claims.tenantId,
+            input: {
+              name: customerName.trim(),
+              phone: customerPhone.trim() || null,
+            },
           })
         }
         // Create vehicle with structured plate
-        vehicleId = await createVehicle(claims.tenantId, {
-          customer_id: customerId,
-          plate_letters: newPlate.letters,
-          plate_digits: newPlate.digits,
-          make: make.trim() || null,
-          model: model.trim() || null,
-          color: color.trim() || null,
+        vehicleId = await createVehicle.mutateAsync({
+          tenantId: claims.tenantId,
+          input: {
+            customer_id: customerId,
+            plate_letters: newPlate.letters,
+            plate_digits: newPlate.digits,
+            make: make.trim() || null,
+            model: model.trim() || null,
+            color: color.trim() || null,
+          },
         })
       } else if (!selectedVehicle.customer_id && customerName.trim()) {
         // Existing vehicle but no customer — optionally link one
-        customerId = await createCustomer(claims.tenantId, {
-          name: customerName.trim(),
-          phone: customerPhone.trim() || null,
+        customerId = await createCustomer.mutateAsync({
+          tenantId: claims.tenantId,
+          input: {
+            name: customerName.trim(),
+            phone: customerPhone.trim() || null,
+          },
         })
       }
 
-      await createWashOrder(claims.tenantId, {
-        branch_id: branchId,
-        price: numPrice,
-        package_id: packageId || null,
-        vehicle_id: vehicleId,
-        customer_id: customerId,
-        notes: notes.trim() || null,
+      await createWash.mutateAsync({
+        tenantId: claims.tenantId,
+        input: {
+          branch_id: branchId,
+          price: numPrice,
+          package_id: packageId || null,
+          vehicle_id: vehicleId,
+          customer_id: customerId,
+          notes: notes.trim() || null,
+        },
       })
 
       handleOpenChange(false)
