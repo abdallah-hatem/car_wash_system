@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-12 (Plan 3 COMPLETE — Egyptian structured plate model: PlateInput (3 Arabic letters + 1–4 digits), per-tenant DB unique index, numeral-agnostic search, pgTAP uniqueness test `0015`).
+Last updated: 2026-06-12 (Washes history page + branch-scoped staff assignment + reactive data layer).
 
 ---
 
