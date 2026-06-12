@@ -22,7 +22,7 @@ describe("validateEmployee", () => {
   })
 })
 
-import { validateCustomer, validateVehicle } from "./validators"
+import { validateCustomer, validateVehicle, validateEgyptianPlate } from "./validators"
 describe("validateCustomer", () => {
   it("requires a name", () => {
     expect(validateCustomer({ name: "" })).toBe("name_required")
@@ -33,5 +33,15 @@ describe("validateVehicle", () => {
   it("requires a plate", () => {
     expect(validateVehicle({ plate_number: "" })).toBe("plate_required")
     expect(validateVehicle({ plate_number: "ABC123" })).toBeNull()
+  })
+})
+describe("validateEgyptianPlate", () => {
+  it("requires exactly 3 Arabic letters and 1-4 digits", () => {
+    expect(validateEgyptianPlate({ letters: "أبج", digits: "123" })).toBeNull()
+    expect(validateEgyptianPlate({ letters: "أب", digits: "123" })).toBe("letters_required")
+    expect(validateEgyptianPlate({ letters: "أبجد", digits: "123" })).toBe("letters_required")
+    expect(validateEgyptianPlate({ letters: "abج", digits: "123" })).toBe("letters_required")
+    expect(validateEgyptianPlate({ letters: "أبج", digits: "" })).toBe("digits_required")
+    expect(validateEgyptianPlate({ letters: "أبج", digits: "12345" })).toBe("digits_required")
   })
 })

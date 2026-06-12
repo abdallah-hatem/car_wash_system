@@ -104,12 +104,16 @@
     "title": "المركبات",
     "newVehicle": "إضافة مركبة",
     "plate": "رقم اللوحة",
+    "plateLetters": "حروف اللوحة",
+    "plateDigits": "أرقام اللوحة",
+    "platePreview": "معاينة",
     "make": "الصانع",
     "model": "الموديل",
     "color": "اللون",
     "empty": "لا توجد مركبات حتى الآن.",
     "errors": {
-      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+      "duplicate": "يوجد مركبة بهذه اللوحة بالفعل."
     }
   },
   "plateSearch": {
@@ -122,7 +126,9 @@
   "validation": {
     "name_required": "الاسم مطلوب.",
     "price_invalid": "يجب أن يكون السعر رقمًا موجبًا.",
-    "plate_required": "رقم اللوحة مطلوب."
+    "plate_required": "رقم اللوحة مطلوب.",
+    "letters_required": "يرجى إدخال ٣ أحرف عربية بالضبط.",
+    "digits_required": "يرجى إدخال من ١ إلى ٤ أرقام."
   },
   "status": {
     "waiting": "في الانتظار",

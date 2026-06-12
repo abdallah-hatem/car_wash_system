@@ -104,12 +104,16 @@
     "title": "Vehicles",
     "newVehicle": "Add vehicle",
     "plate": "Plate number",
+    "plateLetters": "Plate letters",
+    "plateDigits": "Plate digits",
+    "platePreview": "Preview",
     "make": "Make",
     "model": "Model",
     "color": "Color",
     "empty": "No vehicles yet.",
     "errors": {
-      "generic": "Something went wrong. Please try again."
+      "generic": "Something went wrong. Please try again.",
+      "duplicate": "A vehicle with this plate already exists."
     }
   },
   "plateSearch": {
@@ -122,7 +126,9 @@
   "validation": {
     "name_required": "Name is required.",
     "price_invalid": "Price must be a positive number.",
-    "plate_required": "Plate number is required."
+    "plate_required": "Plate number is required.",
+    "letters_required": "Please enter exactly 3 Arabic letters.",
+    "digits_required": "Please enter 1 to 4 digits."
   },
   "status": {
     "waiting": "Waiting",
