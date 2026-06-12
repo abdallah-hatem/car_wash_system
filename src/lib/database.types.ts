@@ -379,6 +379,8 @@ export type Database = {
         Row: {
           assigned_employee_id: string | null
           branch_id: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
           completed_at: string | null
           created_at: string
           customer_id: string | null
@@ -394,6 +396,8 @@ export type Database = {
         Insert: {
           assigned_employee_id?: string | null
           branch_id: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           completed_at?: string | null
           created_at?: string
           customer_id?: string | null
@@ -409,6 +413,8 @@ export type Database = {
         Update: {
           assigned_employee_id?: string | null
           branch_id?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           completed_at?: string | null
           created_at?: string
           customer_id?: string | null
