@@ -12,14 +12,21 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { Pager } from "@/components/ui/pager"
 import { EmployeeDialog } from "@/components/tenant/EmployeeDialog"
-import { useEmployees, useBranches, useEmployeeMutations } from "@/lib/tenant/queries"
+import { useEmployeesPaged, useBranches, useEmployeeMutations } from "@/lib/tenant/queries"
+import { PAGE_SIZE } from "@/lib/pagination"
 import type { Employee } from "@/lib/tenant/employees"
 
 export default function StaffPage() {
   const { t } = useTranslation()
 
-  const { data: employees = [], isLoading, isError, refetch } = useEmployees()
+  const [page, setPage] = useState(0)
+  const { data, isLoading, isError, refetch } = useEmployeesPaged(page)
+  const rows: Employee[] = data?.rows ?? []
+  const total = data?.total ?? 0
+
+  // Keep fetch-all for branch name resolution in the table + EmployeeDialog branch select
   const { data: branches = [] } = useBranches()
   const mutations = useEmployeeMutations()
 
@@ -60,6 +67,7 @@ export default function StaffPage() {
     if (!confirmEmployee) return
     try {
       await mutations.remove.mutateAsync(confirmEmployee.id)
+      if (rows.length === 1 && page > 0) setPage(page - 1)
     } catch {
       /* could show toast in future */
     } finally {
@@ -87,86 +95,89 @@ export default function StaffPage() {
             {t("common.retry")}
           </Button>
         </div>
-      ) : employees.length === 0 ? (
+      ) : total === 0 ? (
         <p className="text-sm text-muted-foreground">{t("staff.empty")}</p>
       ) : (
-        <div className="overflow-x-auto rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-start">{t("staff.name")}</TableHead>
-                <TableHead className="text-start">{t("staff.phone")}</TableHead>
-                <TableHead className="text-start">{t("staff.branch")}</TableHead>
-                <TableHead className="text-start">{t("staff.status")}</TableHead>
-                <TableHead className="text-start">{t("common.actions")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {employees.map((employee) => (
-                <TableRow key={employee.id}>
-                  <TableCell className="font-medium">{employee.name}</TableCell>
-                  <TableCell>{employee.phone ?? "—"}</TableCell>
-                  <TableCell>{getBranchName(employee.branch_id)}</TableCell>
-                  <TableCell>
-                    <Badge variant={employee.is_active ? "default" : "secondary"}>
-                      {employee.is_active ? t("common.active") : t("common.inactive")}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => handleEdit(employee)}
-                        aria-label={t("common.edit")}
-                        title={t("common.edit")}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      {employee.is_active ? (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          disabled={mutations.setActive.isPending}
-                          onClick={() => void handleToggleActive(employee)}
-                          aria-label={t("common.deactivate")}
-                          title={t("common.deactivate")}
-                          className="text-muted-foreground hover:text-foreground"
-                        >
-                          <PowerOff className="h-4 w-4" />
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          disabled={mutations.setActive.isPending}
-                          onClick={() => void handleToggleActive(employee)}
-                          aria-label={t("common.activate")}
-                          title={t("common.activate")}
-                          className="text-muted-foreground hover:text-foreground"
-                        >
-                          <Power className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        disabled={mutations.remove.isPending && confirmEmployee?.id === employee.id}
-                        onClick={() => handleDeleteClick(employee)}
-                        aria-label={t("common.delete")}
-                        title={t("common.delete")}
-                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+        <>
+          <div className="overflow-x-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-start">{t("staff.name")}</TableHead>
+                  <TableHead className="text-start">{t("staff.phone")}</TableHead>
+                  <TableHead className="text-start">{t("staff.branch")}</TableHead>
+                  <TableHead className="text-start">{t("staff.status")}</TableHead>
+                  <TableHead className="text-start">{t("common.actions")}</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {rows.map((employee) => (
+                  <TableRow key={employee.id}>
+                    <TableCell className="font-medium">{employee.name}</TableCell>
+                    <TableCell>{employee.phone ?? "—"}</TableCell>
+                    <TableCell>{getBranchName(employee.branch_id)}</TableCell>
+                    <TableCell>
+                      <Badge variant={employee.is_active ? "default" : "secondary"}>
+                        {employee.is_active ? t("common.active") : t("common.inactive")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => handleEdit(employee)}
+                          aria-label={t("common.edit")}
+                          title={t("common.edit")}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        {employee.is_active ? (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            disabled={mutations.setActive.isPending}
+                            onClick={() => void handleToggleActive(employee)}
+                            aria-label={t("common.deactivate")}
+                            title={t("common.deactivate")}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <PowerOff className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            disabled={mutations.setActive.isPending}
+                            onClick={() => void handleToggleActive(employee)}
+                            aria-label={t("common.activate")}
+                            title={t("common.activate")}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <Power className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          disabled={mutations.remove.isPending && confirmEmployee?.id === employee.id}
+                          onClick={() => handleDeleteClick(employee)}
+                          aria-label={t("common.delete")}
+                          title={t("common.delete")}
+                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <Pager page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
+        </>
       )}
 
       <EmployeeDialog

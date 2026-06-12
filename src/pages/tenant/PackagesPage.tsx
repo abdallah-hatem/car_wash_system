@@ -12,14 +12,20 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { Pager } from "@/components/ui/pager"
 import { PackageDialog } from "@/components/tenant/PackageDialog"
-import { usePackages, usePackageMutations } from "@/lib/tenant/queries"
+import { usePackagesPaged, usePackageMutations } from "@/lib/tenant/queries"
+import { PAGE_SIZE } from "@/lib/pagination"
 import type { Package } from "@/lib/tenant/packages"
 
 export default function PackagesPage() {
   const { t } = useTranslation()
 
-  const { data: packages = [], isLoading, isError, refetch } = usePackages()
+  const [page, setPage] = useState(0)
+  const { data, isLoading, isError, refetch } = usePackagesPaged(page)
+  const rows: Package[] = data?.rows ?? []
+  const total = data?.total ?? 0
+
   const mutations = usePackageMutations()
 
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -54,6 +60,7 @@ export default function PackagesPage() {
     if (!confirmPkg) return
     try {
       await mutations.remove.mutateAsync(confirmPkg.id)
+      if (rows.length === 1 && page > 0) setPage(page - 1)
     } catch {
       /* could show toast in future */
     } finally {
@@ -81,90 +88,93 @@ export default function PackagesPage() {
             {t("common.retry")}
           </Button>
         </div>
-      ) : packages.length === 0 ? (
+      ) : total === 0 ? (
         <p className="text-sm text-muted-foreground">{t("packages.empty")}</p>
       ) : (
-        <div className="overflow-x-auto rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-start">{t("packages.name")}</TableHead>
-                <TableHead className="text-start">{t("packages.price")}</TableHead>
-                <TableHead className="text-start">{t("packages.duration")}</TableHead>
-                <TableHead className="text-start">{t("packages.status")}</TableHead>
-                <TableHead className="text-start">{t("common.actions")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {packages.map((pkg) => (
-                <TableRow key={pkg.id}>
-                  <TableCell className="font-medium">{pkg.name}</TableCell>
-                  <TableCell>{pkg.price}</TableCell>
-                  <TableCell>
-                    {pkg.duration_minutes != null
-                      ? `${pkg.duration_minutes} ${t("packages.minutes")}`
-                      : "—"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={pkg.is_active ? "default" : "secondary"}>
-                      {pkg.is_active ? t("common.active") : t("common.inactive")}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => handleEdit(pkg)}
-                        aria-label={t("common.edit")}
-                        title={t("common.edit")}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      {pkg.is_active ? (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          disabled={mutations.setActive.isPending}
-                          onClick={() => void handleToggleActive(pkg)}
-                          aria-label={t("common.deactivate")}
-                          title={t("common.deactivate")}
-                          className="text-muted-foreground hover:text-foreground"
-                        >
-                          <PowerOff className="h-4 w-4" />
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          disabled={mutations.setActive.isPending}
-                          onClick={() => void handleToggleActive(pkg)}
-                          aria-label={t("common.activate")}
-                          title={t("common.activate")}
-                          className="text-muted-foreground hover:text-foreground"
-                        >
-                          <Power className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        disabled={mutations.remove.isPending && confirmPkg?.id === pkg.id}
-                        onClick={() => handleDeleteClick(pkg)}
-                        aria-label={t("common.delete")}
-                        title={t("common.delete")}
-                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+        <>
+          <div className="overflow-x-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-start">{t("packages.name")}</TableHead>
+                  <TableHead className="text-start">{t("packages.price")}</TableHead>
+                  <TableHead className="text-start">{t("packages.duration")}</TableHead>
+                  <TableHead className="text-start">{t("packages.status")}</TableHead>
+                  <TableHead className="text-start">{t("common.actions")}</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {rows.map((pkg) => (
+                  <TableRow key={pkg.id}>
+                    <TableCell className="font-medium">{pkg.name}</TableCell>
+                    <TableCell>{pkg.price}</TableCell>
+                    <TableCell>
+                      {pkg.duration_minutes != null
+                        ? `${pkg.duration_minutes} ${t("packages.minutes")}`
+                        : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={pkg.is_active ? "default" : "secondary"}>
+                        {pkg.is_active ? t("common.active") : t("common.inactive")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => handleEdit(pkg)}
+                          aria-label={t("common.edit")}
+                          title={t("common.edit")}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        {pkg.is_active ? (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            disabled={mutations.setActive.isPending}
+                            onClick={() => void handleToggleActive(pkg)}
+                            aria-label={t("common.deactivate")}
+                            title={t("common.deactivate")}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <PowerOff className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            disabled={mutations.setActive.isPending}
+                            onClick={() => void handleToggleActive(pkg)}
+                            aria-label={t("common.activate")}
+                            title={t("common.activate")}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <Power className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          disabled={mutations.remove.isPending && confirmPkg?.id === pkg.id}
+                          onClick={() => handleDeleteClick(pkg)}
+                          aria-label={t("common.delete")}
+                          title={t("common.delete")}
+                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <Pager page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
+        </>
       )}
 
       <PackageDialog

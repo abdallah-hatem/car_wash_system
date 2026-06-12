@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Pager } from "@/components/ui/pager"
 import {
   Table,
   TableBody,
@@ -21,6 +22,7 @@ import { useBranch } from "@/lib/tenant/branch-context"
 import { useWashes, useBranches, useEmployees } from "@/lib/tenant/queries"
 import { isPaid } from "@/lib/tenant/operations"
 import { diffMinutes, formatDuration, defaultDateRange } from "@/lib/tenant/duration"
+import { PAGE_SIZE } from "@/lib/pagination"
 import type { WashFilters } from "@/lib/tenant/washes"
 import type { WashStatus } from "@/lib/tenant/operations"
 
@@ -50,6 +52,7 @@ export default function WashesPage() {
   const [page, setPage] = useState(0)
   const { data: washData = { rows: [], total: 0 }, isLoading, isError, refetch } = useWashes(filters, page)
   const rows = washData.rows
+  const total = washData.total
   const { data: branches = [] } = useBranches()
   const { data: employees = [] } = useEmployees()
 
@@ -218,6 +221,7 @@ export default function WashesPage() {
               </TableBody>
             </Table>
           </div>
+          <Pager page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
         </>
       )}
     </div>
