@@ -29,18 +29,22 @@ export function PlateSearch({ onOpenCustomer }: Props) {
 
     setState("searching")
 
+    let active = true
     timerRef.current = setTimeout(async () => {
       try {
         const data = await searchVehiclesByPlate(trimmed)
+        if (!active) return // ignore stale resolution if the term changed
         setResults(data)
         setState(data.length === 0 ? "no-results" : "results")
       } catch {
+        if (!active) return
         setState("idle")
         setResults([])
       }
     }, 300)
 
     return () => {
+      active = false
       if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [term])

@@ -75,10 +75,12 @@ export async function removeVehicle(id: string): Promise<void> {
 export async function searchVehiclesByPlate(term: string): Promise<PlateMatch[]> {
   const norm = normalizePlate(term)
   if (!norm) return []
+  // Escape LIKE wildcards so a literal % or _ doesn't act as a pattern.
+  const esc = norm.replace(/[\\%_]/g, "\\$&")
   const { data, error } = await supabase
     .from("vehicles")
     .select("id,customer_id,plate_number,make,model,color,created_at,customers(name)")
-    .ilike("plate_number", `%${norm}%`)
+    .ilike("plate_number", `%${esc}%`)
     .limit(20)
   if (error) throw error
   return ((data ?? []) as unknown as Array<{
