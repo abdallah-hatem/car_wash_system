@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/auth/AuthProvider"
-import { createVehicle, updateVehicle, type Vehicle } from "@/lib/tenant/vehicles"
+import { useVehicleMutations } from "@/lib/tenant/queries"
+import type { Vehicle } from "@/lib/tenant/vehicles"
 import { validateEgyptianPlate } from "@/lib/tenant/validators"
 import { PlateInput, type PlateValue } from "@/components/tenant/PlateInput"
 
@@ -21,18 +22,18 @@ interface Props {
   onOpenChange: (open: boolean) => void
   customerId: string
   vehicle?: Vehicle | null
-  onSaved: () => void
+  onSaved?: () => void
 }
 
 export function VehicleDialog({ open, onOpenChange, customerId, vehicle, onSaved }: Props) {
   const { t } = useTranslation()
   const { claims } = useAuth()
+  const mutations = useVehicleMutations()
 
   const [plate, setPlate] = useState<PlateValue>({ letters: "", digits: "" })
   const [make, setMake] = useState("")
   const [model, setModel] = useState("")
   const [color, setColor] = useState("")
-  const [submitting, setSubmitting] = useState(false)
   const [fieldError, setFieldError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -74,43 +75,48 @@ export function VehicleDialog({ open, onOpenChange, customerId, vehicle, onSaved
       return
     }
 
-    setSubmitting(true)
     try {
       if (vehicle) {
-        await updateVehicle(vehicle.id, {
-          plate_letters: plate.letters,
-          plate_digits: plate.digits,
-          make: make || null,
-          model: model || null,
-          color: color || null,
+        await mutations.update.mutateAsync({
+          id: vehicle.id,
+          input: {
+            plate_letters: plate.letters,
+            plate_digits: plate.digits,
+            make: make || null,
+            model: model || null,
+            color: color || null,
+          },
         })
       } else {
-        await createVehicle(claims.tenantId!, {
-          customer_id: customerId,
-          plate_letters: plate.letters,
-          plate_digits: plate.digits,
-          make: make || null,
-          model: model || null,
-          color: color || null,
+        await mutations.create.mutateAsync({
+          tenantId: claims.tenantId!,
+          input: {
+            customer_id: customerId,
+            plate_letters: plate.letters,
+            plate_digits: plate.digits,
+            make: make || null,
+            model: model || null,
+            color: color || null,
+          },
         })
       }
       handleOpenChange(false)
-      onSaved()
+      onSaved?.()
     } catch (err) {
       if (err instanceof Error && err.message === "duplicate") {
         setFieldError(t("vehicles.errors.duplicate"))
       } else {
         setFieldError(t("vehicles.errors.generic"))
       }
-    } finally {
-      setSubmitting(false)
     }
   }
+
+  const submitting = mutations.create.isPending || mutations.update.isPending
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-full max-w-md mx-auto">
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={(e) => void handleSubmit(e)} noValidate>
           <DialogHeader>
             <DialogTitle>
               {vehicle ? t("common.edit") : t("vehicles.newVehicle")}

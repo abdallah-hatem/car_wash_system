@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Pencil, Plus, Power, PowerOff, Trash2 } from "lucide-react"
 import {
@@ -11,37 +11,21 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { PackageDialog } from "@/components/tenant/PackageDialog"
-import { listPackages, removePackage, setPackageActive, type Package } from "@/lib/tenant/packages"
+import { usePackages, usePackageMutations } from "@/lib/tenant/queries"
+import type { Package } from "@/lib/tenant/packages"
 
 export default function PackagesPage() {
   const { t } = useTranslation()
 
-  const [packages, setPackages] = useState<Package[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data: packages = [], isLoading, isError, refetch } = usePackages()
+  const mutations = usePackageMutations()
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Package | null>(null)
-  const [togglingId, setTogglingId] = useState<string | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-
-  async function fetchPackages() {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await listPackages()
-      setPackages(data)
-    } catch {
-      setError(t("packages.errors.generic"))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    void fetchPackages()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmPkg, setConfirmPkg] = useState<Package | null>(null)
 
   function handleNew() {
     setEditing(null)
@@ -54,27 +38,27 @@ export default function PackagesPage() {
   }
 
   async function handleToggleActive(pkg: Package) {
-    setTogglingId(pkg.id)
     try {
-      await setPackageActive(pkg.id, !pkg.is_active)
-      await fetchPackages()
+      await mutations.setActive.mutateAsync({ id: pkg.id, is_active: !pkg.is_active })
     } catch {
       /* silently ignore */
-    } finally {
-      setTogglingId(null)
     }
   }
 
-  async function handleDelete(pkg: Package) {
-    if (!window.confirm(t("common.confirmDelete"))) return
-    setDeletingId(pkg.id)
+  function handleDeleteClick(pkg: Package) {
+    setConfirmPkg(pkg)
+    setConfirmOpen(true)
+  }
+
+  async function handleDeleteConfirm() {
+    if (!confirmPkg) return
     try {
-      await removePackage(pkg.id)
-      await fetchPackages()
+      await mutations.remove.mutateAsync(confirmPkg.id)
     } catch {
       /* could show toast in future */
     } finally {
-      setDeletingId(null)
+      setConfirmOpen(false)
+      setConfirmPkg(null)
     }
   }
 
@@ -88,12 +72,12 @@ export default function PackagesPage() {
         </Button>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
-      ) : error ? (
+      ) : isError ? (
         <div className="flex flex-col gap-2">
-          <p role="alert" className="text-sm text-destructive">{error}</p>
-          <Button variant="outline" size="sm" onClick={fetchPackages} className="min-h-[44px] w-fit">
+          <p role="alert" className="text-sm text-destructive">{t("packages.errors.generic")}</p>
+          <Button variant="outline" size="sm" onClick={() => void refetch()} className="min-h-[44px] w-fit">
             {t("common.retry")}
           </Button>
         </div>
@@ -142,8 +126,8 @@ export default function PackagesPage() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          disabled={togglingId === pkg.id}
-                          onClick={() => handleToggleActive(pkg)}
+                          disabled={mutations.setActive.isPending}
+                          onClick={() => void handleToggleActive(pkg)}
                           aria-label={t("common.deactivate")}
                           title={t("common.deactivate")}
                           className="text-muted-foreground hover:text-foreground"
@@ -154,8 +138,8 @@ export default function PackagesPage() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          disabled={togglingId === pkg.id}
-                          onClick={() => handleToggleActive(pkg)}
+                          disabled={mutations.setActive.isPending}
+                          onClick={() => void handleToggleActive(pkg)}
                           aria-label={t("common.activate")}
                           title={t("common.activate")}
                           className="text-muted-foreground hover:text-foreground"
@@ -166,8 +150,8 @@ export default function PackagesPage() {
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        disabled={deletingId === pkg.id}
-                        onClick={() => handleDelete(pkg)}
+                        disabled={mutations.remove.isPending && confirmPkg?.id === pkg.id}
+                        onClick={() => handleDeleteClick(pkg)}
                         aria-label={t("common.delete")}
                         title={t("common.delete")}
                         className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
@@ -187,7 +171,18 @@ export default function PackagesPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         pkg={editing}
-        onSaved={fetchPackages}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={t("common.confirmDeleteTitle")}
+        description={t("common.confirmDeleteBody")}
+        confirmLabel={t("common.delete")}
+        cancelLabel={t("common.cancel")}
+        destructive
+        loading={mutations.remove.isPending}
+        onConfirm={() => void handleDeleteConfirm()}
       />
     </div>
   )

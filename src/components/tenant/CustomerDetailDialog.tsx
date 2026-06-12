@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import {
@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
   Table,
   TableBody,
@@ -17,45 +18,28 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { VehicleDialog } from "@/components/tenant/VehicleDialog"
-import { listVehiclesByCustomer, removeVehicle, type Vehicle } from "@/lib/tenant/vehicles"
+import { useVehiclesByCustomer, useVehicleMutations } from "@/lib/tenant/queries"
+import type { Vehicle } from "@/lib/tenant/vehicles"
 import type { Customer } from "@/lib/tenant/customers"
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   customer: Customer
-  onChanged: () => void
+  onChanged?: () => void
 }
 
 export function CustomerDetailDialog({ open, onOpenChange, customer, onChanged }: Props) {
   const { t } = useTranslation()
 
-  const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { data: vehicles = [], isLoading, isError } = useVehiclesByCustomer(open ? customer.id : null)
+  const mutations = useVehicleMutations()
+
   const [vehicleDialogOpen, setVehicleDialogOpen] = useState(false)
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-
-  async function fetchVehicles() {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await listVehiclesByCustomer(customer.id)
-      setVehicles(data)
-    } catch {
-      setError(t("vehicles.errors.generic"))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (open) {
-      void fetchVehicles()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, customer.id])
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmVehicle, setConfirmVehicle] = useState<Vehicle | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   function handleAddVehicle() {
     setEditingVehicle(null)
@@ -67,23 +51,28 @@ export function CustomerDetailDialog({ open, onOpenChange, customer, onChanged }
     setVehicleDialogOpen(true)
   }
 
-  async function handleDeleteVehicle(vehicle: Vehicle) {
-    if (!window.confirm(t("common.confirmDelete"))) return
-    setDeletingId(vehicle.id)
+  function handleDeleteClick(vehicle: Vehicle) {
+    setConfirmVehicle(vehicle)
+    setDeleteError(null)
+    setConfirmOpen(true)
+  }
+
+  async function handleDeleteConfirm() {
+    if (!confirmVehicle) return
+    setDeleteError(null)
     try {
-      await removeVehicle(vehicle.id)
-      await fetchVehicles()
-      onChanged()
+      await mutations.remove.mutateAsync(confirmVehicle.id)
+      onChanged?.()
+      setConfirmOpen(false)
+      setConfirmVehicle(null)
     } catch {
-      setError(t("vehicles.errors.generic"))
-    } finally {
-      setDeletingId(null)
+      setDeleteError(t("vehicles.errors.generic"))
+      setConfirmOpen(false)
     }
   }
 
   function handleVehicleSaved() {
-    void fetchVehicles()
-    onChanged()
+    onChanged?.()
   }
 
   return (
@@ -110,11 +99,15 @@ export function CustomerDetailDialog({ open, onOpenChange, customer, onChanged }
               </Button>
             </div>
 
-            {error && (
-              <p role="alert" className="text-sm text-destructive">{error}</p>
+            {deleteError && (
+              <p role="alert" className="text-sm text-destructive">{deleteError}</p>
             )}
 
-            {loading ? (
+            {isError && (
+              <p role="alert" className="text-sm text-destructive">{t("vehicles.errors.generic")}</p>
+            )}
+
+            {isLoading ? (
               <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
             ) : vehicles.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("vehicles.empty")}</p>
@@ -152,8 +145,8 @@ export function CustomerDetailDialog({ open, onOpenChange, customer, onChanged }
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              disabled={deletingId === vehicle.id}
-                              onClick={() => handleDeleteVehicle(vehicle)}
+                              disabled={mutations.remove.isPending && confirmVehicle?.id === vehicle.id}
+                              onClick={() => handleDeleteClick(vehicle)}
                               aria-label={t("common.delete")}
                               title={t("common.delete")}
                               className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
@@ -178,6 +171,18 @@ export function CustomerDetailDialog({ open, onOpenChange, customer, onChanged }
         customerId={customer.id}
         vehicle={editingVehicle}
         onSaved={handleVehicleSaved}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={t("common.confirmDeleteTitle")}
+        description={t("common.confirmDeleteBody")}
+        confirmLabel={t("common.delete")}
+        cancelLabel={t("common.cancel")}
+        destructive
+        loading={mutations.remove.isPending}
+        onConfirm={() => void handleDeleteConfirm()}
       />
     </>
   )

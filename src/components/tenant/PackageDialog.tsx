@@ -12,25 +12,26 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/auth/AuthProvider"
-import { createPackage, updatePackage, type Package } from "@/lib/tenant/packages"
+import { usePackageMutations } from "@/lib/tenant/queries"
+import type { Package } from "@/lib/tenant/packages"
 import { validatePackage } from "@/lib/tenant/validators"
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   pkg?: Package | null
-  onSaved: () => void
+  onSaved?: () => void
 }
 
 export function PackageDialog({ open, onOpenChange, pkg, onSaved }: Props) {
   const { t } = useTranslation()
   const { claims } = useAuth()
+  const mutations = usePackageMutations()
 
   const [name, setName] = useState("")
   const [price, setPrice] = useState("")
   const [durationMinutes, setDurationMinutes] = useState("")
   const [isActive, setIsActive] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
   const [fieldError, setFieldError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -72,26 +73,25 @@ export function PackageDialog({ open, onOpenChange, pkg, onSaved }: Props) {
 
     const durationNum = durationMinutes.trim() ? parseInt(durationMinutes, 10) : null
 
-    setSubmitting(true)
     try {
       if (pkg) {
-        await updatePackage(pkg.id, { name, price: priceNum, duration_minutes: durationNum, is_active: isActive })
+        await mutations.update.mutateAsync({ id: pkg.id, input: { name, price: priceNum, duration_minutes: durationNum, is_active: isActive } })
       } else {
-        await createPackage(claims.tenantId!, { name, price: priceNum, duration_minutes: durationNum, is_active: isActive })
+        await mutations.create.mutateAsync({ tenantId: claims.tenantId!, input: { name, price: priceNum, duration_minutes: durationNum, is_active: isActive } })
       }
       handleOpenChange(false)
-      onSaved()
+      onSaved?.()
     } catch {
       setFieldError(t("packages.errors.generic"))
-    } finally {
-      setSubmitting(false)
     }
   }
+
+  const submitting = mutations.create.isPending || mutations.update.isPending
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-full max-w-md mx-auto">
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={(e) => void handleSubmit(e)} noValidate>
           <DialogHeader>
             <DialogTitle>
               {pkg ? t("common.edit") : t("packages.newPackage")}

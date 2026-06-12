@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Pencil, Plus, Power, PowerOff, Trash2 } from "lucide-react"
 import {
@@ -11,40 +11,22 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { EmployeeDialog } from "@/components/tenant/EmployeeDialog"
-import { listEmployees, removeEmployee, setEmployeeActive, type Employee } from "@/lib/tenant/employees"
-import { listBranches, type Branch } from "@/lib/tenant/branches"
+import { useEmployees, useBranches, useEmployeeMutations } from "@/lib/tenant/queries"
+import type { Employee } from "@/lib/tenant/employees"
 
 export default function StaffPage() {
   const { t } = useTranslation()
 
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [branches, setBranches] = useState<Branch[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data: employees = [], isLoading, isError, refetch } = useEmployees()
+  const { data: branches = [] } = useBranches()
+  const mutations = useEmployeeMutations()
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Employee | null>(null)
-  const [togglingId, setTogglingId] = useState<string | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-
-  async function fetchData() {
-    setLoading(true)
-    setError(null)
-    try {
-      const [empData, branchData] = await Promise.all([listEmployees(), listBranches()])
-      setEmployees(empData)
-      setBranches(branchData)
-    } catch {
-      setError(t("staff.errors.generic"))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    void fetchData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmEmployee, setConfirmEmployee] = useState<Employee | null>(null)
 
   function getBranchName(branchId: string | null): string {
     if (!branchId) return "—"
@@ -62,27 +44,27 @@ export default function StaffPage() {
   }
 
   async function handleToggleActive(employee: Employee) {
-    setTogglingId(employee.id)
     try {
-      await setEmployeeActive(employee.id, !employee.is_active)
-      await fetchData()
+      await mutations.setActive.mutateAsync({ id: employee.id, is_active: !employee.is_active })
     } catch {
       /* silently ignore */
-    } finally {
-      setTogglingId(null)
     }
   }
 
-  async function handleDelete(employee: Employee) {
-    if (!window.confirm(t("common.confirmDelete"))) return
-    setDeletingId(employee.id)
+  function handleDeleteClick(employee: Employee) {
+    setConfirmEmployee(employee)
+    setConfirmOpen(true)
+  }
+
+  async function handleDeleteConfirm() {
+    if (!confirmEmployee) return
     try {
-      await removeEmployee(employee.id)
-      await fetchData()
+      await mutations.remove.mutateAsync(confirmEmployee.id)
     } catch {
       /* could show toast in future */
     } finally {
-      setDeletingId(null)
+      setConfirmOpen(false)
+      setConfirmEmployee(null)
     }
   }
 
@@ -96,12 +78,12 @@ export default function StaffPage() {
         </Button>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
-      ) : error ? (
+      ) : isError ? (
         <div className="flex flex-col gap-2">
-          <p role="alert" className="text-sm text-destructive">{error}</p>
-          <Button variant="outline" size="sm" onClick={fetchData} className="min-h-[44px] w-fit">
+          <p role="alert" className="text-sm text-destructive">{t("staff.errors.generic")}</p>
+          <Button variant="outline" size="sm" onClick={() => void refetch()} className="min-h-[44px] w-fit">
             {t("common.retry")}
           </Button>
         </div>
@@ -146,8 +128,8 @@ export default function StaffPage() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          disabled={togglingId === employee.id}
-                          onClick={() => handleToggleActive(employee)}
+                          disabled={mutations.setActive.isPending}
+                          onClick={() => void handleToggleActive(employee)}
                           aria-label={t("common.deactivate")}
                           title={t("common.deactivate")}
                           className="text-muted-foreground hover:text-foreground"
@@ -158,8 +140,8 @@ export default function StaffPage() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          disabled={togglingId === employee.id}
-                          onClick={() => handleToggleActive(employee)}
+                          disabled={mutations.setActive.isPending}
+                          onClick={() => void handleToggleActive(employee)}
                           aria-label={t("common.activate")}
                           title={t("common.activate")}
                           className="text-muted-foreground hover:text-foreground"
@@ -170,8 +152,8 @@ export default function StaffPage() {
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        disabled={deletingId === employee.id}
-                        onClick={() => handleDelete(employee)}
+                        disabled={mutations.remove.isPending && confirmEmployee?.id === employee.id}
+                        onClick={() => handleDeleteClick(employee)}
                         aria-label={t("common.delete")}
                         title={t("common.delete")}
                         className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
@@ -191,7 +173,18 @@ export default function StaffPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         employee={editing}
-        onSaved={fetchData}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={t("common.confirmDeleteTitle")}
+        description={t("common.confirmDeleteBody")}
+        confirmLabel={t("common.delete")}
+        cancelLabel={t("common.cancel")}
+        destructive
+        loading={mutations.remove.isPending}
+        onConfirm={() => void handleDeleteConfirm()}
       />
     </div>
   )

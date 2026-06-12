@@ -19,15 +19,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/auth/AuthProvider"
-import { createEmployee, updateEmployee, type Employee } from "@/lib/tenant/employees"
-import { listBranches, type Branch } from "@/lib/tenant/branches"
+import { useBranches, useEmployeeMutations } from "@/lib/tenant/queries"
+import type { Employee } from "@/lib/tenant/employees"
 import { validateEmployee } from "@/lib/tenant/validators"
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   employee?: Employee | null
-  onSaved: () => void
+  onSaved?: () => void
 }
 
 const NO_BRANCH = "__none__"
@@ -35,14 +35,14 @@ const NO_BRANCH = "__none__"
 export function EmployeeDialog({ open, onOpenChange, employee, onSaved }: Props) {
   const { t } = useTranslation()
   const { claims } = useAuth()
+  const { data: branches = [] } = useBranches()
+  const mutations = useEmployeeMutations()
 
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
   const [branchId, setBranchId] = useState<string>(NO_BRANCH)
   const [isActive, setIsActive] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
   const [fieldError, setFieldError] = useState<string | null>(null)
-  const [branches, setBranches] = useState<Branch[]>([])
 
   useEffect(() => {
     if (open) {
@@ -51,8 +51,6 @@ export function EmployeeDialog({ open, onOpenChange, employee, onSaved }: Props)
       setBranchId(employee?.branch_id ?? NO_BRANCH)
       setIsActive(employee?.is_active ?? true)
       setFieldError(null)
-      // load branches for select
-      listBranches().then(setBranches).catch(() => setBranches([]))
     }
   }, [open, employee])
 
@@ -63,7 +61,6 @@ export function EmployeeDialog({ open, onOpenChange, employee, onSaved }: Props)
       setBranchId(NO_BRANCH)
       setIsActive(true)
       setFieldError(null)
-      setBranches([])
     }
     onOpenChange(next)
   }
@@ -85,36 +82,41 @@ export function EmployeeDialog({ open, onOpenChange, employee, onSaved }: Props)
 
     const resolvedBranchId = branchId === NO_BRANCH ? null : branchId
 
-    setSubmitting(true)
     try {
       if (employee) {
-        await updateEmployee(employee.id, {
-          name,
-          phone: phone || null,
-          branch_id: resolvedBranchId,
-          is_active: isActive,
+        await mutations.update.mutateAsync({
+          id: employee.id,
+          input: {
+            name,
+            phone: phone || null,
+            branch_id: resolvedBranchId,
+            is_active: isActive,
+          },
         })
       } else {
-        await createEmployee(claims.tenantId!, {
-          name,
-          phone: phone || null,
-          branch_id: resolvedBranchId,
-          is_active: isActive,
+        await mutations.create.mutateAsync({
+          tenantId: claims.tenantId!,
+          input: {
+            name,
+            phone: phone || null,
+            branch_id: resolvedBranchId,
+            is_active: isActive,
+          },
         })
       }
       handleOpenChange(false)
-      onSaved()
+      onSaved?.()
     } catch {
       setFieldError(t("staff.errors.generic"))
-    } finally {
-      setSubmitting(false)
     }
   }
+
+  const submitting = mutations.create.isPending || mutations.update.isPending
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-full max-w-md mx-auto">
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={(e) => void handleSubmit(e)} noValidate>
           <DialogHeader>
             <DialogTitle>
               {employee ? t("common.edit") : t("staff.newEmployee")}

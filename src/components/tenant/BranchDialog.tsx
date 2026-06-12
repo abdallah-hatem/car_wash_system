@@ -12,23 +12,24 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/auth/AuthProvider"
-import { createBranch, updateBranch, type Branch } from "@/lib/tenant/branches"
+import { useBranchMutations } from "@/lib/tenant/queries"
+import type { Branch } from "@/lib/tenant/branches"
 import { validateBranch } from "@/lib/tenant/validators"
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   branch?: Branch | null
-  onSaved: () => void
+  onSaved?: () => void
 }
 
 export function BranchDialog({ open, onOpenChange, branch, onSaved }: Props) {
   const { t } = useTranslation()
   const { claims } = useAuth()
+  const mutations = useBranchMutations()
 
   const [name, setName] = useState("")
   const [address, setAddress] = useState("")
-  const [submitting, setSubmitting] = useState(false)
   const [fieldError, setFieldError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -63,15 +64,14 @@ export function BranchDialog({ open, onOpenChange, branch, onSaved }: Props) {
       return
     }
 
-    setSubmitting(true)
     try {
       if (branch) {
-        await updateBranch(branch.id, { name, address: address || null })
+        await mutations.update.mutateAsync({ id: branch.id, input: { name, address: address || null } })
       } else {
-        await createBranch(claims.tenantId!, { name, address: address || null })
+        await mutations.create.mutateAsync({ tenantId: claims.tenantId!, input: { name, address: address || null } })
       }
       handleOpenChange(false)
-      onSaved()
+      onSaved?.()
     } catch (err) {
       const msg = err instanceof Error ? err.message : "generic"
       if (msg === "in_use") {
@@ -79,15 +79,15 @@ export function BranchDialog({ open, onOpenChange, branch, onSaved }: Props) {
       } else {
         setFieldError(t("branches.errors.generic"))
       }
-    } finally {
-      setSubmitting(false)
     }
   }
+
+  const submitting = mutations.create.isPending || mutations.update.isPending
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-full max-w-md mx-auto">
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={(e) => void handleSubmit(e)} noValidate>
           <DialogHeader>
             <DialogTitle>
               {branch ? t("common.edit") : t("branches.newBranch")}

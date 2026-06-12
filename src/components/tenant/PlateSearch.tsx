@@ -2,52 +2,47 @@ import { useState, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { searchVehiclesByPlate, type PlateMatch } from "@/lib/tenant/vehicles"
+import { usePlateSearch } from "@/lib/tenant/queries"
 
 interface Props {
   onOpenCustomer: (customerId: string) => void
 }
 
-type SearchState = "idle" | "searching" | "results" | "no-results"
-
 export function PlateSearch({ onOpenCustomer }: Props) {
   const { t } = useTranslation()
   const [term, setTerm] = useState("")
-  const [results, setResults] = useState<PlateMatch[]>([])
-  const [state, setState] = useState<SearchState>("idle")
+  const [debouncedTerm, setDebouncedTerm] = useState("")
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Debounce the term into debouncedTerm — the query hook is idle when debouncedTerm is empty
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
-
     const trimmed = term.trim()
     if (!trimmed) {
-      setState("idle")
-      setResults([])
+      setDebouncedTerm("")
       return
     }
-
-    setState("searching")
-
-    let active = true
-    timerRef.current = setTimeout(async () => {
-      try {
-        const data = await searchVehiclesByPlate(trimmed)
-        if (!active) return // ignore stale resolution if the term changed
-        setResults(data)
-        setState(data.length === 0 ? "no-results" : "results")
-      } catch {
-        if (!active) return
-        setState("idle")
-        setResults([])
-      }
+    timerRef.current = setTimeout(() => {
+      setDebouncedTerm(trimmed)
     }, 300)
-
     return () => {
-      active = false
       if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [term])
+
+  const { data: results = [], isFetching, isSuccess } = usePlateSearch(debouncedTerm)
+
+  const trimmed = term.trim()
+  const state =
+    !trimmed
+      ? "idle"
+      : isFetching
+        ? "searching"
+        : isSuccess && results.length === 0
+          ? "no-results"
+          : isSuccess && results.length > 0
+            ? "results"
+            : "idle"
 
   return (
     <div className="flex flex-col gap-2">

@@ -12,23 +12,24 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/auth/AuthProvider"
-import { createCustomer, updateCustomer, type Customer } from "@/lib/tenant/customers"
+import { useCustomerMutations } from "@/lib/tenant/queries"
+import type { Customer } from "@/lib/tenant/customers"
 import { validateCustomer } from "@/lib/tenant/validators"
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   customer?: Customer | null
-  onSaved: () => void
+  onSaved?: () => void
 }
 
 export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Props) {
   const { t } = useTranslation()
   const { claims } = useAuth()
+  const mutations = useCustomerMutations()
 
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
-  const [submitting, setSubmitting] = useState(false)
   const [fieldError, setFieldError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -63,26 +64,25 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Props)
       return
     }
 
-    setSubmitting(true)
     try {
       if (customer) {
-        await updateCustomer(customer.id, { name, phone: phone || null })
+        await mutations.update.mutateAsync({ id: customer.id, input: { name, phone: phone || null } })
       } else {
-        await createCustomer(claims.tenantId!, { name, phone: phone || null })
+        await mutations.create.mutateAsync({ tenantId: claims.tenantId!, input: { name, phone: phone || null } })
       }
       handleOpenChange(false)
-      onSaved()
+      onSaved?.()
     } catch {
       setFieldError(t("customers.errors.generic"))
-    } finally {
-      setSubmitting(false)
     }
   }
+
+  const submitting = mutations.create.isPending || mutations.update.isPending
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-full max-w-md mx-auto">
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={(e) => void handleSubmit(e)} noValidate>
           <DialogHeader>
             <DialogTitle>
               {customer ? t("common.edit") : t("customers.newCustomer")}

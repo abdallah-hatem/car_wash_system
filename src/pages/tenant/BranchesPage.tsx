@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import {
@@ -10,37 +10,22 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { BranchDialog } from "@/components/tenant/BranchDialog"
-import { listBranches, removeBranch, type Branch } from "@/lib/tenant/branches"
+import { useBranches, useBranchMutations } from "@/lib/tenant/queries"
+import type { Branch } from "@/lib/tenant/branches"
 
 export default function BranchesPage() {
   const { t, i18n } = useTranslation()
 
-  const [branches, setBranches] = useState<Branch[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data: branches = [], isLoading, isError, refetch } = useBranches()
+  const mutations = useBranchMutations()
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Branch | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmBranch, setConfirmBranch] = useState<Branch | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
-
-  async function fetchBranches() {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await listBranches()
-      setBranches(data)
-    } catch {
-      setError(t("branches.errors.generic"))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    void fetchBranches()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   function handleNew() {
     setEditing(null)
@@ -52,13 +37,19 @@ export default function BranchesPage() {
     setDialogOpen(true)
   }
 
-  async function handleDelete(branch: Branch) {
-    if (!window.confirm(t("common.confirmDelete"))) return
-    setDeletingId(branch.id)
+  function handleDeleteClick(branch: Branch) {
+    setConfirmBranch(branch)
+    setDeleteError(null)
+    setConfirmOpen(true)
+  }
+
+  async function handleDeleteConfirm() {
+    if (!confirmBranch) return
     setDeleteError(null)
     try {
-      await removeBranch(branch.id)
-      await fetchBranches()
+      await mutations.remove.mutateAsync(confirmBranch.id)
+      setConfirmOpen(false)
+      setConfirmBranch(null)
     } catch (err) {
       const msg = err instanceof Error ? err.message : "generic"
       if (msg === "in_use") {
@@ -66,8 +57,7 @@ export default function BranchesPage() {
       } else {
         setDeleteError(t("branches.errors.generic"))
       }
-    } finally {
-      setDeletingId(null)
+      setConfirmOpen(false)
     }
   }
 
@@ -85,12 +75,12 @@ export default function BranchesPage() {
         <p role="alert" className="text-sm text-destructive">{deleteError}</p>
       )}
 
-      {loading ? (
+      {isLoading ? (
         <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
-      ) : error ? (
+      ) : isError ? (
         <div className="flex flex-col gap-2">
-          <p role="alert" className="text-sm text-destructive">{error}</p>
-          <Button variant="outline" size="sm" onClick={fetchBranches} className="min-h-[44px] w-fit">
+          <p role="alert" className="text-sm text-destructive">{t("branches.errors.generic")}</p>
+          <Button variant="outline" size="sm" onClick={() => void refetch()} className="min-h-[44px] w-fit">
             {t("common.retry")}
           </Button>
         </div>
@@ -130,8 +120,8 @@ export default function BranchesPage() {
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        disabled={deletingId === branch.id}
-                        onClick={() => handleDelete(branch)}
+                        disabled={mutations.remove.isPending && confirmBranch?.id === branch.id}
+                        onClick={() => handleDeleteClick(branch)}
                         aria-label={t("common.delete")}
                         title={t("common.delete")}
                         className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
@@ -151,7 +141,18 @@ export default function BranchesPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         branch={editing}
-        onSaved={fetchBranches}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={t("common.confirmDeleteTitle")}
+        description={t("common.confirmDeleteBody")}
+        confirmLabel={t("common.delete")}
+        cancelLabel={t("common.cancel")}
+        destructive
+        loading={mutations.remove.isPending}
+        onConfirm={() => void handleDeleteConfirm()}
       />
     </div>
   )

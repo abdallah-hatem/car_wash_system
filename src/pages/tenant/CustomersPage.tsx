@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Car, Pencil, Plus, Trash2 } from "lucide-react"
 import {
@@ -10,40 +10,26 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { CustomerDialog } from "@/components/tenant/CustomerDialog"
 import { CustomerDetailDialog } from "@/components/tenant/CustomerDetailDialog"
 import { PlateSearch } from "@/components/tenant/PlateSearch"
-import { listCustomers, removeCustomer, type Customer } from "@/lib/tenant/customers"
+import { useCustomers, useCustomerMutations } from "@/lib/tenant/queries"
+import type { Customer } from "@/lib/tenant/customers"
 
 export default function CustomersPage() {
   const { t } = useTranslation()
 
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data: customers = [], isLoading, isError, refetch } = useCustomers()
+  const mutations = useCustomerMutations()
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Customer | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmCustomer, setConfirmCustomer] = useState<Customer | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailCustomer, setDetailCustomer] = useState<Customer | null>(null)
-
-  const fetchCustomers = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await listCustomers()
-      setCustomers(data)
-    } catch {
-      setError(t("customers.errors.generic"))
-    } finally {
-      setLoading(false)
-    }
-  }, [t])
-
-  useEffect(() => {
-    void fetchCustomers()
-  }, [fetchCustomers])
 
   function handleNew() {
     setEditing(null)
@@ -68,17 +54,22 @@ export default function CustomersPage() {
     }
   }
 
-  async function handleDelete(customer: Customer) {
-    if (!window.confirm(t("customers.deleteWarn"))) return
-    setDeletingId(customer.id)
+  function handleDeleteClick(customer: Customer) {
+    setConfirmCustomer(customer)
+    setDeleteError(null)
+    setConfirmOpen(true)
+  }
+
+  async function handleDeleteConfirm() {
+    if (!confirmCustomer) return
     setDeleteError(null)
     try {
-      await removeCustomer(customer.id)
-      await fetchCustomers()
+      await mutations.remove.mutateAsync(confirmCustomer.id)
+      setConfirmOpen(false)
+      setConfirmCustomer(null)
     } catch {
       setDeleteError(t("customers.errors.generic"))
-    } finally {
-      setDeletingId(null)
+      setConfirmOpen(false)
     }
   }
 
@@ -98,12 +89,12 @@ export default function CustomersPage() {
         <p role="alert" className="text-sm text-destructive">{deleteError}</p>
       )}
 
-      {loading ? (
+      {isLoading ? (
         <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
-      ) : error ? (
+      ) : isError ? (
         <div className="flex flex-col gap-2">
-          <p role="alert" className="text-sm text-destructive">{error}</p>
-          <Button variant="outline" size="sm" onClick={fetchCustomers} className="min-h-[44px] w-fit">
+          <p role="alert" className="text-sm text-destructive">{t("customers.errors.generic")}</p>
+          <Button variant="outline" size="sm" onClick={() => void refetch()} className="min-h-[44px] w-fit">
             {t("common.retry")}
           </Button>
         </div>
@@ -151,8 +142,8 @@ export default function CustomersPage() {
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        disabled={deletingId === customer.id}
-                        onClick={() => handleDelete(customer)}
+                        disabled={mutations.remove.isPending && confirmCustomer?.id === customer.id}
+                        onClick={() => handleDeleteClick(customer)}
                         aria-label={t("common.delete")}
                         title={t("common.delete")}
                         className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
@@ -172,7 +163,6 @@ export default function CustomersPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         customer={editing}
-        onSaved={fetchCustomers}
       />
 
       {detailCustomer && (
@@ -180,9 +170,20 @@ export default function CustomersPage() {
           open={detailOpen}
           onOpenChange={setDetailOpen}
           customer={detailCustomer}
-          onChanged={fetchCustomers}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={t("common.confirmDeleteTitle")}
+        description={t("customers.deleteWarn")}
+        confirmLabel={t("common.delete")}
+        cancelLabel={t("common.cancel")}
+        destructive
+        loading={mutations.remove.isPending}
+        onConfirm={() => void handleDeleteConfirm()}
+      />
     </div>
   )
 }
