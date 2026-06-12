@@ -43,6 +43,7 @@
     "branches": "Branches",
     "packages": "Packages",
     "staff": "Staff",
+    "customers": "Customers",
     "queue": "Queue",
     "dashboard": "Dashboard",
     "comingSoon": "coming soon",
@@ -86,9 +87,42 @@
     },
     "empty": "No employees yet."
   },
+  "customers": {
+    "title": "Customers",
+    "newCustomer": "New customer",
+    "name": "Name",
+    "phone": "Phone",
+    "vehicleCount": "Vehicles",
+    "empty": "No customers yet.",
+    "deleteWarn": "Deleting this customer will unlink their vehicles. Continue?",
+    "detailTitle": "Customer details",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "vehicles": {
+    "title": "Vehicles",
+    "newVehicle": "Add vehicle",
+    "plate": "Plate number",
+    "make": "Make",
+    "model": "Model",
+    "color": "Color",
+    "empty": "No vehicles yet.",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "plateSearch": {
+    "label": "Search by plate",
+    "placeholder": "Search plate number…",
+    "noResults": "No vehicles found.",
+    "owner": "Owner",
+    "searching": "Searching…"
+  },
   "validation": {
     "name_required": "Name is required.",
-    "price_invalid": "Price must be a positive number."
+    "price_invalid": "Price must be a positive number.",
+    "plate_required": "Plate number is required."
   },
   "admin": {
     "title": "Businesses",

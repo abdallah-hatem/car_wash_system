@@ -11,3 +11,11 @@ export function validateEmployee(input: { name?: string }): string | null {
   if (!input.name?.trim()) return "name_required"
   return null
 }
+export function validateCustomer(input: { name?: string }): string | null {
+  if (!input.name?.trim()) return "name_required"
+  return null
+}
+export function validateVehicle(input: { plate_number?: string }): string | null {
+  if (!input.plate_number?.trim()) return "plate_required"
+  return null
+}

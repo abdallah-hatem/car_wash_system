@@ -21,3 +21,17 @@ describe("validateEmployee", () => {
     expect(validateEmployee({ name: "Sam" })).toBeNull()
   })
 })
+
+import { validateCustomer, validateVehicle } from "./validators"
+describe("validateCustomer", () => {
+  it("requires a name", () => {
+    expect(validateCustomer({ name: "" })).toBe("name_required")
+    expect(validateCustomer({ name: "Ali" })).toBeNull()
+  })
+})
+describe("validateVehicle", () => {
+  it("requires a plate", () => {
+    expect(validateVehicle({ plate_number: "" })).toBe("plate_required")
+    expect(validateVehicle({ plate_number: "ABC123" })).toBeNull()
+  })
+})
