@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import type { Session } from "@supabase/supabase-js"
-import { supabase } from "@/lib/supabase"
+import { supabase, setUnauthorizedHandler } from "@/lib/supabase"
 import { decodeClaims, type AppClaims } from "./claims"
 
 interface AuthState {
@@ -21,7 +21,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
     })
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
-    return () => sub.subscription.unsubscribe()
+
+    // If a data/functions request 401s (revoked/expired session), sign out so the
+    // guards redirect to /login — avoids leaving a half-dead session that errors on
+    // every write. signOut clears local state even if the server call fails.
+    setUnauthorizedHandler(() => {
+      void supabase.auth.signOut().finally(() => setSession(null))
+    })
+
+    return () => {
+      sub.subscription.unsubscribe()
+      setUnauthorizedHandler(null)
+    }
   }, [])
 
   return (
