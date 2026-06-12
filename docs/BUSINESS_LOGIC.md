@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-12 (Washes history page + branch-scoped staff assignment + reactive data layer).
+Last updated: 2026-06-12 (cancellation reason + table pagination; Washes history; reactive data layer).
 
 ---
 
@@ -73,7 +73,9 @@ Entities (all under Postgres `public`, all tenant-scoped except platform tables)
   `is_active`.
 - **`wash_orders`** — the operations hub. `tenant_id`, `branch_id`, `customer_id`,
   `vehicle_id`, `package_id`, `assigned_employee_id`, `status`
-  (`waiting` → `in_progress` → `done` → `cancelled`), `price`, `notes`, timestamps.
+  (`waiting` → `in_progress` → `done` → `cancelled`), `price`, `notes`, timestamps
+  (`created_at`/`started_at`/`completed_at`/`cancelled_at`), and `cancellation_reason` (a required
+  reason captured when a wash is cancelled).
 - **`payments`** — `tenant_id`, `wash_order_id`, `amount`, `method` (`cash` | `card` |
   `transfer`), `paid_at`. (Manual recording — no real processor in MVP.)
 - **`audit_log`** — generic trigger-written log (`tenant_id`, `table_name`, `row_id`,
