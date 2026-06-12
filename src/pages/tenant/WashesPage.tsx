@@ -180,6 +180,7 @@ export default function WashesPage() {
                   <TableHead className="text-start">{t("washes.colService")}</TableHead>
                   <TableHead className="text-start">{t("washes.colPrice")}</TableHead>
                   <TableHead className="text-start">{t("washes.colPaid")}</TableHead>
+                  <TableHead className="text-start">{t("washes.colReason")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -209,6 +210,9 @@ export default function WashesPage() {
                         <Badge variant={paid ? "default" : "destructive"}>
                           {paid ? t("wash.paid") : t("wash.unpaid")}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-[200px] truncate text-sm">
+                        {row.cancellation_reason ?? "—"}
                       </TableCell>
                     </TableRow>
                   )

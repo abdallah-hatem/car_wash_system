@@ -22,13 +22,14 @@ export interface WashRow {
   package_name: string | null
   employee_name: string | null
   branch_name: string | null
+  cancellation_reason: string | null
   payments: { amount: number }[]
 }
 
 export const WASHES_LIMIT = 200
 
 const SELECT =
-  "id,status,price,created_at,started_at,completed_at," +
+  "id,status,price,created_at,started_at,completed_at,cancellation_reason," +
   "vehicles(plate_number),customers(name),packages(name),employees(name),branches(name),payments(amount)"
 
 export async function listWashes(f: WashFilters): Promise<WashRow[]> {
@@ -48,6 +49,7 @@ export async function listWashes(f: WashFilters): Promise<WashRow[]> {
     created_at: string
     started_at: string | null
     completed_at: string | null
+    cancellation_reason: string | null
     vehicles: { plate_number: string } | null
     customers: { name: string } | null
     packages: { name: string } | null
@@ -61,6 +63,7 @@ export async function listWashes(f: WashFilters): Promise<WashRow[]> {
     created_at: o.created_at,
     started_at: o.started_at,
     completed_at: o.completed_at,
+    cancellation_reason: o.cancellation_reason,
     plate_number: o.vehicles?.plate_number ?? null,
     customer_name: o.customers?.name ?? null,
     package_name: o.packages?.name ?? null,
