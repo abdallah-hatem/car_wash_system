@@ -12,3 +12,7 @@ deno.lock
 
 # Local testing credentials cheatsheet (kept local)
 /TESTING.md
+
+# Local cloud credentials (DB password / tokens) — never commit
+supabase_credentials.md
+admin_creds.md
