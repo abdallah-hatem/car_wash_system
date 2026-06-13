@@ -8,6 +8,7 @@ import * as washOrders from "./wash-orders"
 import * as payments from "./payments"
 import * as dashboard from "./dashboard"
 import { listWashes, type WashFilters } from "./washes"
+import { searchCustomers } from "./customer-search"
 import { PAGE_SIZE } from "@/lib/pagination"
 
 export const keys = {
@@ -68,6 +69,14 @@ export function usePlateSearch(term: string) {
   return useQuery({
     queryKey: keys.plateSearch(term.trim()),
     queryFn: () => vehicles.searchVehiclesByPlate(term),
+    enabled: term.trim().length > 0,
+  })
+}
+
+export function useCustomerSearch(term: string) {
+  return useQuery({
+    queryKey: ["customers", "search", term.trim()] as const,
+    queryFn: () => searchCustomers(term),
     enabled: term.trim().length > 0,
   })
 }

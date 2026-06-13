@@ -14,10 +14,11 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Pager } from "@/components/ui/pager"
 import { CustomerDialog } from "@/components/tenant/CustomerDialog"
 import { CustomerDetailDialog } from "@/components/tenant/CustomerDetailDialog"
-import { PlateSearch } from "@/components/tenant/PlateSearch"
+import { CustomerSearch } from "@/components/tenant/CustomerSearch"
 import { useCustomersPaged, useCustomerMutations } from "@/lib/tenant/queries"
 import { PAGE_SIZE } from "@/lib/pagination"
 import type { Customer } from "@/lib/tenant/customers"
+import type { CustomerMatch } from "@/lib/tenant/customer-search"
 
 export default function CustomersPage() {
   const { t } = useTranslation()
@@ -52,12 +53,19 @@ export default function CustomersPage() {
     setDetailOpen(true)
   }
 
-  function openDetailForCustomerId(id: string) {
-    const found = rows.find((c) => c.id === id)
-    if (found) {
-      setDetailCustomer(found)
-      setDetailOpen(true)
+  function openDetailForCustomerMatch(match: CustomerMatch) {
+    // Try to find the full Customer from the current page (includes vehicle_count).
+    // If not on this page, build a minimal Customer stub from the search match.
+    const found = rows.find((c) => c.id === match.id)
+    const customer: Customer = found ?? {
+      id: match.id,
+      name: match.name,
+      phone: match.phone,
+      created_at: "",
+      vehicle_count: 0,
     }
+    setDetailCustomer(customer)
+    setDetailOpen(true)
   }
 
   function handleDeleteClick(customer: Customer) {
@@ -90,7 +98,7 @@ export default function CustomersPage() {
         </Button>
       </div>
 
-      <PlateSearch onOpenCustomer={openDetailForCustomerId} />
+      <CustomerSearch onOpenCustomer={openDetailForCustomerMatch} />
 
       {deleteError && (
         <p role="alert" className="text-sm text-destructive">{deleteError}</p>

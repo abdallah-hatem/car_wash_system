@@ -127,6 +127,13 @@
     "owner": "Owner",
     "searching": "Searching…"
   },
+  "customerSearch": {
+    "label": "Find customer",
+    "placeholder": "Search by name, plate, or phone",
+    "noResults": "No customers found.",
+    "owner": "Owner",
+    "matchedPlate": "Plate"
+  },
   "validation": {
     "name_required": "Name is required.",
     "price_invalid": "Price must be a positive number.",

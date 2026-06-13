@@ -127,6 +127,13 @@
     "owner": "المالك",
     "searching": "جارٍ البحث…"
   },
+  "customerSearch": {
+    "label": "البحث عن عميل",
+    "placeholder": "ابحث بالاسم أو اللوحة أو الهاتف",
+    "noResults": "لم يتم العثور على عملاء.",
+    "owner": "المالك",
+    "matchedPlate": "اللوحة"
+  },
   "validation": {
     "name_required": "الاسم مطلوب.",
     "price_invalid": "يجب أن يكون السعر رقمًا موجبًا.",
