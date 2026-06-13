@@ -1,82 +1,41 @@
 import { describe, it, expect } from "vitest"
-import { mergeCustomerResults } from "./customer-search"
+import { dedupeIds } from "./customer-search"
 
-describe("mergeCustomerResults", () => {
-  it("name-only hit: returns customer with matched_plate null", () => {
-    const result = mergeCustomerResults(
-      [{ id: "c1", name: "Ahmed Ali", phone: "0500000001" }],
-      [],
-    )
-    expect(result).toEqual([
-      { id: "c1", name: "Ahmed Ali", phone: "0500000001", matched_plate: null },
-    ])
+describe("dedupeIds", () => {
+  it("returns empty array for no lists", () => {
+    expect(dedupeIds()).toEqual([])
   })
 
-  it("plate-only hit: adds the customer with matched_plate set", () => {
-    const result = mergeCustomerResults(
-      [],
-      [
-        {
-          plate_number: "أبج 123",
-          customer: { id: "c2", name: "Khalid", phone: null },
-        },
-      ],
-    )
-    expect(result).toEqual([
-      { id: "c2", name: "Khalid", phone: null, matched_plate: "أبج 123" },
-    ])
+  it("returns ids from a single list unchanged", () => {
+    expect(dedupeIds(["a", "b", "c"])).toEqual(["a", "b", "c"])
   })
 
-  it("overlap: customer from both sources — deduped, matched_plate filled", () => {
-    const result = mergeCustomerResults(
-      [{ id: "c3", name: "Sara", phone: "0501234567" }],
-      [
-        {
-          plate_number: "دهو 456",
-          customer: { id: "c3", name: "Sara", phone: "0501234567" },
-        },
-      ],
-    )
-    expect(result).toHaveLength(1)
-    expect(result[0]).toEqual({
-      id: "c3",
-      name: "Sara",
-      phone: "0501234567",
-      matched_plate: "دهو 456",
-    })
+  it("dedupes within a single list preserving first occurrence", () => {
+    expect(dedupeIds(["a", "b", "a", "c"])).toEqual(["a", "b", "c"])
   })
 
-  it("null-customer plate hit: skipped (not included in results)", () => {
-    const result = mergeCustomerResults(
-      [],
-      [{ plate_number: "مطو 789", customer: null }],
-    )
-    expect(result).toHaveLength(0)
+  it("unions multiple lists, preserving order and deduping across them", () => {
+    expect(dedupeIds(["a", "b"], ["b", "c"], ["c", "d"])).toEqual(["a", "b", "c", "d"])
   })
 
-  it("stable order: name/phone hits first, then plate-only hits", () => {
-    const result = mergeCustomerResults(
-      [{ id: "c1", name: "First", phone: null }],
-      [
-        { plate_number: "أبج 1", customer: { id: "c2", name: "Second", phone: null } },
-        { plate_number: "دهو 2", customer: { id: "c1", name: "First", phone: null } },
-      ],
-    )
-    expect(result[0].id).toBe("c1") // name/phone hit first
-    expect(result[1].id).toBe("c2") // plate-only hit after
-    expect(result[0].matched_plate).toBe("دهو 2") // plate filled on the overlap
+  it("first list takes precedence for duplicates", () => {
+    const result = dedupeIds(["id1", "id2"], ["id3", "id1"])
+    expect(result).toEqual(["id1", "id2", "id3"])
   })
 
-  it("multiple name/phone hits dedupe correctly", () => {
-    const result = mergeCustomerResults(
-      [
-        { id: "c1", name: "Alice", phone: "111" },
-        { id: "c2", name: "Bob", phone: "222" },
-        { id: "c1", name: "Alice", phone: "111" }, // duplicate
-      ],
-      [],
-    )
-    expect(result).toHaveLength(2)
-    expect(result.map((r) => r.id)).toEqual(["c1", "c2"])
+  it("handles empty lists among non-empty ones", () => {
+    expect(dedupeIds([], ["x", "y"], [])).toEqual(["x", "y"])
+  })
+
+  it("handles all empty lists", () => {
+    expect(dedupeIds([], [], [])).toEqual([])
+  })
+
+  it("stable order: name hits, then phone-only, then plate-only", () => {
+    // simulating name/phone/plate id lists as they come from matchingCustomerIds
+    const nameIds = ["c1", "c2"]
+    const phoneIds = ["c3", "c1"] // c1 already seen
+    const plateIds = ["c4", "c2"] // c2 already seen
+    expect(dedupeIds(nameIds, phoneIds, plateIds)).toEqual(["c1", "c2", "c3", "c4"])
   })
 })

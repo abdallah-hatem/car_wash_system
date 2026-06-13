@@ -8,7 +8,6 @@ import * as washOrders from "./wash-orders"
 import * as payments from "./payments"
 import * as dashboard from "./dashboard"
 import { listWashes, type WashFilters } from "./washes"
-import { searchCustomers } from "./customer-search"
 import { PAGE_SIZE } from "@/lib/pagination"
 
 export const keys = {
@@ -53,8 +52,11 @@ export function useEmployeesPaged(page: number) {
   return useQuery({ queryKey: ["employees", "page", page] as const, queryFn: () => employees.listEmployeesPaged(page, PAGE_SIZE) })
 }
 
-export function useCustomersPaged(page: number) {
-  return useQuery({ queryKey: ["customers", "page", page] as const, queryFn: () => customers.listCustomersPaged(page, PAGE_SIZE) })
+export function useCustomersPaged(page: number, search = "") {
+  return useQuery({
+    queryKey: ["customers", "page", page, search] as const,
+    queryFn: () => customers.listCustomersPaged(page, PAGE_SIZE, search),
+  })
 }
 
 export function useVehiclesByCustomer(customerId: string | null) {
@@ -69,14 +71,6 @@ export function usePlateSearch(term: string) {
   return useQuery({
     queryKey: keys.plateSearch(term.trim()),
     queryFn: () => vehicles.searchVehiclesByPlate(term),
-    enabled: term.trim().length > 0,
-  })
-}
-
-export function useCustomerSearch(term: string) {
-  return useQuery({
-    queryKey: ["customers", "search", term.trim()] as const,
-    queryFn: () => searchCustomers(term),
     enabled: term.trim().length > 0,
   })
 }

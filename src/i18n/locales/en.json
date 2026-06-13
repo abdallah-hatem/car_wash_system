@@ -128,11 +128,7 @@
     "searching": "Searching…"
   },
   "customerSearch": {
-    "label": "Find customer",
-    "placeholder": "Search by name, plate, or phone",
-    "noResults": "No customers found.",
-    "owner": "Owner",
-    "matchedPlate": "Plate"
+    "placeholder": "Search by name, plate, or phone"
   },
   "validation": {
     "name_required": "Name is required.",

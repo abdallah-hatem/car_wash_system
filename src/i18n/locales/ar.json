@@ -128,11 +128,7 @@
     "searching": "جارٍ البحث…"
   },
   "customerSearch": {
-    "label": "البحث عن عميل",
-    "placeholder": "ابحث بالاسم أو اللوحة أو الهاتف",
-    "noResults": "لم يتم العثور على عملاء.",
-    "owner": "المالك",
-    "matchedPlate": "اللوحة"
+    "placeholder": "ابحث بالاسم أو اللوحة أو الهاتف"
   },
   "validation": {
     "name_required": "الاسم مطلوب.",

@@ -1,6 +1,6 @@
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { Car, Pencil, Plus, Trash2 } from "lucide-react"
+import { Car, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -10,21 +10,45 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Pager } from "@/components/ui/pager"
 import { CustomerDialog } from "@/components/tenant/CustomerDialog"
 import { CustomerDetailDialog } from "@/components/tenant/CustomerDetailDialog"
-import { CustomerSearch } from "@/components/tenant/CustomerSearch"
 import { useCustomersPaged, useCustomerMutations } from "@/lib/tenant/queries"
 import { PAGE_SIZE } from "@/lib/pagination"
 import type { Customer } from "@/lib/tenant/customers"
-import type { CustomerMatch } from "@/lib/tenant/customer-search"
 
 export default function CustomersPage() {
   const { t } = useTranslation()
 
   const [page, setPage] = useState(0)
-  const { data, isLoading, isError, refetch } = useCustomersPaged(page)
+  const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Debounce search into debouncedSearch (300 ms)
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    const trimmed = search.trim()
+    if (!trimmed) {
+      setDebouncedSearch("")
+      return
+    }
+    timerRef.current = setTimeout(() => {
+      setDebouncedSearch(trimmed)
+    }, 300)
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [search])
+
+  // Reset page to 0 when debounced search changes
+  useEffect(() => {
+    setPage(0)
+  }, [debouncedSearch])
+
+  const { data, isLoading, isError, refetch } = useCustomersPaged(page, debouncedSearch)
   const rows: Customer[] = data?.rows ?? []
   const total = data?.total ?? 0
 
@@ -49,21 +73,6 @@ export default function CustomersPage() {
   }
 
   function handleManage(customer: Customer) {
-    setDetailCustomer(customer)
-    setDetailOpen(true)
-  }
-
-  function openDetailForCustomerMatch(match: CustomerMatch) {
-    // Try to find the full Customer from the current page (includes vehicle_count).
-    // If not on this page, build a minimal Customer stub from the search match.
-    const found = rows.find((c) => c.id === match.id)
-    const customer: Customer = found ?? {
-      id: match.id,
-      name: match.name,
-      phone: match.phone,
-      created_at: "",
-      vehicle_count: 0,
-    }
     setDetailCustomer(customer)
     setDetailOpen(true)
   }
@@ -98,7 +107,21 @@ export default function CustomersPage() {
         </Button>
       </div>
 
-      <CustomerSearch onOpenCustomer={openDetailForCustomerMatch} />
+      <div className="relative max-w-sm">
+        <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          id="customer-filter"
+          type="search"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value)
+            setPage(0)
+          }}
+          placeholder={t("customerSearch.placeholder")}
+          className="min-h-[44px] ps-9"
+          autoComplete="off"
+        />
+      </div>
 
       {deleteError && (
         <p role="alert" className="text-sm text-destructive">{deleteError}</p>
