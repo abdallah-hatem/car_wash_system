@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-12 (cancellation reason + table pagination; Washes history; reactive data layer).
+Last updated: 2026-06-13 (customer search by name/plate/phone; page size 10).
 
 ---
 
