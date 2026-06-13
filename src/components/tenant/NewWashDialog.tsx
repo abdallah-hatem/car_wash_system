@@ -25,6 +25,7 @@ import { validateNewWash } from "@/lib/tenant/operations"
 import { validateEgyptianPlate } from "@/lib/tenant/validators"
 import { PlateInput, type PlateValue } from "@/components/tenant/PlateInput"
 import { useWashOrderMutations, useCustomerMutations, useVehicleMutations } from "@/lib/tenant/queries"
+import { RowsSkeleton } from "@/components/ui/skeletons"
 
 interface Props {
   open: boolean
@@ -312,7 +313,7 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
               )}
 
               {plateSearching && (
-                <p className="text-xs text-muted-foreground">{t("common.loading")}</p>
+                <RowsSkeleton rows={2} />
               )}
 
               {/* New vehicle details toggle */}

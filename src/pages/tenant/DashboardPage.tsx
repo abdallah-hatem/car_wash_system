@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { useBranch } from "@/lib/tenant/branch-context"
 import { useDashboard } from "@/lib/tenant/queries"
+import { StatCardsSkeleton, PageSkeleton } from "@/components/ui/skeletons"
 
 interface StatCardProps {
   label: string
@@ -59,11 +60,7 @@ export default function DashboardPage() {
   const { data: stats, isLoading, isError, isFetching, refetch } = useDashboard(branchId)
 
   if (branchLoading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <p className="text-muted-foreground">{t("common.loading")}</p>
-      </div>
-    )
+    return <PageSkeleton />
   }
 
   if (!branchId) {
@@ -112,7 +109,7 @@ export default function DashboardPage() {
 
       {/* Loading state */}
       {isLoading && !isError && (
-        <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+        <StatCardsSkeleton count={4} />
       )}
 
       {/* KPI cards */}

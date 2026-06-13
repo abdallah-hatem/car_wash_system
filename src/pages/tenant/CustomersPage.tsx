@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Pager } from "@/components/ui/pager"
+import { TableSkeleton } from "@/components/ui/skeletons"
 import { CustomerDialog } from "@/components/tenant/CustomerDialog"
 import { CustomerDetailDialog } from "@/components/tenant/CustomerDetailDialog"
 import { useCustomersPaged, useCustomerMutations } from "@/lib/tenant/queries"
@@ -128,7 +129,7 @@ export default function CustomersPage() {
       )}
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+        <TableSkeleton columns={4} />
       ) : isError ? (
         <div className="flex flex-col gap-2">
           <p role="alert" className="text-sm text-destructive">{t("customers.errors.generic")}</p>

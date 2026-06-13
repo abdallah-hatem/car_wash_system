@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Pager } from "@/components/ui/pager"
+import { TableSkeleton } from "@/components/ui/skeletons"
 import { BranchDialog } from "@/components/tenant/BranchDialog"
 import { useBranchesPaged, useBranchMutations } from "@/lib/tenant/queries"
 import { PAGE_SIZE } from "@/lib/pagination"
@@ -83,7 +84,7 @@ export default function BranchesPage() {
       )}
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+        <TableSkeleton columns={4} />
       ) : isError ? (
         <div className="flex flex-col gap-2">
           <p role="alert" className="text-sm text-destructive">{t("branches.errors.generic")}</p>

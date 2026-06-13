@@ -26,6 +26,7 @@ import { PAGE_SIZE } from "@/lib/pagination"
 import type { WashFilters } from "@/lib/tenant/washes"
 import type { WashStatus } from "@/lib/tenant/operations"
 import { DateRangePicker } from "@/components/tenant/DateRangePicker"
+import { TableSkeleton } from "@/components/ui/skeletons"
 
 const STATUSES: WashStatus[] = ["waiting", "in_progress", "done", "cancelled"]
 
@@ -146,7 +147,7 @@ export default function WashesPage() {
 
       {/* States */}
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+        <TableSkeleton columns={12} />
       ) : isError ? (
         <div className="flex flex-col gap-2">
           <p role="alert" className="text-sm text-destructive">{t("washes.errors.generic")}</p>

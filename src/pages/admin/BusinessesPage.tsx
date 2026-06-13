@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Pager } from "@/components/ui/pager"
 import { CreateBusinessDialog } from "@/components/admin/CreateBusinessDialog"
+import { TableSkeleton } from "@/components/ui/skeletons"
 import { useBusinessesPaged, useBusinessMutations } from "@/lib/admin-queries"
 import { PAGE_SIZE } from "@/lib/pagination"
 import type { Business } from "@/lib/admin"
@@ -55,7 +56,7 @@ export default function BusinessesPage() {
 
       {/* Table area */}
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">{t("admin.loading")}</p>
+        <TableSkeleton columns={4} />
       ) : isError ? (
         <p role="alert" className="text-sm text-destructive">
           {t("admin.errors.generic")}

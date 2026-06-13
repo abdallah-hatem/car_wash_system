@@ -7,6 +7,7 @@ import { useQueue } from "@/lib/tenant/queries"
 import { isPaid } from "@/lib/tenant/operations"
 import { WashCard } from "@/components/tenant/WashCard"
 import { NewWashDialog } from "@/components/tenant/NewWashDialog"
+import { CardGridSkeleton, PageSkeleton } from "@/components/ui/skeletons"
 
 // Compare on the LOCAL calendar day (both sides), so an operator outside UTC
 // still sees washes finished after local midnight. en-CA gives YYYY-MM-DD.
@@ -35,11 +36,7 @@ export default function QueuePage() {
   )
 
   if (branchLoading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <p className="text-muted-foreground">{t("common.loading")}</p>
-      </div>
-    )
+    return <PageSkeleton />
   }
 
   if (!branchId) {
@@ -78,7 +75,7 @@ export default function QueuePage() {
 
       {/* Loading state */}
       {isLoading && !isError && (
-        <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+        <CardGridSkeleton count={3} />
       )}
 
       {/* Board: 3 responsive columns */}

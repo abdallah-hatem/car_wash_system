@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { VehicleDialog } from "@/components/tenant/VehicleDialog"
+import { RowsSkeleton } from "@/components/ui/skeletons"
 import { useVehiclesByCustomer, useVehicleMutations } from "@/lib/tenant/queries"
 import type { Vehicle } from "@/lib/tenant/vehicles"
 import type { Customer } from "@/lib/tenant/customers"
@@ -108,7 +109,7 @@ export function CustomerDetailDialog({ open, onOpenChange, customer, onChanged }
             )}
 
             {isLoading ? (
-              <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+              <RowsSkeleton rows={3} />
             ) : vehicles.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("vehicles.empty")}</p>
             ) : (

@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Pager } from "@/components/ui/pager"
+import { TableSkeleton } from "@/components/ui/skeletons"
 import { PackageDialog } from "@/components/tenant/PackageDialog"
 import { usePackagesPaged, usePackageMutations } from "@/lib/tenant/queries"
 import { PAGE_SIZE } from "@/lib/pagination"
@@ -80,7 +81,7 @@ export default function PackagesPage() {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+        <TableSkeleton columns={5} />
       ) : isError ? (
         <div className="flex flex-col gap-2">
           <p role="alert" className="text-sm text-destructive">{t("packages.errors.generic")}</p>
