@@ -9,3 +9,6 @@ deno.lock
 
 # Playwright MCP screenshot artifacts
 .playwright-mcp/
+
+# Local testing credentials cheatsheet (kept local)
+/TESTING.md
