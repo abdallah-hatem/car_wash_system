@@ -1,4 +1,4 @@
-export const PAGE_SIZE = 7
+export const PAGE_SIZE = 6
 
 export function pageToRange(page: number, pageSize: number): { from: number; to: number } {
   const from = page * pageSize
