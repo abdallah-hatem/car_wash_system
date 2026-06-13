@@ -48,7 +48,7 @@ export default function CustomersPage() {
     setPage(0)
   }, [debouncedSearch])
 
-  const { data, isLoading, isError, refetch } = useCustomersPaged(page, debouncedSearch)
+  const { data, isLoading, isError, refetch, isPlaceholderData } = useCustomersPaged(page, debouncedSearch)
   const rows: Customer[] = data?.rows ?? []
   const total = data?.total ?? 0
 
@@ -140,7 +140,11 @@ export default function CustomersPage() {
         <p className="text-sm text-muted-foreground">{t("customers.empty")}</p>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-md border">
+          <div
+            className={`overflow-x-auto rounded-md border transition-opacity duration-200 ${
+              isPlaceholderData ? "opacity-60" : "opacity-100"
+            }`}
+          >
             <Table>
               <TableHeader>
                 <TableRow>

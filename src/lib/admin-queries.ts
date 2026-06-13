@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query"
 import { listBusinesses, listBusinessesPaged, setBusinessStatus, createBusiness } from "./admin"
 import type { CreateBusinessInput } from "./admin"
 import { PAGE_SIZE } from "./pagination"
@@ -10,7 +10,7 @@ export function useBusinesses() {
 }
 
 export function useBusinessesPaged(page: number) {
-  return useQuery({ queryKey: ["businesses", "page", page] as const, queryFn: () => listBusinessesPaged(page, PAGE_SIZE) })
+  return useQuery({ queryKey: ["businesses", "page", page] as const, queryFn: () => listBusinessesPaged(page, PAGE_SIZE), placeholderData: keepPreviousData })
 }
 
 export function useBusinessMutations() {

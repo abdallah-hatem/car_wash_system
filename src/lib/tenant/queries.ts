@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query"
 import * as branches from "./branches"
 import * as packages from "./packages"
 import * as employees from "./employees"
@@ -41,21 +41,22 @@ export function useCustomers() {
 }
 
 export function useBranchesPaged(page: number) {
-  return useQuery({ queryKey: ["branches", "page", page] as const, queryFn: () => branches.listBranchesPaged(page, PAGE_SIZE) })
+  return useQuery({ queryKey: ["branches", "page", page] as const, queryFn: () => branches.listBranchesPaged(page, PAGE_SIZE), placeholderData: keepPreviousData })
 }
 
 export function usePackagesPaged(page: number) {
-  return useQuery({ queryKey: ["packages", "page", page] as const, queryFn: () => packages.listPackagesPaged(page, PAGE_SIZE) })
+  return useQuery({ queryKey: ["packages", "page", page] as const, queryFn: () => packages.listPackagesPaged(page, PAGE_SIZE), placeholderData: keepPreviousData })
 }
 
 export function useEmployeesPaged(page: number) {
-  return useQuery({ queryKey: ["employees", "page", page] as const, queryFn: () => employees.listEmployeesPaged(page, PAGE_SIZE) })
+  return useQuery({ queryKey: ["employees", "page", page] as const, queryFn: () => employees.listEmployeesPaged(page, PAGE_SIZE), placeholderData: keepPreviousData })
 }
 
 export function useCustomersPaged(page: number, search = "") {
   return useQuery({
     queryKey: ["customers", "page", page, search] as const,
     queryFn: () => customers.listCustomersPaged(page, PAGE_SIZE, search),
+    placeholderData: keepPreviousData,
   })
 }
 
@@ -84,7 +85,7 @@ export function useQueue(branchId: string | null) {
 }
 
 export function useWashes(filters: WashFilters, page = 0) {
-  return useQuery({ queryKey: [...keys.washes, filters, page], queryFn: () => listWashes(filters, page, PAGE_SIZE) })
+  return useQuery({ queryKey: [...keys.washes, filters, page], queryFn: () => listWashes(filters, page, PAGE_SIZE), placeholderData: keepPreviousData })
 }
 
 export function useDashboard(branchId: string | null) {
