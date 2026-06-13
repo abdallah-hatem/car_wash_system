@@ -1,0 +1,296 @@
+{
+  "common": {
+    "appName": "Sudsly",
+    "signOut": "Sign out",
+    "language": "Language",
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "active": "Active",
+    "inactive": "Inactive",
+    "confirmDelete": "Are you sure you want to delete this?",
+    "confirm": "Confirm",
+    "confirmDeleteTitle": "Delete this item?",
+    "confirmDeleteBody": "This action cannot be undone.",
+    "loading": "Loading…",
+    "empty": "Nothing here yet.",
+    "retry": "Retry",
+    "actions": "Actions",
+    "optional": "optional"
+  },
+  "auth": {
+    "tagline": "The cleanest way to run your car wash.",
+    "signInTitle": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "signInButton": "Sign in",
+    "signingIn": "Signing in…",
+    "brandBadge": "Carwash, run beautifully",
+    "brandHeadlineLead": "Every wash,",
+    "brandHeadlineAccent": "spotlessly managed.",
+    "brandBody": "Bookings, bays, staff and payments — one calm console for your whole operation. Sign in to pick up right where you left off.",
+    "featureFastCheckouts": "Fast checkouts",
+    "featureLiveBayStatus": "Live bay status",
+    "featureMultiBranch": "Multi-branch",
+    "footer": "© {{year}} {{appName}} · Carwash operations platform"
+  },
+  "noAccess": {
+    "title": "No workspace assigned",
+    "body": "Your account isn't linked to a business yet. Please contact your administrator."
+  },
+  "nav": {
+    "branches": "Branches",
+    "packages": "Packages",
+    "staff": "Staff",
+    "customers": "Customers",
+    "queue": "Queue",
+    "washes": "Washes",
+    "dashboard": "Dashboard",
+    "comingSoon": "coming soon",
+    "menu": "Open menu"
+  },
+  "branches": {
+    "title": "Branches",
+    "newBranch": "New branch",
+    "name": "Name",
+    "address": "Address",
+    "created": "Created",
+    "errors": {
+      "in_use": "This branch is in use and cannot be deleted.",
+      "generic": "Something went wrong. Please try again."
+    },
+    "empty": "No branches yet."
+  },
+  "packages": {
+    "title": "Packages",
+    "newPackage": "New package",
+    "name": "Name",
+    "price": "Price",
+    "duration": "Duration",
+    "minutes": "min",
+    "status": "Status",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    },
+    "empty": "No packages yet."
+  },
+  "staff": {
+    "title": "Staff",
+    "newEmployee": "New employee",
+    "name": "Name",
+    "phone": "Phone",
+    "branch": "Branch",
+    "noBranch": "No branch",
+    "status": "Status",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    },
+    "empty": "No employees yet."
+  },
+  "customers": {
+    "title": "Customers",
+    "newCustomer": "New customer",
+    "name": "Name",
+    "phone": "Phone",
+    "vehicleCount": "Vehicles",
+    "empty": "No customers yet.",
+    "deleteWarn": "Deleting this customer will unlink their vehicles. Continue?",
+    "detailTitle": "Customer details",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "vehicles": {
+    "title": "Vehicles",
+    "newVehicle": "Add vehicle",
+    "plate": "Plate number",
+    "plateLetters": "Plate letters",
+    "plateDigits": "Plate digits",
+    "platePreview": "Preview",
+    "make": "Make",
+    "model": "Model",
+    "color": "Color",
+    "empty": "No vehicles yet.",
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "duplicate": "A vehicle with this plate already exists."
+    }
+  },
+  "plateSearch": {
+    "label": "Search by plate",
+    "placeholder": "Search plate number…",
+    "noResults": "No vehicles found.",
+    "owner": "Owner",
+    "searching": "Searching…"
+  },
+  "customerSearch": {
+    "placeholder": "Search by name, plate, or phone"
+  },
+  "validation": {
+    "name_required": "Name is required.",
+    "price_invalid": "Price must be a positive number.",
+    "plate_required": "Plate number is required.",
+    "letters_required": "Please enter exactly 3 Arabic letters.",
+    "digits_required": "Please enter 1 to 4 digits."
+  },
+  "status": {
+    "waiting": "Waiting",
+    "in_progress": "In Progress",
+    "done": "Done",
+    "cancelled": "Cancelled"
+  },
+  "queue": {
+    "title": "Queue",
+    "newWash": "New Wash",
+    "waiting": "Waiting",
+    "inProgress": "In Progress",
+    "done": "Done",
+    "emptyWaiting": "No orders waiting.",
+    "emptyInProgress": "No orders in progress.",
+    "emptyDone": "No completed orders today.",
+    "branch": "Branch",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "wash": {
+    "plate": "Plate number",
+    "findOrAddVehicle": "Find or add vehicle",
+    "newVehicle": "New vehicle",
+    "customer": "Customer",
+    "customerName": "Customer name",
+    "customerPhone": "Customer phone",
+    "package": "Package",
+    "price": "Price",
+    "notes": "Notes",
+    "assignEmployee": "Assign employee",
+    "noEmployee": "No employee",
+    "start": "Start",
+    "complete": "Complete",
+    "cancel": "Cancel",
+    "cancelConfirm": "Are you sure you want to cancel this wash?",
+    "cancelTitle": "Cancel wash",
+    "cancelReasonLabel": "Reason for cancellation",
+    "cancelReasonPlaceholder": "Describe the reason…",
+    "cancelReasonRequired": "Please provide a reason before cancelling.",
+    "confirmCancel": "Confirm cancel",
+    "cancelPresets": {
+      "customerLeft": "Customer left",
+      "vehicleIssue": "Vehicle issue",
+      "duplicate": "Duplicate order",
+      "mistake": "Entered by mistake"
+    },
+    "unpaid": "Unpaid",
+    "paid": "Paid",
+    "remaining": "Remaining",
+    "assignedTo": "Assigned to",
+    "create": "Create wash",
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "package_required": "Please select a package.",
+      "price_invalid": "Price must be a positive number.",
+      "plate_required": "Plate number is required."
+    },
+    "noStaffAtBranch": "No staff assigned to this branch — start without one or add staff."
+  },
+  "payment": {
+    "title": "Record payment",
+    "amount": "Amount",
+    "method": "Method",
+    "cash": "Cash",
+    "card": "Card",
+    "transfer": "Transfer",
+    "record": "Record payment",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "dateRange": {
+    "today": "Today",
+    "last7": "Last 7 days",
+    "last30": "Last 30 days",
+    "thisMonth": "This month"
+  },
+  "washes": {
+    "title": "Washes",
+    "dateRange": "Date range",
+    "from": "From",
+    "to": "To",
+    "status": "Status",
+    "employee": "Employee",
+    "branch": "Branch",
+    "allStatuses": "All statuses",
+    "allEmployees": "All employees",
+    "allBranches": "All branches",
+    "colQueued": "Queued",
+    "colPlate": "Plate",
+    "colCustomer": "Customer",
+    "colPackage": "Package",
+    "colBranch": "Branch",
+    "colStatus": "Status",
+    "colEmployee": "Employee",
+    "colWait": "Wait",
+    "colService": "Service",
+    "colPrice": "Price",
+    "colPaid": "Paid",
+    "colReason": "Reason",
+    "empty": "No washes found for the selected filters.",
+    "capped": "Showing the {{n}} most recent washes. Narrow your filters to see more.",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "pager": {
+    "range": "{{from}}–{{to}} of {{total}}",
+    "prev": "Previous page",
+    "next": "Next page"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "revenueToday": "Revenue today",
+    "washesToday": "Washes today",
+    "byStatus": "By status",
+    "empty": "No activity today. Start a new wash to see stats.",
+    "refresh": "Refresh",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "admin": {
+    "title": "Businesses",
+    "newBusiness": "New business",
+    "colName": "Name",
+    "colStatus": "Status",
+    "colCreated": "Created",
+    "colActions": "Actions",
+    "statusActive": "Active",
+    "statusSuspended": "Suspended",
+    "suspend": "Suspend",
+    "activate": "Activate",
+    "empty": "No businesses yet.",
+    "loading": "Loading…",
+    "create": {
+      "title": "Onboard new business",
+      "businessName": "Business name",
+      "ownerEmail": "Owner email",
+      "ownerName": "Owner full name",
+      "submit": "Create",
+      "cancel": "Cancel",
+      "creating": "Creating…",
+      "successTitle": "Business created",
+      "tempPasswordLabel": "Temporary password",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "done": "Done"
+    },
+    "errors": {
+      "email_exists": "An account with that email already exists.",
+      "missing_fields": "Please fill in all required fields with valid values.",
+      "generic": "Something went wrong. Please try again."
+    }
+  }
+}

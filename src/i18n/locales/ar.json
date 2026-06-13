@@ -1,0 +1,296 @@
+{
+  "common": {
+    "appName": "Sudsly",
+    "signOut": "تسجيل الخروج",
+    "language": "اللغة",
+    "create": "إنشاء",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "activate": "تفعيل",
+    "deactivate": "إلغاء التفعيل",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا؟",
+    "confirm": "تأكيد",
+    "confirmDeleteTitle": "حذف هذا العنصر؟",
+    "confirmDeleteBody": "لا يمكن التراجع عن هذا الإجراء.",
+    "loading": "جارٍ التحميل…",
+    "empty": "لا يوجد شيء هنا بعد.",
+    "retry": "إعادة المحاولة",
+    "actions": "الإجراءات",
+    "optional": "اختياري"
+  },
+  "auth": {
+    "tagline": "أنظف طريقة لإدارة مغسلة سيارتك.",
+    "signInTitle": "تسجيل الدخول",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "signInButton": "تسجيل الدخول",
+    "signingIn": "جارٍ تسجيل الدخول…",
+    "brandBadge": "إدارة مغسلة السيارات بأناقة",
+    "brandHeadlineLead": "كل غسلة،",
+    "brandHeadlineAccent": "تُدار بإتقان لا تشوبه شائبة.",
+    "brandBody": "الحجوزات والمواقف والموظفون والمدفوعات — لوحة تحكم واحدة هادئة لإدارة عملك بالكامل. سجّل الدخول لتكمل من حيث توقفت.",
+    "featureFastCheckouts": "دفع سريع",
+    "featureLiveBayStatus": "حالة المواقف مباشرة",
+    "featureMultiBranch": "فروع متعددة",
+    "footer": "© {{year}} {{appName}} · منصة إدارة مغاسل السيارات"
+  },
+  "noAccess": {
+    "title": "لا توجد مساحة عمل مخصصة",
+    "body": "حسابك غير مرتبط بأي نشاط تجاري بعد. يرجى التواصل مع المسؤول."
+  },
+  "nav": {
+    "branches": "الفروع",
+    "packages": "الباقات",
+    "staff": "الموظفون",
+    "customers": "العملاء",
+    "queue": "قائمة الانتظار",
+    "washes": "سجل الغسيل",
+    "dashboard": "لوحة التحكم",
+    "comingSoon": "قريباً",
+    "menu": "فتح القائمة"
+  },
+  "branches": {
+    "title": "الفروع",
+    "newBranch": "فرع جديد",
+    "name": "الاسم",
+    "address": "العنوان",
+    "created": "تاريخ الإنشاء",
+    "errors": {
+      "in_use": "هذا الفرع قيد الاستخدام ولا يمكن حذفه.",
+      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+    },
+    "empty": "لا توجد فروع حتى الآن."
+  },
+  "packages": {
+    "title": "الباقات",
+    "newPackage": "باقة جديدة",
+    "name": "الاسم",
+    "price": "السعر",
+    "duration": "المدة",
+    "minutes": "د",
+    "status": "الحالة",
+    "errors": {
+      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+    },
+    "empty": "لا توجد باقات حتى الآن."
+  },
+  "staff": {
+    "title": "الموظفون",
+    "newEmployee": "موظف جديد",
+    "name": "الاسم",
+    "phone": "الهاتف",
+    "branch": "الفرع",
+    "noBranch": "بدون فرع",
+    "status": "الحالة",
+    "errors": {
+      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+    },
+    "empty": "لا يوجد موظفون حتى الآن."
+  },
+  "customers": {
+    "title": "العملاء",
+    "newCustomer": "عميل جديد",
+    "name": "الاسم",
+    "phone": "الهاتف",
+    "vehicleCount": "المركبات",
+    "empty": "لا يوجد عملاء حتى الآن.",
+    "deleteWarn": "حذف هذا العميل سيفصل مركباته. هل تريد المتابعة؟",
+    "detailTitle": "تفاصيل العميل",
+    "errors": {
+      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+    }
+  },
+  "vehicles": {
+    "title": "المركبات",
+    "newVehicle": "إضافة مركبة",
+    "plate": "رقم اللوحة",
+    "plateLetters": "حروف اللوحة",
+    "plateDigits": "أرقام اللوحة",
+    "platePreview": "معاينة",
+    "make": "الصانع",
+    "model": "الموديل",
+    "color": "اللون",
+    "empty": "لا توجد مركبات حتى الآن.",
+    "errors": {
+      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+      "duplicate": "يوجد مركبة بهذه اللوحة بالفعل."
+    }
+  },
+  "plateSearch": {
+    "label": "البحث بلوحة التسجيل",
+    "placeholder": "ابحث برقم اللوحة…",
+    "noResults": "لم يتم العثور على مركبات.",
+    "owner": "المالك",
+    "searching": "جارٍ البحث…"
+  },
+  "customerSearch": {
+    "placeholder": "ابحث بالاسم أو اللوحة أو الهاتف"
+  },
+  "validation": {
+    "name_required": "الاسم مطلوب.",
+    "price_invalid": "يجب أن يكون السعر رقمًا موجبًا.",
+    "plate_required": "رقم اللوحة مطلوب.",
+    "letters_required": "يرجى إدخال ٣ أحرف عربية بالضبط.",
+    "digits_required": "يرجى إدخال من ١ إلى ٤ أرقام."
+  },
+  "status": {
+    "waiting": "في الانتظار",
+    "in_progress": "جارٍ الغسيل",
+    "done": "مكتمل",
+    "cancelled": "ملغى"
+  },
+  "queue": {
+    "title": "قائمة الانتظار",
+    "newWash": "غسيل جديد",
+    "waiting": "في الانتظار",
+    "inProgress": "جارٍ الغسيل",
+    "done": "مكتمل",
+    "emptyWaiting": "لا توجد طلبات في الانتظار.",
+    "emptyInProgress": "لا توجد طلبات قيد التنفيذ.",
+    "emptyDone": "لا توجد طلبات مكتملة اليوم.",
+    "branch": "الفرع",
+    "errors": {
+      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+    }
+  },
+  "wash": {
+    "plate": "رقم اللوحة",
+    "findOrAddVehicle": "ابحث عن مركبة أو أضف جديدة",
+    "newVehicle": "مركبة جديدة",
+    "customer": "العميل",
+    "customerName": "اسم العميل",
+    "customerPhone": "هاتف العميل",
+    "package": "الباقة",
+    "price": "السعر",
+    "notes": "ملاحظات",
+    "assignEmployee": "تعيين موظف",
+    "noEmployee": "بدون موظف",
+    "start": "بدء",
+    "complete": "إتمام",
+    "cancel": "إلغاء",
+    "cancelConfirm": "هل أنت متأكد أنك تريد إلغاء هذا الغسيل؟",
+    "cancelTitle": "إلغاء الغسيل",
+    "cancelReasonLabel": "سبب الإلغاء",
+    "cancelReasonPlaceholder": "اكتب سبب الإلغاء…",
+    "cancelReasonRequired": "يرجى تحديد سبب قبل الإلغاء.",
+    "confirmCancel": "تأكيد الإلغاء",
+    "cancelPresets": {
+      "customerLeft": "العميل غادر",
+      "vehicleIssue": "مشكلة في المركبة",
+      "duplicate": "طلب مكرر",
+      "mistake": "أُدخل بالخطأ"
+    },
+    "unpaid": "غير مدفوع",
+    "paid": "مدفوع",
+    "remaining": "المتبقي",
+    "assignedTo": "مُعيَّن إلى",
+    "create": "إنشاء غسيل",
+    "errors": {
+      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+      "package_required": "يرجى اختيار باقة.",
+      "price_invalid": "يجب أن يكون السعر رقمًا موجبًا.",
+      "plate_required": "رقم اللوحة مطلوب."
+    },
+    "noStaffAtBranch": "لا يوجد موظفون في هذا الفرع — ابدأ بدون موظف أو أضف موظفين."
+  },
+  "payment": {
+    "title": "تسجيل دفعة",
+    "amount": "المبلغ",
+    "method": "طريقة الدفع",
+    "cash": "نقداً",
+    "card": "بطاقة",
+    "transfer": "تحويل",
+    "record": "تسجيل الدفعة",
+    "errors": {
+      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+    }
+  },
+  "dateRange": {
+    "today": "اليوم",
+    "last7": "آخر ٧ أيام",
+    "last30": "آخر ٣٠ يومًا",
+    "thisMonth": "هذا الشهر"
+  },
+  "washes": {
+    "title": "سجل الغسيل",
+    "dateRange": "نطاق التاريخ",
+    "from": "من",
+    "to": "إلى",
+    "status": "الحالة",
+    "employee": "الموظف",
+    "branch": "الفرع",
+    "allStatuses": "جميع الحالات",
+    "allEmployees": "جميع الموظفين",
+    "allBranches": "جميع الفروع",
+    "colQueued": "وقت الإضافة",
+    "colPlate": "اللوحة",
+    "colCustomer": "العميل",
+    "colPackage": "الباقة",
+    "colBranch": "الفرع",
+    "colStatus": "الحالة",
+    "colEmployee": "الموظف",
+    "colWait": "وقت الانتظار",
+    "colService": "وقت الخدمة",
+    "colPrice": "السعر",
+    "colPaid": "الدفع",
+    "colReason": "السبب",
+    "empty": "لا توجد غسيلات تطابق الفلاتر المحددة.",
+    "capped": "يتم عرض أحدث {{n}} غسيلة. قلّل نطاق الفلاتر لرؤية المزيد.",
+    "errors": {
+      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+    }
+  },
+  "pager": {
+    "range": "{{from}}–{{to}} من {{total}}",
+    "prev": "الصفحة السابقة",
+    "next": "الصفحة التالية"
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "revenueToday": "إيرادات اليوم",
+    "washesToday": "غسيل اليوم",
+    "byStatus": "حسب الحالة",
+    "empty": "لا نشاط اليوم. ابدأ غسيلاً جديداً لعرض الإحصاءات.",
+    "refresh": "تحديث",
+    "errors": {
+      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+    }
+  },
+  "admin": {
+    "title": "الشركات",
+    "newBusiness": "شركة جديدة",
+    "colName": "الاسم",
+    "colStatus": "الحالة",
+    "colCreated": "تاريخ الإنشاء",
+    "colActions": "الإجراءات",
+    "statusActive": "نشط",
+    "statusSuspended": "موقوف",
+    "suspend": "إيقاف",
+    "activate": "تفعيل",
+    "empty": "لا توجد شركات حتى الآن.",
+    "loading": "جارٍ التحميل…",
+    "create": {
+      "title": "تأهيل شركة جديدة",
+      "businessName": "اسم الشركة",
+      "ownerEmail": "البريد الإلكتروني للمالك",
+      "ownerName": "الاسم الكامل للمالك",
+      "submit": "إنشاء",
+      "cancel": "إلغاء",
+      "creating": "جارٍ الإنشاء…",
+      "successTitle": "تم إنشاء الشركة",
+      "tempPasswordLabel": "كلمة المرور المؤقتة",
+      "copy": "نسخ",
+      "copied": "تم النسخ!",
+      "done": "تم"
+    },
+    "errors": {
+      "email_exists": "يوجد حساب مسجّل بهذا البريد الإلكتروني بالفعل.",
+      "missing_fields": "يرجى ملء جميع الحقول المطلوبة بقيم صحيحة.",
+      "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+    }
+  }
+}

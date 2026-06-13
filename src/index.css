@@ -1,0 +1,156 @@
+@import "@fontsource-variable/geist";
+@import "@fontsource/cairo/400.css";
+@import "@fontsource/cairo/600.css";
+@import "@fontsource/cairo/700.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  }
+  html {
+    font-family: var(--font-sans);
+  }
+}
+
+/* Login-screen atmosphere: drifting droplets + a single chrome shine sweep. */
+@keyframes cw-drift {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--cw-drop-opacity, 0.5);
+  }
+  90% {
+    opacity: var(--cw-drop-opacity, 0.5);
+  }
+  100% {
+    transform: translateY(-120px) translateX(18px) scale(1.15);
+    opacity: 0;
+  }
+}
+
+@keyframes cw-shine {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  100% {
+    transform: translateX(320%) skewX(-18deg);
+  }
+}
+
+/* Mirror the shine sweep under RTL so it travels across the panel
+   in the reading direction instead of overflowing the inline-end edge.
+   The element is anchored with `start-0`, which sits at the right edge
+   under RTL, so the sweep needs to run from there toward the left. */
+@keyframes cw-shine-rtl {
+  0% {
+    transform: translateX(120%) skewX(18deg);
+  }
+  100% {
+    transform: translateX(-320%) skewX(18deg);
+  }
+}
+
+@keyframes cw-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cw-droplet {
+  animation: cw-drift linear infinite;
+}
+
+.cw-shine {
+  animation: cw-shine 6.5s ease-in-out infinite;
+}
+
+[dir="rtl"] .cw-shine {
+  animation-name: cw-shine-rtl;
+}
+
+.cw-rise {
+  animation: cw-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cw-droplet,
+  .cw-shine,
+  .cw-rise {
+    animation: none;
+  }
+}
+
+@layer base {
+  :root {
+    /* Cool, modern, teal-forward. Neutrals carry a faint cool (slate→teal) tint
+       so white surfaces read crisp rather than flat. Teal is the single brand
+       accent: primary actions, focus rings, active nav, and hover tints. */
+    --background: 180 33% 99%;
+    --foreground: 200 24% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 200 24% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 200 24% 11%;
+    --primary: 174 84% 30%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 180 22% 95%;
+    --secondary-foreground: 192 30% 18%;
+    --muted: 185 20% 95.5%;
+    --muted-foreground: 200 12% 42%;
+    --accent: 172 55% 94%;
+    --accent-foreground: 175 72% 22%;
+    --destructive: 0 78% 56%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 195 24% 90%;
+    --input: 195 24% 88%;
+    --ring: 174 84% 32%;
+    --radius: 0.7rem;
+  }
+
+  .dark {
+    --background: 196 38% 7%;
+    --foreground: 180 20% 96%;
+    --card: 197 34% 10%;
+    --card-foreground: 180 20% 96%;
+    --popover: 197 34% 10%;
+    --popover-foreground: 180 20% 96%;
+    --primary: 172 70% 45%;
+    --primary-foreground: 190 80% 8%;
+    --secondary: 197 26% 17%;
+    --secondary-foreground: 180 20% 96%;
+    --muted: 197 26% 16%;
+    --muted-foreground: 190 15% 65%;
+    --accent: 188 40% 18%;
+    --accent-foreground: 172 65% 75%;
+    --destructive: 0 62% 42%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 197 24% 19%;
+    --input: 197 24% 21%;
+    --ring: 172 70% 45%;
+    --radius: 0.7rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+html[lang="ar"] body {
+  font-family: "Cairo", system-ui, sans-serif;
+}

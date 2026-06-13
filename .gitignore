@@ -3,3 +3,12 @@ dist/
 .env
 .env.local
 .DS_Store
+
+# Deno test artifact (edge function tests run via deno; lock is noise here)
+deno.lock
+
+# Playwright MCP screenshot artifacts
+.playwright-mcp/
+
+# Local testing credentials cheatsheet (kept local)
+/TESTING.md
