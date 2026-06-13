@@ -19,10 +19,49 @@ function ymd(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
+/** Format a local Date as YYYY-MM-DD (no UTC shift). */
+export function formatYmd(d: Date): string {
+  return ymd(d)
+}
+
+/**
+ * Parse a YYYY-MM-DD string as a LOCAL date.
+ * Never use `new Date("YYYY-MM-DD")` — that parses as UTC and shifts by TZ offset.
+ */
+export function parseYmd(s: string): Date {
+  const [y, m, d] = s.split("-").map(Number)
+  return new Date(y, m - 1, d)
+}
+
+export type RangePreset = "today" | "last7" | "last30" | "thisMonth"
+
+/** Return the `from`/`to` YYYY-MM-DD pair for a named preset relative to `today`. */
+export function presetRange(
+  kind: RangePreset,
+  today: Date
+): { from: string; to: string } {
+  switch (kind) {
+    case "today":
+      return { from: formatYmd(today), to: formatYmd(today) }
+    case "last7": {
+      const from = new Date(today)
+      from.setDate(from.getDate() - 6)
+      return { from: formatYmd(from), to: formatYmd(today) }
+    }
+    case "last30": {
+      const from = new Date(today)
+      from.setDate(from.getDate() - 29)
+      return { from: formatYmd(from), to: formatYmd(today) }
+    }
+    case "thisMonth": {
+      const from = new Date(today.getFullYear(), today.getMonth(), 1)
+      return { from: formatYmd(from), to: formatYmd(today) }
+    }
+  }
+}
+
 export function defaultDateRange(today: Date): { from: string; to: string } {
-  const from = new Date(today)
-  from.setDate(from.getDate() - 6) // last 7 days inclusive
-  return { from: ymd(from), to: ymd(today) }
+  return presetRange("last7", today)
 }
 
 export function dayRangeToBounds(from: string, to: string): { fromISO: string; toISO: string } {

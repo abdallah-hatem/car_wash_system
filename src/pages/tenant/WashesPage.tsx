@@ -25,6 +25,7 @@ import { diffMinutes, formatDuration, defaultDateRange } from "@/lib/tenant/dura
 import { PAGE_SIZE } from "@/lib/pagination"
 import type { WashFilters } from "@/lib/tenant/washes"
 import type { WashStatus } from "@/lib/tenant/operations"
+import { DateRangePicker } from "@/components/tenant/DateRangePicker"
 
 const STATUSES: WashStatus[] = ["waiting", "in_progress", "done", "cancelled"]
 
@@ -70,27 +71,18 @@ export default function WashesPage() {
 
       {/* Filter bar — wraps on small screens */}
       <div className="flex flex-wrap gap-3 items-end">
-        {/* From date */}
+        {/* Date range picker */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-muted-foreground">{t("washes.from")}</label>
-          <input
-            type="date"
-            value={filters.from}
-            max={filters.to}
-            onChange={(e) => setFilter("from", e.target.value)}
-            className="min-h-[44px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
-        </div>
-
-        {/* To date */}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-muted-foreground">{t("washes.to")}</label>
-          <input
-            type="date"
-            value={filters.to}
-            min={filters.from}
-            onChange={(e) => setFilter("to", e.target.value)}
-            className="min-h-[44px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          <label className="text-sm font-medium text-muted-foreground">
+            {t("washes.dateRange")}
+          </label>
+          <DateRangePicker
+            from={filters.from}
+            to={filters.to}
+            onChange={(from, to) => {
+              setPage(0)
+              setFilters((prev) => ({ ...prev, from, to }))
+            }}
           />
         </div>
 
