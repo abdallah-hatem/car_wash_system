@@ -374,6 +374,11 @@ allow_dynamic_registration = false
 [functions.create-business]
 verify_jwt = false
 
+[functions.notify-wash-event]
+# Called by a Supabase Database Webhook (not a user JWT). We own auth via the
+# optional WEBHOOK_SECRET header check inside the function.
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.

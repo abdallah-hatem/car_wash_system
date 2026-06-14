@@ -264,6 +264,13 @@
     "updateAvailable": "A new version is available",
     "reload": "Reload"
   },
+  "notify": {
+    "enable": "Enable notifications",
+    "disable": "Disable notifications",
+    "enabled": "Notifications on",
+    "blocked": "Notifications blocked in browser settings",
+    "unsupported": "Install the app to enable notifications"
+  },
   "admin": {
     "title": "Businesses",
     "newBusiness": "New business",

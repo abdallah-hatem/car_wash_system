@@ -27,18 +27,20 @@
 - [ ] i18n: `pwa.updateAvailable`, `pwa.reload` (en/ar parity).
 - [ ] Verify: app installable (manifest + SW registered, Lighthouse PWA basics), SW push handler unit-reasoned; `npm test` + `npm run build` green. Local gate → push to `dev`.
 
-## Phase 2 — Web push core (3 DB-driven events)
+## Phase 2 — Web push core (3 DB-driven events) — DONE (local; cloud wiring pending)
 
-**Files:** migration `00NN_push_subscriptions.sql` (+ RLS), pgTAP test, `supabase/functions/send-push/`, `src/lib/notify/subscriptions.ts` + `queries`, an **Enable notifications** control in `AppHeader`/`TenantLayout`, i18n.
+**Files:** migration `0014_push_subscriptions.sql` (+ RLS), pgTAP `0017_push_subscriptions_test.sql`, `supabase/functions/notify-wash-event/` (`index.ts` + pure `classify.ts` + `classify.test.ts` + server-i18n `copy.ts`), `src/lib/notify/subscriptions.ts`, `src/components/tenant/NotificationsToggle.tsx` (in `TenantLayout`), i18n `notify.*` keys, `src/lib/database.types.ts` (new table type).
 
-- [ ] Migration: `push_subscriptions(id uuid pk, tenant_id uuid not null, user_id uuid not null, endpoint text unique not null, p256dh text, auth text, user_agent text, created_at timestamptz default now())`; enable RLS + `tenant_isolation` policy (`tenant_id = current_tenant_id()`); index on tenant_id. Update `docs/BUSINESS_LOGIC.md`.
-- [ ] pgTAP `00NN_push_subscriptions_test.sql`: tenant isolation (insert/select scoped), unique endpoint.
-- [ ] Generate VAPID keypair. `VITE_VAPID_PUBLIC_KEY` → `.env.local` + `.env.example`; `VAPID_PRIVATE_KEY` → local function env + (later) cloud secret. Store keys in gitignored creds file.
-- [ ] `send-push` edge fn (Deno): input `{ tenant_id, type, title, body, url }`; service_role client; load tenant subs; send via a Deno web-push lib using VAPID; delete subs on 404/410. CORS via `_shared/cors.ts`. Deno tests for the classify/payload helper.
-- [ ] Client: `subscribePush()` (permission → `pushManager.subscribe` → upsert via supabase), `unsubscribePush()`, support detection. **Enable notifications** toggle (header) — localized, RTL, ≥44px, graceful when unsupported.
-- [ ] Event classification helper (pure, tested): given a `wash_orders` row change (old/new), return which notification(s) to send (queued / completed / done-unpaid). Used by the webhook receiver fn.
-- [ ] Wire Supabase **Database Webhook** on `wash_orders` INSERT/UPDATE → `send-push` (or a `notify-wash-event` fn that classifies then calls send). (Webhook config is a cloud step — phase-6 task; locally test the fn directly.)
-- [ ] Verify locally (subscribe flow, fn unit/Deno tests, pgTAP RLS) + build; gate → push `dev`.
+Implementation note: rather than a generic `send-push` fn taking `{ tenant_id, type, … }`, the receiver is a single **`notify-wash-event`** fn that takes the Database Webhook payload directly, classifies it (pure), refines `completed`→`done_unpaid` via a payments check, then loads subs and sends — simpler and fewer moving parts.
+
+- [x] Migration `0014_push_subscriptions.sql`: `push_subscriptions(id, tenant_id default current_tenant_id(), user_id default auth.uid(), endpoint unique, p256dh, auth, lang default 'en', user_agent, created_at)`; RLS + `tenant_isolation`; index on tenant_id; grants to anon/authenticated (new tables no longer auto-exposed). `docs/BUSINESS_LOGIC.md` updated (§4, §6.10).
+- [x] pgTAP `0017_push_subscriptions_test.sql` (4 assertions): tenant_id/user_id server defaults resolve, RLS isolation (A can't see B), unique endpoint (23505). Scoped by endpoint/tenant (no global counts).
+- [x] VAPID keypair already provisioned: `VITE_VAPID_PUBLIC_KEY` in `.env.local`; `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT` in gitignored `supabase/functions/.env`. No keys hardcoded.
+- [x] `notify-wash-event` edge fn (Deno): receives `{ type, record, old_record }`; service_role client; payment check for `done_unpaid`; loads tenant subs; sends via `npm:web-push@^3` (`setVapidDetails`); deletes subs on 404/410; optional `WEBHOOK_SECRET` header guard; CORS via `_shared/cors.ts`; returns a JSON summary. Registered `verify_jwt = false` in `config.toml`.
+- [x] Client `subscriptions.ts`: `pushSupported()`, `currentPushState()`, `enablePush(lang)` (permission → `pushManager.subscribe` → upsert by endpoint), `disablePush()`. **Enable notifications** bell in `TenantLayout` header — localized (`notify.*`), RTL logical utils, ≥44 px, graceful (disabled bell + hint) when unsupported/denied.
+- [x] Pure classifier `classify.ts` + Deno test `classify.test.ts` (6 tests): queued on insert-waiting, null on insert-in_progress, completed on →done, null on unrelated update, null on already-done, plate/price extraction. Payment refinement (`done_unpaid`) lives in `index.ts`, not the pure classifier.
+- [ ] **Cloud step (Phase 5):** create the Supabase **Database Webhook** on `public.wash_orders` INSERT + UPDATE → the deployed `notify-wash-event` URL (send `x-webhook-secret` if `WEBHOOK_SECRET` set). Locally the fn is tested directly.
+- [x] Verified locally: `npm test` (68 Vitest incl. parity), `npm run build` clean, `npx supabase test db` (20 files / 61 tests incl. 0017), `deno test` classify (6/6). Gate → push `dev` (push is gated by the maintainer).
 
 ## Phase 3 — Long-wait (>15 min) scheduler
 
@@ -54,8 +56,12 @@
 
 ## Phase 5 (cloud) — wire env + verify e2e on staging
 
-- [ ] Set `VITE_VAPID_PUBLIC_KEY` (Vercel) + `VAPID_PRIVATE_KEY` (supabase secret) on staging+prod; deploy `send-push`; enable Database Webhooks + `pg_cron`.
-- [ ] e2e on staging: install PWA → enable notifications → create wash → receive push for each event.
+- [ ] **Vercel:** set `VITE_VAPID_PUBLIC_KEY` (public key — public by design) on staging + prod.
+- [ ] **Supabase function secrets** (`supabase secrets set`): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (e.g. `mailto:ops@…`), and optionally `WEBHOOK_SECRET`. (`SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` are injected by the platform.)
+- [ ] **Deploy** the function: `npx supabase functions deploy notify-wash-event`.
+- [ ] **Database Webhook:** on `public.wash_orders` for **INSERT + UPDATE** → POST the deployed `notify-wash-event` URL. If `WEBHOOK_SECRET` is set, add an `x-webhook-secret: <secret>` HTTP header to the webhook config.
+- [ ] (Phase 3) enable `pg_cron` for the long-wait scanner.
+- [ ] e2e on staging: install PWA → enable notifications → create wash → receive push for queued / completed / done-unpaid.
 
 ## Notes
 - RTL/responsive/i18n on every new UI (the enable-notifications control), checked LTR + AR.

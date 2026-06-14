@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-13 (customer search by name/plate/phone; page size 10).
+Last updated: 2026-06-14 (Phase 2 web push core: push_subscriptions table + RLS, notify-wash-event edge fn, Enable-notifications toggle).
 
 ---
 
@@ -80,6 +80,13 @@ Entities (all under Postgres `public`, all tenant-scoped except platform tables)
   `transfer`), `paid_at`. (Manual recording — no real processor in MVP.)
 - **`audit_log`** — generic trigger-written log (`tenant_id`, `table_name`, `row_id`,
   `action`, `actor`, `at`) on `wash_orders`, `payments`, `customers`.
+- **`push_subscriptions`** — one row per browser/device web-push subscription
+  (`tenant_id`, `user_id`, `endpoint` (unique), `p256dh`, `auth`, `lang`, `user_agent`,
+  `created_at`). `tenant_id` defaults to `current_tenant_id()` and `user_id` to `auth.uid()`
+  **server-side via column DEFAULTs**, so the client only ever sends the push fields and
+  cannot spoof another tenant. Tenant-isolated by the `tenant_isolation` RLS policy; read by
+  the `notify-wash-event` edge function with the `service_role` to send pushes. (Migration
+  `0014_push_subscriptions.sql`; pgTAP `0017_push_subscriptions_test.sql`.)
 
 Relationships: a `tenant` has many branches/customers/vehicles/packages/employees/wash_orders;
 a `wash_order` ties together customer + vehicle + package + assigned employee + branch, and
@@ -344,6 +351,56 @@ the operation itself is correct at every layer (verified via REST 204 and a full
 run of Start/Complete/Payment); the error was the stale dual-React bundle crashing the
 queue's dialogs, now prevented by dedupe.
 
+### 6.10 PWA + Web Push notifications — IN PROGRESS (Plan: pwa-push-notifications)
+
+The app is an installable **PWA** with a custom service worker that handles `push` and
+`notificationclick` (Phase 1 — DONE). **Web push** for wash-lifecycle events is delivered
+per-tenant (Phase 2).
+
+**Events that notify (per tenant):**
+1. **New wash queued** — `wash_orders` INSERT with status `waiting` → `queued`.
+2. **Wash completed** — `wash_orders` UPDATE where status transitions to `done` and the wash
+   is fully paid (sum of `payments.amount` ≥ `price`) → `completed`.
+3. **Wash done & awaiting payment** — the same `done` transition when paid < `price` →
+   `done_unpaid`.
+4. **Long wait (> 15 min)** — **Planned** (Phase 3, `pg_cron` + `wait_notified_at`).
+
+**Subscriptions:** the **Enable-notifications** toggle (bell) in the tenant header
+(`NotificationsToggle` in `TenantLayout`) requests Notification permission, subscribes via the
+service worker's `PushManager` using `VITE_VAPID_PUBLIC_KEY`, and **upserts** the subscription
+(by `endpoint`) into `push_subscriptions` through the **anon** client — `tenant_id`/`user_id`
+are filled by DB defaults. Unsubscribe removes the `PushManager` subscription and deletes the
+row. The control reflects state (subscribed / unsubscribed / denied / unsupported); on browsers
+without push (e.g. iOS Safari before "Add to Home Screen") it shows a disabled bell with a hint
+rather than disappearing. Localized (en/ar), RTL, ≥ 44 px. Per device.
+(`src/lib/notify/subscriptions.ts`: `pushSupported`, `currentPushState`, `enablePush`,
+`disablePush`; VAPID-key encoder `src/lib/notify/push.ts`.)
+
+**Send pipeline — `notify-wash-event` edge function** (`supabase/functions/notify-wash-event/`):
+receives a Supabase **Database Webhook** payload (`{ type, record, old_record }`) for
+`public.wash_orders` INSERT + UPDATE. A **pure** classifier (`classify.ts`, Deno-tested)
+maps the row change to `queued` / `completed` / `null`. For a `completed` (→`done`) result the
+function queries `payments` for that wash (via **service_role**) and downgrades to `done_unpaid`
+when paid < `price`. It then loads that tenant's `push_subscriptions` (service_role, bypassing
+RLS — server-side only) and sends each one a push via **`web-push`** (VAPID), pruning any
+subscription that returns **404/410**. Notification copy is a tiny server-side i18n map
+(`copy.ts`) keyed by the subscription's `lang`; the body includes the plate when known; title
+"WashFlow" (ar "واش فلو"). The function is guarded by an optional shared-secret header
+(`WEBHOOK_SECRET`) and returns a JSON summary `{ classified, sent, pruned, … }`.
+
+**Security:** the VAPID **private key** lives only as an edge-function env var
+(`VAPID_PRIVATE_KEY`); the **public key** ships to the client (`VITE_VAPID_PUBLIC_KEY`, public
+by design). `push_subscriptions` is tenant-isolated by RLS; the send function reads it via
+`service_role` server-side only — never exposed to the client. A user only ever receives their
+own tenant's events.
+
+**Cloud wiring (per environment — not done in code; see "Build status & scope"):** set
+`VITE_VAPID_PUBLIC_KEY` (Vercel) + `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT`
+(and optionally `WEBHOOK_SECRET`) as Supabase function secrets; deploy `notify-wash-event`; and
+create a **Database Webhook** on `public.wash_orders` for **INSERT + UPDATE** pointing at the
+function URL (with the `x-webhook-secret` header if `WEBHOOK_SECRET` is set). Locally the
+function is tested directly (the webhook itself is a cloud step).
+
 ## 7. Cross-cutting conventions
 
 - **i18n:** all user-facing strings come from `src/i18n/locales/{en,ar}.json` (identical key
@@ -406,11 +463,26 @@ queue's dialogs, now prevented by dedupe.
 
 **Plan 3 — COMPLETE (3A + 3B + 3C + 3D + Egyptian plate model all done).**
 
+- **PWA + Web Push — Phase 1 (PWA foundation):** DONE. `vite-plugin-pwa` (injectManifest),
+  custom `src/sw.ts` with precache + offline shell + `push`/`notificationclick` handlers,
+  manifest + icons, update toast, pure VAPID-key encoder `src/lib/notify/push.ts`.
+- **PWA + Web Push — Phase 2 (web push core):** DONE (local). `push_subscriptions` table +
+  RLS (migration `0014_push_subscriptions.sql`, pgTAP `0017_push_subscriptions_test.sql`,
+  4 assertions: server-side tenant_id/user_id defaults, RLS isolation, unique endpoint).
+  `notify-wash-event` edge function (pure `classify.ts` + Deno test, payment-check for
+  `done_unpaid`, service_role sub-load, `web-push` send + 404/410 prune, server-side i18n
+  copy, optional `WEBHOOK_SECRET`). Client `subscriptions.ts` (support detection,
+  enable/disable, anon upsert). Enable-notifications bell in the tenant header
+  (`NotificationsToggle`), localized/RTL/≥44 px/graceful-when-unsupported. See section 6.10.
+  **Cloud-only remaining:** set `VITE_VAPID_PUBLIC_KEY` (Vercel) + `VAPID_*` secrets, deploy
+  the function, and create the `wash_orders` INSERT+UPDATE **Database Webhook** → the fn URL.
+- **PWA + Web Push — Phase 3 (long-wait > 15 min) & Phase 4 (realtime live queue):** Planned.
+
 **Deferred (not in MVP):** inventory/chemicals, assets/machines/depreciation,
-payroll/commission, analytics suite, ratings/performance, appointments/booking, push
-notifications, real payment processing, admin usage-metrics/billing, support impersonation,
-email-invite onboarding (we use temp-password), per-user/server-side language persistence,
-multi-owner-per-tenant, editing an owner's email/password from admin.
+payroll/commission, analytics suite, ratings/performance, appointments/booking, real payment
+processing, admin usage-metrics/billing, support impersonation, email-invite onboarding (we
+use temp-password), per-user/server-side language persistence, multi-owner-per-tenant, editing
+an owner's email/password from admin. (Push notifications: see Phases 1–2 above — now built.)
 
 ## 9. Known follow-ups / tech debt
 
