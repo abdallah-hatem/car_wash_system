@@ -266,6 +266,9 @@
       "generic": "Something went wrong. Please try again."
     }
   },
+  "branch": {
+    "nowViewing": "Now viewing {{branch}}"
+  },
   "pwa": {
     "updateAvailable": "A new version is available",
     "reload": "Reload"

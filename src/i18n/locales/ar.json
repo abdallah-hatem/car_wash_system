@@ -266,6 +266,9 @@
       "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
     }
   },
+  "branch": {
+    "nowViewing": "تعرض الآن {{branch}}"
+  },
   "pwa": {
     "updateAvailable": "يتوفر إصدار جديد",
     "reload": "إعادة تحميل"

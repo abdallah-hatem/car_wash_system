@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { SidebarNav } from "./SidebarNav"
 import { BranchSelector } from "./BranchSelector"
+import { BranchSwitchToast } from "./BranchSwitchToast"
 import { NotificationsToggle } from "./NotificationsToggle"
 import { BranchProvider } from "@/lib/tenant/branch-context"
 import { Menu } from "lucide-react"
@@ -54,6 +55,9 @@ function TenantLayoutInner() {
           <Outlet />
         </main>
       </div>
+
+      {/* Branch-switch toast — renders only on active user-initiated switches */}
+      <BranchSwitchToast />
     </div>
   )
 }
