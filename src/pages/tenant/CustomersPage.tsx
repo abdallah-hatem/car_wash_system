@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { Car, Pencil, Plus, Search, Trash2 } from "lucide-react"
+import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -173,11 +173,11 @@ export default function CustomersPage() {
                           variant="ghost"
                           size="icon-sm"
                           onClick={() => handleManage(customer)}
-                          aria-label={t("vehicles.title")}
-                          title={t("vehicles.title")}
+                          aria-label={t("common.view")}
+                          title={t("common.view")}
                           className="text-muted-foreground hover:text-foreground"
                         >
-                          <Car className="h-4 w-4" />
+                          <Eye className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"

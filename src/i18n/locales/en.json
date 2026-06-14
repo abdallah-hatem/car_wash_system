@@ -20,6 +20,7 @@
     "empty": "Nothing here yet.",
     "retry": "Retry",
     "actions": "Actions",
+    "view": "View",
     "optional": "optional"
   },
   "auth": {
