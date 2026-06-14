@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { normalizePhone, isValidEgyptianMobile, formatPhoneForStore } from "./phone"
+import { normalizePhone, isValidEgyptianMobile, formatPhoneForStore, sanitizePhoneInput } from "./phone"
 
 describe("normalizePhone", () => {
   it("converts Arabic-Indic digits to Western", () => {
@@ -51,5 +51,35 @@ describe("formatPhoneForStore", () => {
   it("returns normalized digits-only form", () => {
     expect(formatPhoneForStore("010 123-456-78")).toBe("01012345678")
     expect(formatPhoneForStore("٠١٠١٢٣٤٥٦٧٨")).toBe("01012345678")
+  })
+})
+
+describe("sanitizePhoneInput", () => {
+  it("converts Arabic-Indic digits to Western digits", () => {
+    expect(sanitizePhoneInput("٠١٠١٢٣٤٥٦٧٨")).toBe("01012345678")
+  })
+  it("strips letters", () => {
+    expect(sanitizePhoneInput("01a2b3c")).toBe("0123")
+  })
+  it("strips symbols and spaces", () => {
+    expect(sanitizePhoneInput("010-123 456")).toBe("010123456")
+  })
+  it("strips parentheses and dashes", () => {
+    expect(sanitizePhoneInput("(010) 123-45678")).toBe("01012345678")
+  })
+  it("truncates to 11 digits", () => {
+    expect(sanitizePhoneInput("012345678901234")).toBe("01234567890")
+  })
+  it("mixed Arabic-Indic and Western digits truncated to 11", () => {
+    expect(sanitizePhoneInput("٠١٠١٢٣٤٥٦٧٨٩٠")).toBe("01012345678")
+  })
+  it("returns empty string for empty input", () => {
+    expect(sanitizePhoneInput("")).toBe("")
+  })
+  it("returns empty string when all chars are non-digits", () => {
+    expect(sanitizePhoneInput("abc-xyz")).toBe("")
+  })
+  it("preserves exactly 11 Western digits unchanged", () => {
+    expect(sanitizePhoneInput("01012345678")).toBe("01012345678")
   })
 })

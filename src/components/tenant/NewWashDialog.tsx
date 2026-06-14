@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PhoneInput } from "@/components/ui/phone-input"
 import {
   Select,
   SelectContent,
@@ -399,21 +400,18 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="new-wash-customer-phone">
-                {t("wash.customerPhone")}{" "}
-                <span className="text-muted-foreground text-xs">({t("common.optional")})</span>
-              </Label>
-              <Input
-                id="new-wash-customer-phone"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                disabled={submitting || (!!selectedVehicle && !!selectedVehicle.customer_id)}
-                className="min-h-[44px]"
-                autoComplete="off"
-                type="tel"
-              />
-            </div>
+            <PhoneInput
+              id="new-wash-customer-phone"
+              value={customerPhone}
+              onChange={setCustomerPhone}
+              disabled={submitting || (!!selectedVehicle && !!selectedVehicle.customer_id)}
+              label={
+                <>
+                  {t("wash.customerPhone")}{" "}
+                  <span className="text-muted-foreground text-xs">({t("common.optional")})</span>
+                </>
+              }
+            />
 
             {/* Package */}
             <div className="flex flex-col gap-1.5">

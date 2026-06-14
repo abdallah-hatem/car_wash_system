@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PhoneInput } from "@/components/ui/phone-input"
 import { useAuth } from "@/auth/AuthProvider"
 import { useCustomerMutations } from "@/lib/tenant/queries"
 import type { Customer } from "@/lib/tenant/customers"
@@ -110,21 +111,18 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Props)
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="customer-phone">
-                {t("customers.phone")}{" "}
-                <span className="text-muted-foreground text-xs">({t("common.optional")})</span>
-              </Label>
-              <Input
-                id="customer-phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                disabled={submitting}
-                className="min-h-[44px]"
-                autoComplete="off"
-                type="tel"
-              />
-            </div>
+            <PhoneInput
+              id="customer-phone"
+              value={phone}
+              onChange={setPhone}
+              disabled={submitting}
+              label={
+                <>
+                  {t("customers.phone")}{" "}
+                  <span className="text-muted-foreground text-xs">({t("common.optional")})</span>
+                </>
+              }
+            />
 
             {fieldError && (
               <p role="alert" className="text-sm text-destructive">

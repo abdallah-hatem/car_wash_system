@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PhoneInput } from "@/components/ui/phone-input"
 import { useAuth } from "@/auth/AuthProvider"
 import { useBranches, useEmployeeMutations } from "@/lib/tenant/queries"
 import type { Employee } from "@/lib/tenant/employees"
@@ -143,21 +144,18 @@ export function EmployeeDialog({ open, onOpenChange, employee, onSaved }: Props)
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="emp-phone">
-                {t("staff.phone")}{" "}
-                <span className="text-muted-foreground text-xs">({t("common.optional")})</span>
-              </Label>
-              <Input
-                id="emp-phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                disabled={submitting}
-                className="min-h-[44px]"
-                inputMode="tel"
-                autoComplete="off"
-              />
-            </div>
+            <PhoneInput
+              id="emp-phone"
+              value={phone}
+              onChange={setPhone}
+              disabled={submitting}
+              label={
+                <>
+                  {t("staff.phone")}{" "}
+                  <span className="text-muted-foreground text-xs">({t("common.optional")})</span>
+                </>
+              }
+            />
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="emp-branch">

@@ -140,7 +140,7 @@
     "plate_required": "Plate number is required.",
     "letters_required": "Please enter exactly 3 Arabic letters.",
     "digits_required": "Please enter 1 to 4 digits.",
-    "phone_invalid": "Enter a valid Egyptian mobile number (e.g. 01012345678)"
+    "phone_invalid": "Egyptian mobile: 11 digits starting 010, 011, 012, or 015"
   },
   "status": {
     "waiting": "Waiting",

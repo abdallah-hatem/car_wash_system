@@ -14,6 +14,26 @@ export function normalizePhone(input: string): string {
 }
 
 /**
+ * Sanitize a phone field value for real-time input:
+ * 1. Convert Arabic-Indic digits (٠-٩) to Western digits.
+ * 2. Strip every character that is not a digit (0-9).
+ * 3. Truncate to a maximum of 11 characters.
+ *
+ * Safe to call on every keystroke / paste event. The result
+ * contains only Western digit characters, at most 11 chars.
+ */
+export function sanitizePhoneInput(raw: string): string {
+  return [...(raw ?? "")]
+    .map((ch) => {
+      const ai = ARABIC_INDIC.indexOf(ch)
+      return ai >= 0 ? String(ai) : ch
+    })
+    .join("")
+    .replace(/\D/g, "")
+    .slice(0, 11)
+}
+
+/**
  * Return true if the normalized phone matches an Egyptian mobile number.
  * Valid prefixes: 010, 011, 012, 015. Total length: 11 digits.
  */
