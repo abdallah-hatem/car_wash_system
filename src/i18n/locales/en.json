@@ -260,6 +260,10 @@
       "generic": "Something went wrong. Please try again."
     }
   },
+  "pwa": {
+    "updateAvailable": "A new version is available",
+    "reload": "Reload"
+  },
   "admin": {
     "title": "Businesses",
     "newBusiness": "New business",
