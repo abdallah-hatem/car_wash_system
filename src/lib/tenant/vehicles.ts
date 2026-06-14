@@ -15,6 +15,7 @@ export interface Vehicle {
 
 export interface PlateMatch extends Vehicle {
   customer_name: string | null
+  customer_phone: string | null
 }
 
 export async function listVehiclesByCustomer(customerId: string): Promise<Vehicle[]> {
@@ -96,7 +97,7 @@ export async function searchVehiclesByPlate(term: string): Promise<PlateMatch[]>
   const esc = norm.replace(/[\\%_]/g, "\\$&")
   const { data, error } = await supabase
     .from("vehicles")
-    .select("id,customer_id,plate_number,plate_letters,plate_digits,make,model,color,created_at,customers(name)")
+    .select("id,customer_id,plate_number,plate_letters,plate_digits,make,model,color,created_at,customers(name,phone)")
     .ilike("plate_number", `%${esc}%`)
     .limit(20)
   if (error) throw error
@@ -110,7 +111,7 @@ export async function searchVehiclesByPlate(term: string): Promise<PlateMatch[]>
     model: string | null
     color: string | null
     created_at: string
-    customers: { name: string } | null
+    customers: { name: string; phone: string | null } | null
   }>).map((v) => ({
     id: v.id,
     customer_id: v.customer_id,
@@ -122,5 +123,6 @@ export async function searchVehiclesByPlate(term: string): Promise<PlateMatch[]>
     color: v.color,
     created_at: v.created_at,
     customer_name: v.customers?.name ?? null,
+    customer_phone: v.customers?.phone ?? null,
   }))
 }

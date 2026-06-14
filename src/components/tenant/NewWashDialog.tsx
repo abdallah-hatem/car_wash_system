@@ -24,7 +24,7 @@ import { searchVehiclesByPlate, type PlateMatch } from "@/lib/tenant/vehicles"
 import { listPackages, type Package } from "@/lib/tenant/packages"
 import { validateNewWash } from "@/lib/tenant/operations"
 import { validateEgyptianPlate } from "@/lib/tenant/validators"
-import { isValidEgyptianMobile, formatPhoneForStore } from "@/lib/tenant/phone"
+import { isValidEgyptianMobile, formatPhoneForStore, sanitizePhoneInput } from "@/lib/tenant/phone"
 import { PlateInput, type PlateValue } from "@/components/tenant/PlateInput"
 import { useWashOrderMutations, useCustomerMutations, useVehicleMutations } from "@/lib/tenant/queries"
 import { RowsSkeleton } from "@/components/ui/skeletons"
@@ -146,6 +146,7 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
     if (match.customer_name) {
       setCustomerName(match.customer_name)
     }
+    setCustomerPhone(match.customer_phone ? sanitizePhoneInput(match.customer_phone) : "")
   }
 
   function handleClearVehicle() {
