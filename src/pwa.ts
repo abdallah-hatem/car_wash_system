@@ -12,6 +12,23 @@
 import { registerSW } from "virtual:pwa-register"
 
 export function initPWA(showUpdateToast: () => void): () => void {
+  // In dev, never register a service worker — and proactively unregister any
+  // stale one (e.g. left over from when devOptions was enabled) and drop its
+  // caches, so HMR is never served a cached bundle (the "my fix doesn't show"
+  // bug). The SW is only active in production builds.
+  if (import.meta.env.DEV) {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((regs) => regs.forEach((r) => void r.unregister()))
+        .catch(() => {})
+      if (typeof caches !== "undefined") {
+        caches.keys().then((keys) => keys.forEach((k) => void caches.delete(k))).catch(() => {})
+      }
+    }
+    return () => {}
+  }
+
   const updateSW = registerSW({
     onNeedRefresh() {
       // A new SW is waiting — tell the app to show the update banner.

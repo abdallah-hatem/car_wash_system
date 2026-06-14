@@ -124,6 +124,30 @@ export async function listCustomersPaged(
   return { rows, total: ids.length }
 }
 
+export async function getCustomer(id: string): Promise<Customer | null> {
+  const { data, error } = await supabase
+    .from("customers")
+    .select("id,name,phone,created_at,vehicles(count)")
+    .eq("id", id)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) return null
+  const c = data as unknown as {
+    id: string
+    name: string
+    phone: string | null
+    created_at: string
+    vehicles: Array<{ count: number }>
+  }
+  return {
+    id: c.id,
+    name: c.name,
+    phone: c.phone,
+    created_at: c.created_at,
+    vehicle_count: c.vehicles?.[0]?.count ?? 0,
+  }
+}
+
 export async function listCustomers(): Promise<Customer[]> {
   const { data, error } = await supabase
     .from("customers")

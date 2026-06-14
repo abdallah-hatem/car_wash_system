@@ -52,6 +52,14 @@ export function useEmployeesPaged(page: number) {
   return useQuery({ queryKey: ["employees", "page", page] as const, queryFn: () => employees.listEmployeesPaged(page, PAGE_SIZE), placeholderData: keepPreviousData })
 }
 
+export function useCustomer(id: string | null) {
+  return useQuery({
+    queryKey: ["customers", "detail", id] as const,
+    queryFn: () => customers.getCustomer(id!),
+    enabled: !!id,
+  })
+}
+
 export function useCustomersPaged(page: number, search = "") {
   return useQuery({
     queryKey: ["customers", "page", page, search] as const,

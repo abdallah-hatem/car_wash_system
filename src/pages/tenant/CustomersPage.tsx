@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react"
+import { useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { Car, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import {
@@ -15,13 +16,13 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Pager } from "@/components/ui/pager"
 import { TableSkeleton } from "@/components/ui/skeletons"
 import { CustomerDialog } from "@/components/tenant/CustomerDialog"
-import { CustomerDetailDialog } from "@/components/tenant/CustomerDetailDialog"
 import { useCustomersPaged, useCustomerMutations } from "@/lib/tenant/queries"
 import { PAGE_SIZE } from "@/lib/pagination"
 import type { Customer } from "@/lib/tenant/customers"
 
 export default function CustomersPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
 
   const [page, setPage] = useState(0)
   const [search, setSearch] = useState("")
@@ -60,8 +61,6 @@ export default function CustomersPage() {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [confirmCustomer, setConfirmCustomer] = useState<Customer | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
-  const [detailOpen, setDetailOpen] = useState(false)
-  const [detailCustomer, setDetailCustomer] = useState<Customer | null>(null)
 
   function handleNew() {
     setEditing(null)
@@ -74,8 +73,7 @@ export default function CustomersPage() {
   }
 
   function handleManage(customer: Customer) {
-    setDetailCustomer(customer)
-    setDetailOpen(true)
+    navigate(`/app/customers/${customer.id}`)
   }
 
   function handleDeleteClick(customer: Customer) {
@@ -158,7 +156,15 @@ export default function CustomersPage() {
               <TableBody>
                 {rows.map((customer) => (
                   <TableRow key={customer.id}>
-                    <TableCell className="font-medium">{customer.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <button
+                        type="button"
+                        onClick={() => handleManage(customer)}
+                        className="text-start hover:underline focus-visible:underline outline-none"
+                      >
+                        {customer.name}
+                      </button>
+                    </TableCell>
                     <TableCell>{customer.phone ?? "—"}</TableCell>
                     <TableCell>{customer.vehicle_count}</TableCell>
                     <TableCell>
@@ -210,14 +216,6 @@ export default function CustomersPage() {
         onOpenChange={setDialogOpen}
         customer={editing}
       />
-
-      {detailCustomer && (
-        <CustomerDetailDialog
-          open={detailOpen}
-          onOpenChange={setDetailOpen}
-          customer={detailCustomer}
-        />
-      )}
 
       <ConfirmDialog
         open={confirmOpen}

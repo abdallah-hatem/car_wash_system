@@ -102,6 +102,8 @@
     "detailTitle": "Customer details",
     "washHistory": "Wash history",
     "noWashes": "No washes yet.",
+    "back": "Back to customers",
+    "notFound": "Customer not found",
     "errors": {
       "generic": "Something went wrong. Please try again."
     }

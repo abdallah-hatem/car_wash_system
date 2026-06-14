@@ -6,6 +6,7 @@ import BranchesPage from "./pages/tenant/BranchesPage"
 import PackagesPage from "./pages/tenant/PackagesPage"
 import StaffPage from "./pages/tenant/StaffPage"
 import CustomersPage from "./pages/tenant/CustomersPage"
+import CustomerDetailPage from "./pages/tenant/CustomerDetailPage"
 import QueuePage from "./pages/tenant/QueuePage"
 import WashesPage from "./pages/tenant/WashesPage"
 import DashboardPage from "./pages/tenant/DashboardPage"
@@ -66,6 +67,10 @@ export const router = createBrowserRouter([
               {
                 path: "customers",
                 element: <CustomersPage />,
+              },
+              {
+                path: "customers/:id",
+                element: <CustomerDetailPage />,
               },
               {
                 path: "queue",

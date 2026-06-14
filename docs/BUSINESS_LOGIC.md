@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-14 (Phase 2 web push core; Washes history filterable by plate number; customer wash history shown in CustomerDetailDialog).
+Last updated: 2026-06-15 (dedicated customer detail page replacing the dialog; status pill colors amber/blue/green/red; tables horizontally scroll on small screens; Egyptian mobile phone validation; New-Wash vehicle required; branch switcher polish; dev service worker disabled).
 
 ---
 
@@ -189,7 +189,7 @@ Vehicles use the **Egyptian licence plate format**: 3 Arabic letters + 1–4 dig
   `new Error("duplicate")`; VehicleDialog and NewWashDialog surface `t("vehicles.errors.duplicate")`
   ("A vehicle with this plate already exists.") with the dialog staying open.
 
-**Per-customer vehicles (CustomerDetailDialog):**
+**Per-customer vehicles + wash history (dedicated page `/app/customers/:id`):**
 - Opened from the "Vehicles" button in the customer list row, or by clicking a plate
   search result.
 - Shows customer name + phone, then a table of linked vehicles (plate, make, model,
@@ -441,7 +441,7 @@ function is tested directly (the webhook itself is a cloud step).
   customer CRUD, per-customer vehicle CRUD (nested detail dialog), debounced plate search
   with wildcard-escaped `ilike` query, RTL/responsive at 375 px–820 px, pgTAP RLS
   isolation test `0012_customers_vehicles_rls_test.sql` (5 assertions: isolation,
-  plate search, audit trigger). `CustomerDetailDialog` overflow fix applied
+  plate search, audit trigger). `the customer detail page (`/app/customers/:id`)` overflow fix applied
   (`min-w-0` on flex column + table wrapper). See section 6.5.
 - **Egyptian plate model (Task 5):** DONE. Vehicles use Egyptian structured plate:
   3 Arabic letters + 1–4 digits stored as `plate_letters`/`plate_digits` +

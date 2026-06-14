@@ -47,9 +47,11 @@ export default defineConfig({
           },
         ],
       },
+      // Service worker is DISABLED in dev — when enabled it caches bundles and
+      // serves them even as code changes, fighting HMR and showing stale UI.
+      // The SW is exercised via `npm run build && npm run preview` and in prod.
       devOptions: {
-        enabled: true,
-        type: "module",
+        enabled: false,
       },
     }),
   ],
