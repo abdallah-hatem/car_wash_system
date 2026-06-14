@@ -88,7 +88,7 @@ export default function StaffPage() {
       </div>
 
       {isLoading ? (
-        <TableSkeleton columns={5} />
+        <TableSkeleton columns={5} minWidth="min-w-[640px]" />
       ) : isError ? (
         <div className="flex flex-col gap-2">
           <p role="alert" className="text-sm text-destructive">{t("staff.errors.generic")}</p>
@@ -101,7 +101,7 @@ export default function StaffPage() {
       ) : (
         <>
           <div className="overflow-x-auto rounded-md border">
-            <Table>
+            <Table className="min-w-[640px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-start">{t("staff.name")}</TableHead>

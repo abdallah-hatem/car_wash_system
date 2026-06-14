@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { canTransition, isPaid, remaining } from "@/lib/tenant/operations"
+import { statusBadgeClass } from "@/lib/tenant/status-style"
 import { type QueueOrder } from "@/lib/tenant/wash-orders"
 import { useWashOrderMutations } from "@/lib/tenant/queries"
 import { AssignStartDialog } from "./AssignStartDialog"
@@ -70,13 +71,6 @@ export function WashCard({ order, branchId }: Props) {
     }
   }
 
-  const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-    waiting: "secondary",
-    in_progress: "default",
-    done: "outline",
-    cancelled: "destructive",
-  }
-
   return (
     <Card className="flex flex-col gap-0">
       <CardHeader className="pb-2 gap-1">
@@ -84,7 +78,7 @@ export function WashCard({ order, branchId }: Props) {
           <span className="font-semibold text-base tracking-wide">
             {order.plate_number ?? "—"}
           </span>
-          <Badge variant={statusVariant[order.status] ?? "secondary"}>
+          <Badge variant="outline" className={statusBadgeClass(order.status)}>
             {t(`status.${order.status}`)}
           </Badge>
         </div>

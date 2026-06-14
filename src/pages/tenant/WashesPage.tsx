@@ -23,6 +23,7 @@ import {
 import { useBranch } from "@/lib/tenant/branch-context"
 import { useWashes, useBranches, useEmployees } from "@/lib/tenant/queries"
 import { isPaid } from "@/lib/tenant/operations"
+import { statusBadgeClass } from "@/lib/tenant/status-style"
 import { diffMinutes, formatDuration, defaultDateRange } from "@/lib/tenant/duration"
 import { PAGE_SIZE } from "@/lib/pagination"
 import type { WashFilters } from "@/lib/tenant/washes"
@@ -31,13 +32,6 @@ import { DateRangePicker } from "@/components/tenant/DateRangePicker"
 import { TableSkeleton } from "@/components/ui/skeletons"
 
 const STATUSES: WashStatus[] = ["waiting", "in_progress", "done", "cancelled"]
-
-const statusVariant: Record<WashStatus, "default" | "secondary" | "destructive" | "outline"> = {
-  waiting: "secondary",
-  in_progress: "default",
-  done: "outline",
-  cancelled: "destructive",
-}
 
 export default function WashesPage() {
   const { t, i18n } = useTranslation()
@@ -179,7 +173,7 @@ export default function WashesPage() {
 
       {/* States */}
       {isLoading ? (
-        <TableSkeleton columns={12} />
+        <TableSkeleton columns={12} minWidth="min-w-[1000px]" />
       ) : isError ? (
         <div className="flex flex-col gap-2">
           <p role="alert" className="text-sm text-destructive">{t("washes.errors.generic")}</p>
@@ -192,7 +186,7 @@ export default function WashesPage() {
       ) : (
         <>
           <div className="overflow-x-auto rounded-md border">
-            <Table>
+            <Table className="min-w-[1000px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-start">{t("washes.colQueued")}</TableHead>
@@ -224,7 +218,7 @@ export default function WashesPage() {
                       <TableCell>{row.package_name ?? "—"}</TableCell>
                       <TableCell>{row.branch_name ?? "—"}</TableCell>
                       <TableCell>
-                        <Badge variant={statusVariant[row.status] ?? "secondary"}>
+                        <Badge variant="outline" className={statusBadgeClass(row.status)}>
                           {t(`status.${row.status}`)}
                         </Badge>
                       </TableCell>

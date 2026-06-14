@@ -56,7 +56,7 @@ export default function BusinessesPage() {
 
       {/* Table area */}
       {isLoading ? (
-        <TableSkeleton columns={4} />
+        <TableSkeleton columns={4} minWidth="min-w-[640px]" />
       ) : isError ? (
         <p role="alert" className="text-sm text-destructive">
           {t("admin.errors.generic")}
@@ -66,7 +66,7 @@ export default function BusinessesPage() {
       ) : (
         <>
           <div className="overflow-x-auto rounded-md border">
-            <Table>
+            <Table className="min-w-[640px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-start">{t("admin.colName")}</TableHead>

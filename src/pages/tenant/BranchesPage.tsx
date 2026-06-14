@@ -84,7 +84,7 @@ export default function BranchesPage() {
       )}
 
       {isLoading ? (
-        <TableSkeleton columns={4} />
+        <TableSkeleton columns={4} minWidth="min-w-[640px]" />
       ) : isError ? (
         <div className="flex flex-col gap-2">
           <p role="alert" className="text-sm text-destructive">{t("branches.errors.generic")}</p>
@@ -97,7 +97,7 @@ export default function BranchesPage() {
       ) : (
         <>
           <div className="overflow-x-auto rounded-md border">
-            <Table>
+            <Table className="min-w-[640px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-start">{t("branches.name")}</TableHead>
