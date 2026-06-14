@@ -81,7 +81,7 @@ export default function PackagesPage() {
       </div>
 
       {isLoading ? (
-        <TableSkeleton columns={5} minWidth="min-w-[640px]" />
+        <TableSkeleton columns={5} />
       ) : isError ? (
         <div className="flex flex-col gap-2">
           <p role="alert" className="text-sm text-destructive">{t("packages.errors.generic")}</p>
@@ -94,7 +94,7 @@ export default function PackagesPage() {
       ) : (
         <>
           <div className="overflow-x-auto rounded-md border">
-            <Table className="min-w-[640px]">
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-start">{t("packages.name")}</TableHead>

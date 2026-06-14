@@ -173,7 +173,7 @@ export default function WashesPage() {
 
       {/* States */}
       {isLoading ? (
-        <TableSkeleton columns={12} minWidth="min-w-[1000px]" />
+        <TableSkeleton columns={12} />
       ) : isError ? (
         <div className="flex flex-col gap-2">
           <p role="alert" className="text-sm text-destructive">{t("washes.errors.generic")}</p>
@@ -186,7 +186,7 @@ export default function WashesPage() {
       ) : (
         <>
           <div className="overflow-x-auto rounded-md border">
-            <Table className="min-w-[1000px]">
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-start">{t("washes.colQueued")}</TableHead>

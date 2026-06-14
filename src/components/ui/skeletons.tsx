@@ -19,17 +19,14 @@ function barWidth(rowIdx: number, colIdx: number): string {
 /**
  * TableSkeleton — mimics a table with a header row + N body rows of skeleton cells.
  * Renders inside a `rounded-md border` wrapper matching the real table containers.
- * Pass `minWidth` (e.g. "min-w-[1000px]") to match the real table's min-width so the
- * skeleton scrolls at the same breakpoint as the live table.
+ * The min-width floor (650px) is provided by the shared Table component.
  */
 export function TableSkeleton({
   columns,
   rows = 6,
-  minWidth,
 }: {
   columns: number
   rows?: number
-  minWidth?: string
 }) {
   const { t } = useTranslation()
   return (
@@ -39,7 +36,7 @@ export function TableSkeleton({
       aria-busy="true"
     >
       <span className="sr-only">{t("common.loading")}</span>
-      <Table className={minWidth}>
+      <Table>
         <TableHeader>
           <TableRow>
             {Array.from({ length: columns }).map((_, i) => (

@@ -127,7 +127,7 @@ export default function CustomersPage() {
       )}
 
       {isLoading ? (
-        <TableSkeleton columns={4} minWidth="min-w-[640px]" />
+        <TableSkeleton columns={4} />
       ) : isError ? (
         <div className="flex flex-col gap-2">
           <p role="alert" className="text-sm text-destructive">{t("customers.errors.generic")}</p>
@@ -144,7 +144,7 @@ export default function CustomersPage() {
               isPlaceholderData ? "opacity-60" : "opacity-100"
             }`}
           >
-            <Table className="min-w-[640px]">
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-start">{t("customers.name")}</TableHead>

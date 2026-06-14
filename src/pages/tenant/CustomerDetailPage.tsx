@@ -192,7 +192,7 @@ export default function CustomerDetailPage() {
           <p className="text-sm text-muted-foreground">{t("vehicles.empty")}</p>
         ) : (
           <div className="w-full min-w-0 overflow-x-auto rounded-md border">
-            <Table className="min-w-[640px]">
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-start">{t("vehicles.plate")}</TableHead>
@@ -247,12 +247,12 @@ export default function CustomerDetailPage() {
         <h2 className="font-semibold">{t("customers.washHistory")}</h2>
 
         {washesLoading ? (
-          <TableSkeleton columns={6} rows={3} minWidth="min-w-[640px]" />
+          <TableSkeleton columns={6} rows={3} />
         ) : washes.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("customers.noWashes")}</p>
         ) : (
           <div className="w-full min-w-0 overflow-x-auto rounded-md border">
-            <Table className="min-w-[640px]">
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-start">{t("washes.colQueued")}</TableHead>
