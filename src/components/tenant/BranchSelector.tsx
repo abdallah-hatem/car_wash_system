@@ -39,13 +39,22 @@ export function BranchSelector() {
   }
 
   return (
-    <Select value={branchId ?? ""} onValueChange={(id) => setBranchId(id)}>
+    <Select
+      value={branchId ?? ""}
+      onValueChange={(id) => {
+        setBranchId(id)
+        // Belt-and-suspenders: drop focus after a selection so no ring lingers.
+        requestAnimationFrame(() => (document.activeElement as HTMLElement | null)?.blur?.())
+      }}
+    >
       <SelectTrigger
         className="
           min-h-[44px] w-auto min-w-[90px] max-w-[160px] shrink gap-1.5 text-sm
           bg-muted/60 hover:bg-muted border-border
+          outline-none ring-0 ring-offset-0
           focus:outline-none focus:ring-0 focus:ring-offset-0
-          focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/25 focus-visible:ring-offset-1
+          data-[state=open]:ring-0
           transition-colors
         "
         aria-label={t("queue.branch")}
@@ -53,7 +62,9 @@ export function BranchSelector() {
         <GitBranch className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
         <SelectValue placeholder={t("queue.branch")} />
       </SelectTrigger>
-      <SelectContent>
+      {/* Prevent Radix from re-focusing the trigger on close — that refocus was
+          showing a lingering (teal) focus ring after selecting. */}
+      <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
         {branches.map((b) => (
           <SelectItem key={b.id} value={b.id}>
             {b.name}
