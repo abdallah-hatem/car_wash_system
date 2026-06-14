@@ -1,7 +1,9 @@
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
+import { Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Pager } from "@/components/ui/pager"
 import {
   Table,
@@ -43,15 +45,30 @@ export default function WashesPage() {
 
   const defaults = defaultDateRange(new Date())
 
+  const [plateInput, setPlateInput] = useState("")
   const [filters, setFilters] = useState<WashFilters>({
     branchId: branchId ?? "all",
     status: "all",
     employeeId: "all",
     from: defaults.from,
     to: defaults.to,
+    plate: "",
   })
 
   const [page, setPage] = useState(0)
+
+  // Debounce the plate input 300 ms before committing to filters
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      setPage(0)
+      setFilters((prev) => ({ ...prev, plate: plateInput }))
+    }, 300)
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [plateInput])
   const { data: washData = { rows: [], total: 0 }, isLoading, isError, refetch } = useWashes(filters, page)
   const rows = washData.rows
   const total = washData.total
@@ -142,6 +159,21 @@ export default function WashesPage() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Plate search */}
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-muted-foreground">{t("washes.colPlate")}</label>
+          <div className="relative">
+            <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              value={plateInput}
+              onChange={(e) => setPlateInput(e.target.value)}
+              placeholder={t("washes.platePlaceholder")}
+              className="min-h-[44px] min-w-[180px] ps-9"
+            />
+          </div>
         </div>
       </div>
 

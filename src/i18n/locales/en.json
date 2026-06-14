@@ -100,6 +100,8 @@
     "empty": "No customers yet.",
     "deleteWarn": "Deleting this customer will unlink their vehicles. Continue?",
     "detailTitle": "Customer details",
+    "washHistory": "Wash history",
+    "noWashes": "No washes yet.",
     "errors": {
       "generic": "Something went wrong. Please try again."
     }
@@ -238,6 +240,7 @@
     "colPrice": "Price",
     "colPaid": "Paid",
     "colReason": "Reason",
+    "platePlaceholder": "Search by plate",
     "empty": "No washes found for the selected filters.",
     "capped": "Showing the {{n}} most recent washes. Narrow your filters to see more.",
     "errors": {

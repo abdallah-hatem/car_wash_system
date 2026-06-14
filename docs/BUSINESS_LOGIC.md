@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-14 (Phase 2 web push core: push_subscriptions table + RLS, notify-wash-event edge fn, Enable-notifications toggle).
+Last updated: 2026-06-14 (Phase 2 web push core; Washes history filterable by plate number; customer wash history shown in CustomerDetailDialog).
 
 ---
 
@@ -196,6 +196,11 @@ Vehicles use the **Egyptian licence plate format**: 3 Arabic letters + 1–4 dig
   color) with **Add vehicle / Edit vehicle / Delete vehicle** actions.
 - Vehicle count in the customer list row reflects the live count.
 - All vehicle mutations trigger `onChanged()` to refresh the outer customer list.
+- Below the vehicles, a **Wash history** table lists the customer's recent washes (date,
+  plate, package, status, price, paid/unpaid) via `listCustomerWashes(customer_id)`
+  (`useCustomerWashes`, keyed under `["washes"]` so wash mutations refresh it).
+- The **Washes** history page also has a debounced plate-number search (numeral-agnostic via
+  `normalizePlateSearch`, inner-joins `vehicles` when active).
 
 **Plate search (PlateSearch component):**
 - Debounced (300 ms) `ilike '%<normalised_term>%'` query against `vehicles.plate_number`.

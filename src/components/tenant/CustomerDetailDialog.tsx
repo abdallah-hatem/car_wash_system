@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
   Table,
@@ -18,10 +19,19 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { VehicleDialog } from "@/components/tenant/VehicleDialog"
-import { RowsSkeleton } from "@/components/ui/skeletons"
-import { useVehiclesByCustomer, useVehicleMutations } from "@/lib/tenant/queries"
+import { RowsSkeleton, TableSkeleton } from "@/components/ui/skeletons"
+import { useVehiclesByCustomer, useVehicleMutations, useCustomerWashes } from "@/lib/tenant/queries"
+import { isPaid } from "@/lib/tenant/operations"
+import type { WashStatus } from "@/lib/tenant/operations"
 import type { Vehicle } from "@/lib/tenant/vehicles"
 import type { Customer } from "@/lib/tenant/customers"
+
+const statusVariant: Record<WashStatus, "default" | "secondary" | "destructive" | "outline"> = {
+  waiting: "secondary",
+  in_progress: "default",
+  done: "outline",
+  cancelled: "destructive",
+}
 
 interface Props {
   open: boolean
@@ -31,9 +41,13 @@ interface Props {
 }
 
 export function CustomerDetailDialog({ open, onOpenChange, customer, onChanged }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   const { data: vehicles = [], isLoading, isError } = useVehiclesByCustomer(open ? customer.id : null)
+  const {
+    data: washes = [],
+    isLoading: washesLoading,
+  } = useCustomerWashes(open ? customer.id : null)
   const mutations = useVehicleMutations()
 
   const [vehicleDialogOpen, setVehicleDialogOpen] = useState(false)
@@ -158,6 +172,55 @@ export function CustomerDetailDialog({ open, onOpenChange, customer, onChanged }
                         </TableCell>
                       </TableRow>
                     ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            {/* Wash history */}
+            <h2 className="font-semibold text-sm pt-2">{t("customers.washHistory")}</h2>
+
+            {washesLoading ? (
+              <TableSkeleton columns={5} rows={3} />
+            ) : washes.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("customers.noWashes")}</p>
+            ) : (
+              <div className="w-full min-w-0 overflow-x-auto rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-start">{t("washes.colQueued")}</TableHead>
+                      <TableHead className="text-start">{t("washes.colPlate")}</TableHead>
+                      <TableHead className="text-start">{t("washes.colPackage")}</TableHead>
+                      <TableHead className="text-start">{t("washes.colStatus")}</TableHead>
+                      <TableHead className="text-start">{t("washes.colPrice")}</TableHead>
+                      <TableHead className="text-start">{t("washes.colPaid")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {washes.map((w) => {
+                      const paid = isPaid(w.price, w.payments)
+                      return (
+                        <TableRow key={w.id}>
+                          <TableCell className="whitespace-nowrap text-sm">
+                            {new Date(w.created_at).toLocaleDateString(i18n.language)}
+                          </TableCell>
+                          <TableCell className="text-sm">{w.plate_number ?? "—"}</TableCell>
+                          <TableCell className="text-sm">{w.package_name ?? "—"}</TableCell>
+                          <TableCell>
+                            <Badge variant={statusVariant[w.status] ?? "secondary"}>
+                              {t(`status.${w.status}`)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">{w.price}</TableCell>
+                          <TableCell>
+                            <Badge variant={paid ? "default" : "destructive"}>
+                              {paid ? t("wash.paid") : t("wash.unpaid")}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
                   </TableBody>
                 </Table>
               </div>
