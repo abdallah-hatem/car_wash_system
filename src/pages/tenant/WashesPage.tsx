@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { Search } from "lucide-react"
+import { Eye, Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,7 +25,7 @@ import { useBranch } from "@/lib/tenant/branch-context"
 import { useWashes, useBranches, useEmployees } from "@/lib/tenant/queries"
 import { isPaid } from "@/lib/tenant/operations"
 import { statusBadgeClass } from "@/lib/tenant/status-style"
-import { diffMinutes, formatDuration, defaultDateRange } from "@/lib/tenant/duration"
+import { defaultDateRange } from "@/lib/tenant/duration"
 import { PAGE_SIZE } from "@/lib/pagination"
 import type { WashFilters } from "@/lib/tenant/washes"
 import type { WashStatus } from "@/lib/tenant/operations"
@@ -175,7 +175,7 @@ export default function WashesPage() {
 
       {/* States */}
       {isLoading ? (
-        <TableSkeleton columns={12} />
+        <TableSkeleton columns={8} />
       ) : isError ? (
         <div className="flex flex-col gap-2">
           <p role="alert" className="text-sm text-destructive">{t("washes.errors.generic")}</p>
@@ -197,33 +197,19 @@ export default function WashesPage() {
                   <TableHead className="text-start">{t("washes.colPackage")}</TableHead>
                   <TableHead className="text-start">{t("washes.colBranch")}</TableHead>
                   <TableHead className="text-start">{t("washes.colStatus")}</TableHead>
-                  <TableHead className="text-start">{t("washes.colEmployee")}</TableHead>
-                  <TableHead className="text-start">{t("washes.colWait")}</TableHead>
-                  <TableHead className="text-start">{t("washes.colService")}</TableHead>
-                  <TableHead className="text-start">{t("washes.colPrice")}</TableHead>
                   <TableHead className="text-start">{t("washes.colPaid")}</TableHead>
-                  <TableHead className="text-start">{t("washes.colReason")}</TableHead>
+                  <TableHead className="text-start">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {rows.map((row) => {
                   const paid = isPaid(row.price, row.payments)
-                  const wait = formatDuration(diffMinutes(row.created_at, row.started_at))
-                  const service = formatDuration(diffMinutes(row.started_at, row.completed_at))
                   return (
                     <TableRow key={row.id}>
                       <TableCell className="whitespace-nowrap text-sm">
                         {new Date(row.created_at).toLocaleString(i18n.language)}
                       </TableCell>
-                      <TableCell>
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/app/washes/${row.id}`)}
-                          className="hover:underline text-start font-medium min-h-[44px] flex items-center"
-                        >
-                          {row.plate_number ?? "—"}
-                        </button>
-                      </TableCell>
+                      <TableCell className="font-medium">{row.plate_number ?? "—"}</TableCell>
                       <TableCell>{row.customer_name ?? "—"}</TableCell>
                       <TableCell>{row.package_name ?? "—"}</TableCell>
                       <TableCell>{row.branch_name ?? "—"}</TableCell>
@@ -232,17 +218,22 @@ export default function WashesPage() {
                           {t(`status.${row.status}`)}
                         </Badge>
                       </TableCell>
-                      <TableCell>{row.employee_name ?? "—"}</TableCell>
-                      <TableCell>{wait}</TableCell>
-                      <TableCell>{service}</TableCell>
-                      <TableCell>{row.price}</TableCell>
                       <TableCell>
                         <Badge variant={paid ? "default" : "destructive"}>
                           {paid ? t("wash.paid") : t("wash.unpaid")}
                         </Badge>
                       </TableCell>
-                      <TableCell className="max-w-[200px] truncate text-sm">
-                        {row.cancellation_reason ?? "—"}
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => navigate(`/app/washes/${row.id}`)}
+                          aria-label={t("common.view")}
+                          title={t("common.view")}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   )
