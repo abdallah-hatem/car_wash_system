@@ -15,6 +15,7 @@ import { useAuth } from "@/auth/AuthProvider"
 import { useCustomerMutations } from "@/lib/tenant/queries"
 import type { Customer } from "@/lib/tenant/customers"
 import { validateCustomer } from "@/lib/tenant/validators"
+import { isValidEgyptianMobile, formatPhoneForStore } from "@/lib/tenant/phone"
 
 interface Props {
   open: boolean
@@ -59,16 +60,23 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Props)
       return
     }
 
+    if (phone.trim() && !isValidEgyptianMobile(phone)) {
+      setFieldError(t("validation.phone_invalid"))
+      return
+    }
+
     if (!customer && !claims.tenantId) {
       setFieldError(t("customers.errors.generic"))
       return
     }
 
+    const normalizedPhone = phone.trim() ? formatPhoneForStore(phone) : null
+
     try {
       if (customer) {
-        await mutations.update.mutateAsync({ id: customer.id, input: { name, phone: phone || null } })
+        await mutations.update.mutateAsync({ id: customer.id, input: { name, phone: normalizedPhone } })
       } else {
-        await mutations.create.mutateAsync({ tenantId: claims.tenantId!, input: { name, phone: phone || null } })
+        await mutations.create.mutateAsync({ tenantId: claims.tenantId!, input: { name, phone: normalizedPhone } })
       }
       handleOpenChange(false)
       onSaved?.()

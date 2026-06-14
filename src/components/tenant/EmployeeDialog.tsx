@@ -22,6 +22,7 @@ import { useAuth } from "@/auth/AuthProvider"
 import { useBranches, useEmployeeMutations } from "@/lib/tenant/queries"
 import type { Employee } from "@/lib/tenant/employees"
 import { validateEmployee } from "@/lib/tenant/validators"
+import { isValidEgyptianMobile, formatPhoneForStore } from "@/lib/tenant/phone"
 
 interface Props {
   open: boolean
@@ -75,12 +76,18 @@ export function EmployeeDialog({ open, onOpenChange, employee, onSaved }: Props)
       return
     }
 
+    if (phone.trim() && !isValidEgyptianMobile(phone)) {
+      setFieldError(t("validation.phone_invalid"))
+      return
+    }
+
     if (!employee && !claims.tenantId) {
       setFieldError(t("staff.errors.generic"))
       return
     }
 
     const resolvedBranchId = branchId === NO_BRANCH ? null : branchId
+    const normalizedPhone = phone.trim() ? formatPhoneForStore(phone) : null
 
     try {
       if (employee) {
@@ -88,7 +95,7 @@ export function EmployeeDialog({ open, onOpenChange, employee, onSaved }: Props)
           id: employee.id,
           input: {
             name,
-            phone: phone || null,
+            phone: normalizedPhone,
             branch_id: resolvedBranchId,
             is_active: isActive,
           },
@@ -98,7 +105,7 @@ export function EmployeeDialog({ open, onOpenChange, employee, onSaved }: Props)
           tenantId: claims.tenantId!,
           input: {
             name,
-            phone: phone || null,
+            phone: normalizedPhone,
             branch_id: resolvedBranchId,
             is_active: isActive,
           },

@@ -55,10 +55,21 @@ describe("payment math", () => {
   })
 })
 describe("validateNewWash", () => {
-  it("requires a package and positive price", () => {
-    expect(validateNewWash({ package_id: "", price: 10 })).toBe("package_required")
-    expect(validateNewWash({ package_id: "p1", price: 0 })).toBe("price_invalid")
-    expect(validateNewWash({ package_id: "p1", price: 25 })).toBeNull()
+  it("requires a package", () => {
+    expect(validateNewWash({ package_id: "", price: 10, vehicle_id: "v1" })).toBe("package_required")
+  })
+  it("requires a positive price", () => {
+    expect(validateNewWash({ package_id: "p1", price: 0, vehicle_id: "v1" })).toBe("price_invalid")
+  })
+  it("requires a vehicle (selected or new)", () => {
+    expect(validateNewWash({ package_id: "p1", price: 25 })).toBe("vehicle_required")
+    expect(validateNewWash({ package_id: "p1", price: 25, vehicle_id: null })).toBe("vehicle_required")
+  })
+  it("passes when vehicle is selected by id", () => {
+    expect(validateNewWash({ package_id: "p1", price: 25, vehicle_id: "v1" })).toBeNull()
+  })
+  it("passes when a new vehicle is being created", () => {
+    expect(validateNewWash({ package_id: "p1", price: 25, has_new_vehicle: true })).toBeNull()
   })
 })
 describe("validateCancelReason", () => {

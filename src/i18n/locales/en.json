@@ -137,7 +137,8 @@
     "price_invalid": "Price must be a positive number.",
     "plate_required": "Plate number is required.",
     "letters_required": "Please enter exactly 3 Arabic letters.",
-    "digits_required": "Please enter 1 to 4 digits."
+    "digits_required": "Please enter 1 to 4 digits.",
+    "phone_invalid": "Enter a valid Egyptian mobile number (e.g. 01012345678)"
   },
   "status": {
     "waiting": "Waiting",
@@ -163,6 +164,7 @@
     "plate": "Plate number",
     "findOrAddVehicle": "Find or add vehicle",
     "newVehicle": "New vehicle",
+    "vehicleHelperText": "Select a car, or add a new one",
     "customer": "Customer",
     "customerName": "Customer name",
     "customerPhone": "Customer phone",
@@ -195,7 +197,8 @@
       "generic": "Something went wrong. Please try again.",
       "package_required": "Please select a package.",
       "price_invalid": "Price must be a positive number.",
-      "plate_required": "Plate number is required."
+      "plate_required": "Plate number is required.",
+      "vehicle_required": "Please select or add a vehicle."
     },
     "noStaffAtBranch": "No staff assigned to this branch — start without one or add staff."
   },

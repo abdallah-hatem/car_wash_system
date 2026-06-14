@@ -18,9 +18,15 @@ export function isPaid(price: number, payments: { amount: number }[]): boolean {
 export function remaining(price: number, payments: { amount: number }[]): number {
   return Math.max(0, Number(price) - amountPaid(payments))
 }
-export function validateNewWash(input: { package_id?: string; price?: number }): string | null {
+export function validateNewWash(input: {
+  package_id?: string
+  price?: number
+  vehicle_id?: string | null
+  has_new_vehicle?: boolean
+}): string | null {
   if (!input.package_id) return "package_required"
   if (input.price == null || Number.isNaN(input.price) || input.price <= 0) return "price_invalid"
+  if (!input.vehicle_id && !input.has_new_vehicle) return "vehicle_required"
   return null
 }
 
