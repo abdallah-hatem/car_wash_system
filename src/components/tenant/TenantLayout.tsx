@@ -37,7 +37,7 @@ function TenantLayoutInner() {
         </div>
       </header>
 
-      <div className="lg:grid lg:grid-cols-[220px_1fr]">
+      <div className="lg:grid lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="hidden lg:block border-e p-3">
           <SidebarNav />
         </aside>
@@ -51,7 +51,7 @@ function TenantLayoutInner() {
           </div>
         )}
 
-        <main className="p-4 sm:p-6">
+        <main className="p-4 sm:p-6 min-w-0">
           <Outlet />
         </main>
       </div>
