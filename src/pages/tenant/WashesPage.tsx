@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react"
+import { useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -35,6 +36,7 @@ const STATUSES: WashStatus[] = ["waiting", "in_progress", "done", "cancelled"]
 
 export default function WashesPage() {
   const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
   const { branchId } = useBranch()
 
   const defaults = defaultDateRange(new Date())
@@ -213,7 +215,15 @@ export default function WashesPage() {
                       <TableCell className="whitespace-nowrap text-sm">
                         {new Date(row.created_at).toLocaleString(i18n.language)}
                       </TableCell>
-                      <TableCell>{row.plate_number ?? "—"}</TableCell>
+                      <TableCell>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/app/washes/${row.id}`)}
+                          className="hover:underline text-start font-medium min-h-[44px] flex items-center"
+                        >
+                          {row.plate_number ?? "—"}
+                        </button>
+                      </TableCell>
                       <TableCell>{row.customer_name ?? "—"}</TableCell>
                       <TableCell>{row.package_name ?? "—"}</TableCell>
                       <TableCell>{row.branch_name ?? "—"}</TableCell>

@@ -251,7 +251,23 @@
     "capped": "يتم عرض أحدث {{n}} غسيلة. قلّل نطاق الفلاتر لرؤية المزيد.",
     "errors": {
       "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
-    }
+    },
+    "back": "العودة إلى سجل الغسيل",
+    "notFound": "لم يتم العثور على الغسيل",
+    "sectionCustomer": "العميل",
+    "sectionVehicle": "المركبة",
+    "sectionService": "الخدمة",
+    "sectionTimeline": "التسلسل الزمني",
+    "sectionPayments": "المدفوعات",
+    "queued": "وقت الإضافة",
+    "started": "وقت البدء",
+    "completed": "وقت الاكتمال",
+    "cancelledAt": "وقت الإلغاء",
+    "waitDuration": "وقت الانتظار",
+    "serviceDuration": "مدة الخدمة",
+    "noPayments": "لا توجد مدفوعات مسجّلة",
+    "totalPaid": "إجمالي المدفوع",
+    "colPaidAt": "وقت الدفع"
   },
   "pager": {
     "range": "{{from}}–{{to}} من {{total}}",

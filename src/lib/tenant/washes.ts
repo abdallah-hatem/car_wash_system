@@ -149,3 +149,102 @@ export async function listCustomerWashes(
     payments: (o.payments ?? []).map((p) => ({ amount: Number(p.amount) })),
   }))
 }
+
+// ─── Single wash detail ───────────────────────────────────────────────────────
+
+export interface WashPayment {
+  amount: number
+  method: "cash" | "card" | "transfer"
+  paid_at: string
+}
+
+export interface WashDetail {
+  id: string
+  status: WashStatus
+  price: number
+  notes: string | null
+  created_at: string
+  started_at: string | null
+  completed_at: string | null
+  cancelled_at: string | null
+  cancellation_reason: string | null
+  // vehicle
+  plate_number: string | null
+  vehicle_make: string | null
+  vehicle_model: string | null
+  vehicle_color: string | null
+  // customer
+  customer_id: string | null
+  customer_name: string | null
+  customer_phone: string | null
+  // package / employee / branch
+  package_name: string | null
+  employee_name: string | null
+  branch_name: string | null
+  // payments (full detail)
+  payments: WashPayment[]
+}
+
+const SELECT_DETAIL =
+  "id,status,price,notes,created_at,started_at,completed_at,cancelled_at,cancellation_reason," +
+  "customer_id," +
+  "vehicles(plate_number,make,model,color)," +
+  "customers(name,phone)," +
+  "packages(name)," +
+  "employees(name)," +
+  "branches(name)," +
+  "payments(amount,method,paid_at)"
+
+export async function getWash(id: string): Promise<WashDetail | null> {
+  const { data, error } = await supabase
+    .from("wash_orders")
+    .select(SELECT_DETAIL)
+    .eq("id", id)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) return null
+  const o = data as unknown as {
+    id: string
+    status: WashStatus
+    price: number
+    notes: string | null
+    created_at: string
+    started_at: string | null
+    completed_at: string | null
+    cancelled_at: string | null
+    cancellation_reason: string | null
+    customer_id: string | null
+    vehicles: { plate_number: string; make: string | null; model: string | null; color: string | null } | null
+    customers: { name: string; phone: string | null } | null
+    packages: { name: string } | null
+    employees: { name: string } | null
+    branches: { name: string } | null
+    payments: { amount: number; method: "cash" | "card" | "transfer"; paid_at: string }[]
+  }
+  return {
+    id: o.id,
+    status: o.status,
+    price: Number(o.price),
+    notes: o.notes,
+    created_at: o.created_at,
+    started_at: o.started_at,
+    completed_at: o.completed_at,
+    cancelled_at: o.cancelled_at,
+    cancellation_reason: o.cancellation_reason,
+    customer_id: o.customer_id,
+    plate_number: o.vehicles?.plate_number ?? null,
+    vehicle_make: o.vehicles?.make ?? null,
+    vehicle_model: o.vehicles?.model ?? null,
+    vehicle_color: o.vehicles?.color ?? null,
+    customer_name: o.customers?.name ?? null,
+    customer_phone: o.customers?.phone ?? null,
+    package_name: o.packages?.name ?? null,
+    employee_name: o.employees?.name ?? null,
+    branch_name: o.branches?.name ?? null,
+    payments: (o.payments ?? []).map((p) => ({
+      amount: Number(p.amount),
+      method: p.method,
+      paid_at: p.paid_at,
+    })),
+  }
+}

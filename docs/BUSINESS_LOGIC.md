@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-15 (dedicated customer detail page replacing the dialog; status pill colors amber/blue/green/red; tables horizontally scroll on small screens; Egyptian mobile phone validation; New-Wash vehicle required; branch switcher polish; dev service worker disabled).
+Last updated: 2026-06-15 (wash detail page at /app/washes/:id, read-only; plate cell in Washes list navigates to it).
 
 ---
 
@@ -467,6 +467,8 @@ function is tested directly (the webhook itself is a cloud step).
   visibility). See section 6.7.
 
 **Plan 3 — COMPLETE (3A + 3B + 3C + 3D + Egyptian plate model all done).**
+
+- **Wash detail page (`/app/washes/:id`):** DONE. Read-only detail page for a single wash order — plate + status header, customer (name + phone, name links to `/app/customers/:id`), vehicle, service (package / price / employee / branch), timeline (queued / started / completed or cancelled-at + cancellation reason, wait and service durations), payments breakdown (table of amount + method + paid_at, total paid, remaining, paid/unpaid badge). Reachable by clicking the plate cell in the Washes history list.
 
 - **PWA + Web Push — Phase 1 (PWA foundation):** DONE. `vite-plugin-pwa` (injectManifest),
   custom `src/sw.ts` with precache + offline shell + `push`/`notificationclick` handlers,

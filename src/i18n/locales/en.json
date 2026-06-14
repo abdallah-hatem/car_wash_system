@@ -251,7 +251,23 @@
     "capped": "Showing the {{n}} most recent washes. Narrow your filters to see more.",
     "errors": {
       "generic": "Something went wrong. Please try again."
-    }
+    },
+    "back": "Back to washes",
+    "notFound": "Wash not found",
+    "sectionCustomer": "Customer",
+    "sectionVehicle": "Vehicle",
+    "sectionService": "Service",
+    "sectionTimeline": "Timeline",
+    "sectionPayments": "Payments",
+    "queued": "Queued",
+    "started": "Started",
+    "completed": "Completed",
+    "cancelledAt": "Cancelled at",
+    "waitDuration": "Wait",
+    "serviceDuration": "Service duration",
+    "noPayments": "No payments recorded",
+    "totalPaid": "Total paid",
+    "colPaidAt": "Paid at"
   },
   "pager": {
     "range": "{{from}}–{{to}} of {{total}}",

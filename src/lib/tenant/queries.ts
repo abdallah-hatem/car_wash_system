@@ -7,7 +7,7 @@ import * as vehicles from "./vehicles"
 import * as washOrders from "./wash-orders"
 import * as payments from "./payments"
 import * as dashboard from "./dashboard"
-import { listWashes, listCustomerWashes, type WashFilters } from "./washes"
+import { listWashes, listCustomerWashes, getWash, type WashFilters } from "./washes"
 import { PAGE_SIZE } from "@/lib/pagination"
 
 export const keys = {
@@ -101,6 +101,14 @@ export function useCustomerWashes(customerId: string | null) {
     queryKey: ["washes", "byCustomer", customerId] as const,
     queryFn: () => listCustomerWashes(customerId!),
     enabled: !!customerId,
+  })
+}
+
+export function useWash(id: string | null) {
+  return useQuery({
+    queryKey: ["washes", "detail", id] as const,
+    queryFn: () => getWash(id!),
+    enabled: !!id,
   })
 }
 
