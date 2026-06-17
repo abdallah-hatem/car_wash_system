@@ -196,7 +196,7 @@ function KpiRow({ stats, locale }: { stats: WashStats; locale: string }) {
   ]
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {cards.map((c, i) => (
         <KpiCard key={c.label} {...c} style={{ animationDelay: `${i * 50}ms` }} />
       ))}
@@ -578,7 +578,7 @@ function LoadingState() {
     <div className="flex flex-col gap-4" role="status" aria-busy="true">
       <span className="sr-only">{t("common.loading")}</span>
       {/* KPI skeletons */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
