@@ -374,6 +374,11 @@ allow_dynamic_registration = false
 [functions.create-business]
 verify_jwt = false
 
+[functions.manage-users]
+# Owner-only sub-user CRUD. We own auth (verify the caller JWT + authoritative
+# owner gate via service_role) inside the function and return clean JSON errors.
+verify_jwt = false
+
 [functions.notify-wash-event]
 # Called by a Supabase Database Webhook (not a user JWT). We own auth via the
 # optional WEBHOOK_SECRET header check inside the function.
