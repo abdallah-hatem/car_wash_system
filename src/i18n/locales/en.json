@@ -52,8 +52,47 @@
     "washes": "Washes",
     "dashboard": "Dashboard",
     "analytics": "Analytics",
+    "users": "Users",
     "comingSoon": "coming soon",
     "menu": "Open menu"
+  },
+  "users": {
+    "title": "Users",
+    "subtitle": "Staff who can sign in — scoped to branches and features",
+    "newUser": "New user",
+    "editUser": "Edit user",
+    "user": "User",
+    "email": "Email",
+    "password": "Password",
+    "passwordHint": "At least 8 characters",
+    "newPasswordOptional": "New password (leave blank to keep)",
+    "fullName": "Full name",
+    "branches": "Branches",
+    "branchesHint": "Which branches this user can operate",
+    "noBranches": "No branches",
+    "noBranchesAvailable": "No branches yet — add one first.",
+    "access": "Access",
+    "featureCount": "{{n}} features",
+    "permissions": "Permissions",
+    "permissionsHint": "What this user can see and do",
+    "level": {
+      "none": "No access",
+      "view": "View",
+      "edit": "Edit"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "empty": "No users yet. Add staff to help run your branches.",
+    "claimsNote": "Changes take effect the next time the user signs in.",
+    "deleteTitle": "Delete user?",
+    "deleteBody": "This permanently removes their sign-in access.",
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "invalid": "Please check the form and try again.",
+      "email_exists": "That email is already registered.",
+      "not_found": "User not found.",
+      "forbidden": "Only the owner can manage users."
+    }
   },
   "branches": {
     "title": "Branches",

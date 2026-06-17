@@ -12,9 +12,10 @@ import WashesPage from "./pages/tenant/WashesPage"
 import WashDetailPage from "./pages/tenant/WashDetailPage"
 import DashboardPage from "./pages/tenant/DashboardPage"
 import AnalyticsPage from "./pages/tenant/AnalyticsPage"
+import UsersPage from "./pages/tenant/UsersPage"
 import { AppHeader } from "./components/AppHeader"
 import { TenantLayout } from "./components/tenant/TenantLayout"
-import { RequireAuth, RequireAdmin, RequireTenant } from "./auth/guards"
+import { RequireAuth, RequireAdmin, RequireTenant, RequireOwner } from "./auth/guards"
 
 export const router = createBrowserRouter([
   {
@@ -89,6 +90,15 @@ export const router = createBrowserRouter([
               {
                 path: "washes/:id",
                 element: <WashDetailPage />,
+              },
+              {
+                element: <RequireOwner />,
+                children: [
+                  {
+                    path: "users",
+                    element: <UsersPage />,
+                  },
+                ],
               },
             ],
           },

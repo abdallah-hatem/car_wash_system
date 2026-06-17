@@ -7,6 +7,7 @@ import * as vehicles from "./vehicles"
 import * as washOrders from "./wash-orders"
 import * as payments from "./payments"
 import * as dashboard from "./dashboard"
+import * as users from "./users"
 import { listWashes, listCustomerWashes, getWash, listWashesForStats, type WashFilters, type StatsFilters } from "./washes"
 import { computeWashStats } from "./wash-stats"
 import { PAGE_SIZE } from "@/lib/pagination"
@@ -22,6 +23,7 @@ export const keys = {
   dashboard: (branchId: string) => ["dashboard", branchId] as const,
   washes: ["washes"] as const,
   washStats: (f: StatsFilters) => ["washStats", f] as const,
+  users: ["users"] as const,
 }
 
 // ─── Query hooks ────────────────────────────────────────────────────────────
@@ -131,6 +133,11 @@ export function useDashboard(branchId: string | null) {
     queryFn: () => dashboard.getTodayStats(branchId!),
     enabled: !!branchId,
   })
+}
+
+// Owner-only: the tenant's sub-users (managers). enabled-gated by the caller.
+export function useUsers(enabled = true) {
+  return useQuery({ queryKey: keys.users, queryFn: users.listUsers, enabled })
 }
 
 // ─── Mutation hooks ──────────────────────────────────────────────────────────
@@ -286,6 +293,32 @@ export function useWashOrderMutations(branchId: string | null) {
     cancel: useMutation({
       mutationFn: (a: { id: string; reason: string }) => washOrders.cancelWashOrder(a.id, a.reason),
       onSuccess: inval,
+    }),
+  }
+}
+
+export function useUserMutations() {
+  const qc = useQueryClient()
+  const inval = () => qc.invalidateQueries({ queryKey: keys.users })
+  return {
+    create: useMutation({
+      mutationFn: (input: users.CreateUserInput) => users.createUser(input),
+      onSuccess: inval,
+    }),
+    update: useMutation({
+      mutationFn: (input: users.UpdateUserInput) => users.updateUser(input),
+      onSuccess: inval,
+    }),
+    setActive: useMutation({
+      mutationFn: (a: { userId: string; isActive: boolean }) => users.setUserActive(a.userId, a.isActive),
+      onSuccess: inval,
+    }),
+    remove: useMutation({
+      mutationFn: (userId: string) => users.deleteUser(userId),
+      onSuccess: inval,
+    }),
+    resetPassword: useMutation({
+      mutationFn: (a: { userId: string; password: string }) => users.resetUserPassword(a.userId, a.password),
     }),
   }
 }
