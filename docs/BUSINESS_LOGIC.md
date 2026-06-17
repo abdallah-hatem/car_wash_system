@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-17 (analytics/statistics page at /app/analytics — date-range + branch filters, KPI cards + Recharts chart set, pure unit-tested wash-stats aggregation, sidebar link added).
+Last updated: 2026-06-17 (packages: optional free-text `description` column — textarea on the create/edit form, shown as a muted subtitle in the packages list; migration 0015).
 
 ---
 
@@ -67,8 +67,8 @@ Entities (all under Postgres `public`, all tenant-scoped except platform tables)
   Per-tenant uniqueness enforced by DB unique index
   `vehicles_tenant_plate_unique(tenant_id, plate_letters, plate_digits)` — the same plate
   may exist across different tenants but never twice within the same tenant.
-- **`packages`** — wash offerings. `tenant_id`, `name`, `price`, `duration_minutes`,
-  `is_active`.
+- **`packages`** — wash offerings. `tenant_id`, `name`, `description` (optional free text),
+  `price`, `duration_minutes`, `is_active`.
 - **`employees`** — washers (not users). `tenant_id`, `branch_id`, `name`, `phone`,
   `is_active`.
 - **`wash_orders`** — the operations hub. `tenant_id`, `branch_id`, `customer_id`,
@@ -139,7 +139,8 @@ Queue and Dashboard are placeholders marked "coming soon".
 - **Branches** (`/app/branches`): list, create, edit, delete. "Main Branch" seeded by
   onboarding. Delete blocked if branch has associated wash orders.
 - **Packages** (`/app/packages`): list, create, edit, activate/deactivate, delete.
-  Fields: name, price, optional duration (minutes), is_active.
+  Fields: name, optional description (free text, shown as a subtitle in the list),
+  price, optional duration (minutes), is_active.
 - **Staff** (`/app/staff`): list, create, edit, activate/deactivate, delete. Fields:
   name, optional phone, optional branch assignment, is_active.
 

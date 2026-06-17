@@ -71,6 +71,8 @@
     "title": "الباقات",
     "newPackage": "باقة جديدة",
     "name": "الاسم",
+    "description": "الوصف",
+    "descriptionPlaceholder": "ملاحظات اختيارية عن هذه الباقة",
     "price": "السعر",
     "duration": "المدة",
     "minutes": "د",

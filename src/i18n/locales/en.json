@@ -71,6 +71,8 @@
     "title": "Packages",
     "newPackage": "New package",
     "name": "Name",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional notes about this package",
     "price": "Price",
     "duration": "Duration",
     "minutes": "min",

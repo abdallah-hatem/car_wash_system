@@ -107,7 +107,16 @@ export default function PackagesPage() {
               <TableBody>
                 {rows.map((pkg) => (
                   <TableRow key={pkg.id}>
-                    <TableCell className="font-medium">{pkg.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex flex-col">
+                        <span>{pkg.name}</span>
+                        {pkg.description && (
+                          <span className="line-clamp-1 max-w-[32ch] text-xs font-normal text-muted-foreground">
+                            {pkg.description}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>{pkg.price}</TableCell>
                     <TableCell>
                       {pkg.duration_minutes != null
