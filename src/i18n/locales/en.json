@@ -51,6 +51,7 @@
     "queue": "Queue",
     "washes": "Washes",
     "dashboard": "Dashboard",
+    "analytics": "Analytics",
     "comingSoon": "coming soon",
     "menu": "Open menu"
   },
@@ -281,6 +282,36 @@
     "byStatus": "By status",
     "empty": "No activity today. Start a new wash to see stats.",
     "refresh": "Refresh",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "analytics": {
+    "title": "Analytics",
+    "dateRange": "Date range",
+    "branch": "Branch",
+    "allBranches": "All branches",
+    "empty": "No washes in this period. Adjust the filters or start a new wash.",
+    "noChartData": "No data for this period",
+    "capped": "Showing the first {{n}} washes. Narrow the date range or branch to see all.",
+    "kpi": {
+      "revenue": "Revenue",
+      "washes": "Washes",
+      "avgTicket": "Avg ticket",
+      "completionRate": "Completion rate",
+      "avgWait": "Avg wait",
+      "avgService": "Avg service"
+    },
+    "charts": {
+      "revenueTrend": "Revenue trend",
+      "byStatus": "Washes by status",
+      "byWeekday": "Busiest weekdays",
+      "byHour": "Busiest hours",
+      "topPackages": "Top packages",
+      "byBranch": "By branch",
+      "cancellations": "Cancellations by reason",
+      "topEmployees": "Top employees"
+    },
     "errors": {
       "generic": "Something went wrong. Please try again."
     }

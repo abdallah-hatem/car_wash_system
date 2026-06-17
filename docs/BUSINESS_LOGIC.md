@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-15 (wash detail page at /app/washes/:id, read-only; plate cell in Washes list navigates to it).
+Last updated: 2026-06-17 (analytics/statistics page at /app/analytics — date-range + branch filters, KPI cards + Recharts chart set, pure unit-tested wash-stats aggregation, sidebar link added).
 
 ---
 
@@ -329,6 +329,47 @@ revenue sum scoped to branch A, wash count scoped to branch A, row-level isolati
   adding `min-w-0 overflow-hidden` to the container and `shrink` + `max-w-[130px]` to
   `BranchSelector`. Verified: `body.scrollWidth === body.clientWidth = 375` after fix.
 
+### 6.7a Analytics / Statistics — BUILT
+
+**`/app/analytics`** — a tenant-wide analytics dashboard over a chosen **date range** and
+**branch** (default: last 30 days, all branches). Reachable from the sidebar (`nav.analytics`,
+chart icon, placed right after Dashboard).
+
+**Data path:** `listWashesForStats({ from, to, branchId })` (`src/lib/tenant/washes.ts`)
+fetches **all** matching `wash_orders` in the range with no pagination, capped at
+`STATS_LIMIT = 5000` rows (ordered newest-first), embedding package/branch/employee names
+and `payments(amount, paid_at)`. RLS scopes to the tenant automatically; the branch filter is
+optional ("all" = no branch filter). A `capped` flag is returned when the row cap is hit so
+the UI can note "showing first N". The `useWashStats` query hook (`queries.ts`,
+`placeholderData: keepPreviousData` for smooth refilter) runs the records through a **pure,
+unit-tested aggregation module** `src/lib/tenant/wash-stats.ts` (`computeWashStats`) in its
+`select`. The aggregations are empty-safe (zeros / nulls / empty arrays) and use
+locale-independent `YYYY-MM-DD` day keys.
+
+**Metrics (all pure functions in `wash-stats.ts`, tested in `wash-stats.test.ts`):**
+- **KPIs:** total revenue (sum of all payments in range), wash count, avg ticket
+  (revenue ÷ completed count, null-guarded), completion rate (done ÷ total), avg wait
+  (`diffMinutes(created_at, started_at)` over started washes), avg service
+  (`diffMinutes(started_at, completed_at)` over completed washes).
+- **Time series:** `revenueByDay` (by each payment's `paid_at` day — cross-day correct),
+  `washesByDay` (by `created_at`), `washesByWeekday` (Sun–Sat), `washesByHour` (0–23).
+- **Breakdowns:** `statusBreakdown` (waiting/in_progress/done/cancelled), `topPackages`
+  (count + revenue), `byBranch` (count + revenue), `cancellationsByReason` (cancelled only),
+  `topEmployees` (completed-wash count per employee).
+
+**UI (`src/pages/tenant/AnalyticsPage.tsx`):** card-based, teal-accented, icon-chip card
+headers matching the WashDetail design. KPI cards row + a charts grid built with **Recharts**
+via the **shadcn chart component** (`src/components/ui/chart.tsx`): revenue trend (area, full
+width, teal gradient), washes-by-status donut (status colors matching `statusBadgeClass`),
+busiest weekdays (bar, localized labels), busiest hours (bar, `HH:00`), top packages
+(horizontal bar, revenue in tooltip), by-branch (washes + revenue bars, rendered only when
+>1 branch), cancellations-by-reason (ranked list + share bars), top employees (ranked list).
+Skeleton loading mirrors the KPI + charts layout; empty state when no washes in range; error
+state with retry; a subtle note when the data cap is hit. Fully i18n (`analytics.*` +
+`nav.analytics` in en/ar, parity-tested), RTL-correct (logical utilities; numeric axes stay
+LTR per convention), tablet-first responsive (KPI grid + charts reflow at 375 px). Uses the
+anon Supabase client (RLS-scoped).
+
 ### 6.8 JWT role claim conflict — RESOLVED (2026-06-11)
 **Was:** the `custom_access_token_hook` wrote `role = "owner" | "manager"` into the JWT
 claims to carry the app role. PostgREST's default `jwt-role-claim-key = ".role"` then tried
@@ -470,6 +511,8 @@ function is tested directly (the webhook itself is a cloud step).
 
 - **Wash detail page (`/app/washes/:id`):** DONE. Read-only detail page for a single wash order — plate + status header, customer (name + phone, name links to `/app/customers/:id`), vehicle, service (package / price / employee / branch), timeline (queued / started / completed or cancelled-at + cancellation reason, wait and service durations), payments breakdown (table of amount + method + paid_at, total paid, remaining, paid/unpaid badge). Reachable by clicking the plate cell in the Washes history list.
 
+- **Analytics / Statistics page (`/app/analytics`):** DONE. Tenant-wide analytics over a date range + branch filter (default last 30 days, all branches). Pure unit-tested aggregation module `wash-stats.ts` (KPIs: revenue, washes, avg ticket, completion rate, avg wait, avg service; series: revenue-by-day, washes-by-day/weekday/hour; breakdowns: status, top packages, by branch, cancellations-by-reason, top employees). Data fetched by `listWashesForStats` (no pagination, capped at 5000, RLS-scoped) via `useWashStats`. Charts built with Recharts + the shadcn chart component (`src/components/ui/chart.tsx`), teal-themed: revenue area trend, status donut, weekday/hour bars, top-packages horizontal bar, by-branch bars (only when >1 branch), cancellations + top-employees lists. KPI cards + icon-chip card headers matching WashDetail quality; skeleton/empty/error states; cap note; en/ar parity (`analytics.*` + `nav.analytics`); RTL + tablet-first responsive. Sidebar link added after Dashboard. Unit tests: `wash-stats.test.ts` (29 tests). See section 6.7a.
+
 - **PWA + Web Push — Phase 1 (PWA foundation):** DONE. `vite-plugin-pwa` (injectManifest),
   custom `src/sw.ts` with precache + offline shell + `push`/`notificationclick` handlers,
   manifest + icons, update toast, pure VAPID-key encoder `src/lib/notify/push.ts`.
@@ -486,7 +529,7 @@ function is tested directly (the webhook itself is a cloud step).
 - **PWA + Web Push — Phase 3 (long-wait > 15 min) & Phase 4 (realtime live queue):** Planned.
 
 **Deferred (not in MVP):** inventory/chemicals, assets/machines/depreciation,
-payroll/commission, analytics suite, ratings/performance, appointments/booking, real payment
+payroll/commission, ratings/performance, appointments/booking, real payment
 processing, admin usage-metrics/billing, support impersonation, email-invite onboarding (we
 use temp-password), per-user/server-side language persistence, multi-owner-per-tenant, editing
 an owner's email/password from admin. (Push notifications: see Phases 1–2 above — now built.)

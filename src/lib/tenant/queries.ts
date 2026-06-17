@@ -7,7 +7,8 @@ import * as vehicles from "./vehicles"
 import * as washOrders from "./wash-orders"
 import * as payments from "./payments"
 import * as dashboard from "./dashboard"
-import { listWashes, listCustomerWashes, getWash, type WashFilters } from "./washes"
+import { listWashes, listCustomerWashes, getWash, listWashesForStats, type WashFilters, type StatsFilters } from "./washes"
+import { computeWashStats } from "./wash-stats"
 import { PAGE_SIZE } from "@/lib/pagination"
 
 export const keys = {
@@ -20,6 +21,7 @@ export const keys = {
   queue: (branchId: string) => ["queue", branchId] as const,
   dashboard: (branchId: string) => ["dashboard", branchId] as const,
   washes: ["washes"] as const,
+  washStats: (f: StatsFilters) => ["washStats", f] as const,
 }
 
 // ─── Query hooks ────────────────────────────────────────────────────────────
@@ -109,6 +111,17 @@ export function useWash(id: string | null) {
     queryKey: ["washes", "detail", id] as const,
     queryFn: () => getWash(id!),
     enabled: !!id,
+  })
+}
+
+export function useWashStats(filters: StatsFilters) {
+  return useQuery({
+    queryKey: keys.washStats(filters),
+    queryFn: () => listWashesForStats(filters),
+    // Aggregate in `select` so the heavy work is cached per query result and the
+    // component receives a ready-to-render stats bundle (+ the capped flag).
+    select: (res) => ({ stats: computeWashStats(res.washes), capped: res.capped }),
+    placeholderData: keepPreviousData,
   })
 }
 

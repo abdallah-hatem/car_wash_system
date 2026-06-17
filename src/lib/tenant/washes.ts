@@ -101,6 +101,86 @@ export async function listWashes(f: WashFilters, page = 0, pageSize = PAGE_SIZE)
   return { rows, total: count ?? 0 }
 }
 
+// ─── Analytics / stats fetch ────────────────────────────────────────────────────
+
+import type { StatsWash } from "./wash-stats"
+
+export interface StatsFilters {
+  from: string // YYYY-MM-DD
+  to: string // YYYY-MM-DD
+  branchId: string | "all"
+}
+
+export interface StatsResult {
+  washes: StatsWash[]
+  /** True when the row cap was reached, so the dataset may be incomplete. */
+  capped: boolean
+}
+
+/** Hard cap on rows pulled for analytics (no pagination — we aggregate client-side). */
+export const STATS_LIMIT = 5000
+
+const SELECT_STATS =
+  "id,status,price,created_at,started_at,completed_at,cancelled_at,cancellation_reason," +
+  "packages(name),branches(name),employees(name),payments(amount,paid_at)"
+
+/**
+ * Fetch ALL washes in a date range (optionally one branch) for the analytics page.
+ * No pagination — capped at STATS_LIMIT rows. RLS scopes to the caller's tenant.
+ * Returns flattened StatsWash records the pure aggregation module consumes, plus a
+ * `capped` flag the UI surfaces when the cap is hit.
+ */
+export async function listWashesForStats(f: StatsFilters): Promise<StatsResult> {
+  const { fromISO, toISO } = dayRangeToBounds(f.from, f.to)
+
+  let q = supabase
+    .from("wash_orders")
+    .select(SELECT_STATS)
+    .gte("created_at", fromISO)
+    .lte("created_at", toISO)
+
+  if (f.branchId !== "all") q = q.eq("branch_id", f.branchId)
+
+  q = q.order("created_at", { ascending: false }).limit(STATS_LIMIT)
+  const { data, error } = await q
+  if (error) throw error
+
+  const rows = (data ?? []) as unknown as Array<{
+    id: string
+    status: WashStatus
+    price: number
+    created_at: string
+    started_at: string | null
+    completed_at: string | null
+    cancelled_at: string | null
+    cancellation_reason: string | null
+    packages: { name: string } | null
+    branches: { name: string } | null
+    employees: { name: string } | null
+    payments: { amount: number; paid_at: string }[]
+  }>
+
+  const washes: StatsWash[] = rows.map((o) => ({
+    id: o.id,
+    status: o.status,
+    price: Number(o.price),
+    created_at: o.created_at,
+    started_at: o.started_at,
+    completed_at: o.completed_at,
+    cancelled_at: o.cancelled_at,
+    cancellation_reason: o.cancellation_reason,
+    package_name: o.packages?.name ?? null,
+    branch_name: o.branches?.name ?? null,
+    employee_name: o.employees?.name ?? null,
+    payments: (o.payments ?? []).map((p) => ({
+      amount: Number(p.amount),
+      paid_at: p.paid_at,
+    })),
+  }))
+
+  return { washes, capped: washes.length >= STATS_LIMIT }
+}
+
 // ─── Customer wash history ────────────────────────────────────────────────────
 
 export interface CustomerWashRow {

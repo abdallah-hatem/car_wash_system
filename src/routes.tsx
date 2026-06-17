@@ -11,6 +11,7 @@ import QueuePage from "./pages/tenant/QueuePage"
 import WashesPage from "./pages/tenant/WashesPage"
 import WashDetailPage from "./pages/tenant/WashDetailPage"
 import DashboardPage from "./pages/tenant/DashboardPage"
+import AnalyticsPage from "./pages/tenant/AnalyticsPage"
 import { AppHeader } from "./components/AppHeader"
 import { TenantLayout } from "./components/tenant/TenantLayout"
 import { RequireAuth, RequireAdmin, RequireTenant } from "./auth/guards"
@@ -52,6 +53,10 @@ export const router = createBrowserRouter([
               {
                 path: "dashboard",
                 element: <DashboardPage />,
+              },
+              {
+                path: "analytics",
+                element: <AnalyticsPage />,
               },
               {
                 path: "branches",
