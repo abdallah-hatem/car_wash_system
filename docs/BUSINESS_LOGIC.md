@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-17 (roles & permissions: branch-scoped sub-users — owner adds managers scoped to one+ branches with per-tab view/edit permissions; enforced in RLS + UI; `manage-users` edge fn + `/app/users`; migrations 0016/0017. See §6.11).
+Last updated: 2026-06-17 (branch selection moved from the global navbar dropdown to per-tab in-page `BranchFilter` on Queue + Dashboard — shared/persisted, hidden when one branch; + roles & permissions: branch-scoped sub-users with per-tab view/edit, RLS + UI gating, `manage-users` edge fn + `/app/users`, migrations 0016/0017. See §6.6, §6.7, §6.11).
 
 ---
 
@@ -242,9 +242,13 @@ policy (tenant A reads only its own rows).
 **`/app/queue`** — the counter-operator's main screen. A 3-column Kanban board
 (Waiting / In Progress / Done) scoped to the currently-selected branch.
 
-**Branch context:** the header branch selector (BranchSelector component) persists
-the chosen branch in `localStorage` via BranchProvider. All queue reads/writes use this
-`branchId`. Switching branches re-fetches and filters to that branch only.
+**Branch context:** an in-page **branch filter** at the top of the Queue (`BranchFilter`
+component) persists the chosen branch in `localStorage` via BranchProvider — the same shared
+context the Dashboard's filter reads, so a pick on one carries to the other. All queue
+reads/writes use this `branchId`; switching re-fetches and filters to that branch only. The
+filter is **hidden when the user has a single branch** (single-branch tenants and members
+locked to one branch). New Wash uses the selected branch. (The old global navbar dropdown was
+removed in favor of these per-tab filters.)
 
 **Wash order status flow:**
 ```
@@ -326,8 +330,9 @@ at 375 px. No horizontal overflow at 375 px or 820 px. Cairo font in Arabic.
 - **Status breakdown:** Waiting / In Progress / Done / Cancelled counts from today's orders.
 - **Empty state:** when both revenue and washes are 0, shows "No activity today." message.
 
-**Branch context:** uses the same `BranchProvider`/`BranchSelector` as the queue page.
-Switching branches in the header immediately re-fetches and updates all KPI cards.
+**Branch context:** the Dashboard has its own in-page `BranchFilter` (top-right, beside
+Refresh) bound to the same shared `BranchProvider` as the Queue — switching re-fetches and
+updates all KPI cards. Hidden when the user has a single branch.
 
 **Refresh button:** manual refresh re-fetches all KPI data. 44px min touch-target.
 
@@ -513,10 +518,10 @@ profiles cols, `user_branches`, profiles RLS, auth hook) + `0017` (operational t
 - **Data fetching (reactive):** the frontend uses **TanStack Query**. Components read data
   via query hooks (`src/lib/tenant/queries.ts`, `src/lib/admin-queries.ts`); mutations
   **invalidate the related query keys** on success, so any add/edit/delete refreshes all
-  related views automatically (e.g. creating a branch updates the navbar dropdown; recording
+  related views automatically (e.g. creating a branch updates the branch filters; recording
   a payment updates the dashboard) — no manual refresh. The branch context
-  (`branch-context.tsx`) is a `useBranches()` consumer, so the navbar branch selector is
-  reactive. Realtime/multi-client sync is deferred.
+  (`branch-context.tsx`) is a `useBranches()` consumer, so the in-page branch filters
+  (Queue + Dashboard) stay reactive. Realtime/multi-client sync is deferred.
 - **Confirmations:** destructive actions use a custom `ConfirmDialog` (shadcn AlertDialog,
   `src/components/ui/confirm-dialog.tsx`) — no native `window.confirm`.
 - **Session resilience:** a `401` from the data/functions API signs the user out and the

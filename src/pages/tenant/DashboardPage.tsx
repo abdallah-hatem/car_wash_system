@@ -15,6 +15,7 @@ import {
 import { useBranch } from "@/lib/tenant/branch-context"
 import { useDashboard } from "@/lib/tenant/queries"
 import { StatCardsSkeleton, PageSkeleton } from "@/components/ui/skeletons"
+import { BranchFilter } from "@/components/tenant/BranchFilter"
 
 interface StatCardProps {
   label: string
@@ -81,15 +82,18 @@ export default function DashboardPage() {
       {/* Page header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-bold">{t("dashboard.title")}</h1>
-        <Button
-          variant="outline"
-          className="gap-1.5"
-          onClick={() => void refetch()}
-          disabled={isFetching}
-        >
-          <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
-          {t("dashboard.refresh")}
-        </Button>
+        <div className="flex items-center gap-2">
+          <BranchFilter />
+          <Button
+            variant="outline"
+            className="gap-1.5"
+            onClick={() => void refetch()}
+            disabled={isFetching}
+          >
+            <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
+            {t("dashboard.refresh")}
+          </Button>
+        </div>
       </div>
 
       {/* Error state */}

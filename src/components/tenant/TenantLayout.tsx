@@ -5,8 +5,6 @@ import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { SidebarNav } from "./SidebarNav"
-import { BranchSelector } from "./BranchSelector"
-import { BranchSwitchToast } from "./BranchSwitchToast"
 import { NotificationsToggle } from "./NotificationsToggle"
 import { BranchProvider } from "@/lib/tenant/branch-context"
 import { Menu } from "lucide-react"
@@ -28,7 +26,6 @@ function TenantLayoutInner() {
           <span className="font-semibold">{t("common.appName")}</span>
         </div>
         <div className="flex items-center gap-1 min-w-0 overflow-hidden">
-          <BranchSelector />
           <NotificationsToggle />
           <LanguageSwitcher />
           <Button type="button" variant="ghost" size="sm" className="min-h-[44px] shrink-0" onClick={() => void signOut()}>
@@ -55,9 +52,6 @@ function TenantLayoutInner() {
           <Outlet />
         </main>
       </div>
-
-      {/* Branch-switch toast — renders only on active user-initiated switches */}
-      <BranchSwitchToast />
     </div>
   )
 }

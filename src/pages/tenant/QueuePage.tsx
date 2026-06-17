@@ -9,6 +9,7 @@ import { useAuth } from "@/auth/AuthProvider"
 import { canEdit } from "@/auth/claims"
 import { WashCard } from "@/components/tenant/WashCard"
 import { NewWashDialog } from "@/components/tenant/NewWashDialog"
+import { BranchFilter } from "@/components/tenant/BranchFilter"
 import { CardGridSkeleton, PageSkeleton } from "@/components/ui/skeletons"
 
 // Compare on the LOCAL calendar day (both sides), so an operator outside UTC
@@ -56,10 +57,13 @@ export default function QueuePage() {
       {/* Page header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-bold">{t("queue.title")}</h1>
-        <Button className="gap-1.5" disabled={!allowEdit} onClick={() => setNewWashOpen(true)}>
-          <Plus className="h-4 w-4" />
-          {t("queue.newWash")}
-        </Button>
+        <div className="flex items-center gap-2">
+          <BranchFilter />
+          <Button className="gap-1.5" disabled={!allowEdit} onClick={() => setNewWashOpen(true)}>
+            <Plus className="h-4 w-4" />
+            {t("queue.newWash")}
+          </Button>
+        </div>
       </div>
 
       {/* Error state */}
