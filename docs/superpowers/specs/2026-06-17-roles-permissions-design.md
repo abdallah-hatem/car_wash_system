@@ -215,7 +215,7 @@ predicates. Pattern per table:
 | `customers` | tenant-wide (unchanged) | `can_edit('customers')` |
 | `vehicles` | tenant-wide (unchanged) | `can_edit('customers')` |
 | `packages` | tenant-wide (unchanged) | `can_edit('packages')` |
-| `branches` | tenant-wide (unchanged) | owner-only: `current_app_role() = 'owner'` |
+| `branches` | owner: all; member: `id = any(current_branch_ids())` | owner-only: `current_app_role() = 'owner'` |
 | `profiles`, `user_branches` | owner-only / hook (§4) | edge function (service_role) |
 
 ¹ `payments` (`tenant_id, wash_order_id, amount, method, paid_at` — no `branch_id`) scopes
@@ -226,6 +226,13 @@ write (take payment) additionally requires `can_edit('queue')`.
 Owners satisfy every predicate (`can_access_branch`/`can_edit` short-circuit to true), so their
 behavior is unchanged. A `manager` with `{}` permissions and no branches can read/write nothing
 operational — a safe default.
+
+**`view` is UI-enforced, not RLS-enforced.** The DB boundaries are *tenant isolation* (always),
+*branch scoping* on operational rows (the cross-branch data boundary), and *`edit` permission* on
+writes. Whether a permitted-branch member can hit the API to read data for a tab they can't "see"
+is bounded by tenant+branch, not by their `view` level — tab visibility is enforced in the UI
+(§8). This avoids coupling reads of `wash_orders` (which Dashboard, Analytics, Washes and Queue all
+display) to a single tab's permission.
 
 **Implementation approach:** replace each affected table's existing `tenant_isolation`
 (`FOR ALL`) policy with explicit `FOR SELECT` and `FOR INSERT/UPDATE/DELETE` policies carrying
