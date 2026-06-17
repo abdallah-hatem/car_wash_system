@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react"
@@ -16,7 +16,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Pager } from "@/components/ui/pager"
 import { TableSkeleton } from "@/components/ui/skeletons"
 import { CustomerDialog } from "@/components/tenant/CustomerDialog"
-import { useCustomersPaged, useCustomerMutations } from "@/lib/tenant/queries"
+import { useCustomersPaged, useCustomerMutations, useBranches } from "@/lib/tenant/queries"
 import { PAGE_SIZE } from "@/lib/pagination"
 import type { Customer } from "@/lib/tenant/customers"
 import { useAuth } from "@/auth/AuthProvider"
@@ -57,6 +57,12 @@ export default function CustomersPage() {
   const { data, isLoading, isError, refetch, isPlaceholderData } = useCustomersPaged(page, debouncedSearch)
   const rows: Customer[] = data?.rows ?? []
   const total = data?.total ?? 0
+
+  const { data: branches = [] } = useBranches()
+  const branchName = useMemo(() => {
+    const m = new Map(branches.map((b) => [b.id, b.name]))
+    return (id: string | null) => (id ? m.get(id) ?? "—" : "—")
+  }, [branches])
 
   const mutations = useCustomerMutations()
 
@@ -131,7 +137,7 @@ export default function CustomersPage() {
       )}
 
       {isLoading ? (
-        <TableSkeleton columns={4} />
+        <TableSkeleton columns={5} />
       ) : isError ? (
         <div className="flex flex-col gap-2">
           <p role="alert" className="text-sm text-destructive">{t("customers.errors.generic")}</p>
@@ -153,6 +159,7 @@ export default function CustomersPage() {
                 <TableRow>
                   <TableHead className="text-start">{t("customers.name")}</TableHead>
                   <TableHead className="text-start">{t("customers.phone")}</TableHead>
+                  <TableHead className="text-start">{t("customers.branch")}</TableHead>
                   <TableHead className="text-start">{t("customers.vehicleCount")}</TableHead>
                   <TableHead className="text-start">{t("common.actions")}</TableHead>
                 </TableRow>
@@ -170,6 +177,7 @@ export default function CustomersPage() {
                       </button>
                     </TableCell>
                     <TableCell>{customer.phone ?? "—"}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{branchName(customer.branch_id)}</TableCell>
                     <TableCell>{customer.vehicle_count}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">

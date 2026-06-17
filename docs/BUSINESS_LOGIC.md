@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-17 (branch selection moved from the global navbar dropdown to per-tab in-page `BranchFilter` on Queue + Dashboard — shared/persisted, hidden when one branch; + roles & permissions: branch-scoped sub-users with per-tab view/edit, RLS + UI gating, `manage-users` edge fn + `/app/users`, migrations 0016/0017. See §6.6, §6.7, §6.11).
+Last updated: 2026-06-17 (sidebar icons on every tab; customers track + show created `branch_id` — migration 0018, shown as a Branch column; branch selection moved from the global navbar dropdown to per-tab in-page `BranchFilter` on Queue + Dashboard — shared/persisted, hidden when one branch; + roles & permissions: branch-scoped sub-users with per-tab view/edit, RLS + UI gating, `manage-users` edge fn + `/app/users`, migrations 0016/0017. See §6.5, §6.6, §6.7, §6.11).
 
 ---
 
@@ -75,7 +75,8 @@ Entities (all under Postgres `public`, all tenant-scoped except platform tables)
 - **`user_branches`** — which branches a `manager` sub-user is responsible for. `tenant_id`,
   `user_id`, `branch_id` (PK `user_id`+`branch_id`, all FKs cascade). Owners need no rows
   (they see all branches). Tenant-isolated by RLS.
-- **`customers`** — `tenant_id`, `name`, `phone`.
+- **`customers`** — `tenant_id`, `name`, `phone`, `branch_id` (the branch where the customer
+  was first registered — informational; customers stay tenant-wide/visible across branches).
 - **`vehicles`** — `tenant_id`, `customer_id`, `plate_letters` (3 Arabic letters),
   `plate_digits` (1–4 Western digits), `plate_number` (derived canonical form
   `"<letters> <digits>"`; indexed for `ilike` search), `make`, `model`, `color`.

@@ -139,6 +139,7 @@
     "newCustomer": "New customer",
     "name": "Name",
     "phone": "Phone",
+    "branch": "Branch",
     "vehicleCount": "Vehicles",
     "empty": "No customers yet.",
     "deleteWarn": "Deleting this customer will unlink their vehicles. Continue?",

@@ -98,6 +98,7 @@ export type Database = {
       }
       customers: {
         Row: {
+          branch_id: string | null
           created_at: string
           id: string
           name: string
@@ -105,6 +106,7 @@ export type Database = {
           tenant_id: string
         }
         Insert: {
+          branch_id?: string | null
           created_at?: string
           id?: string
           name: string
@@ -112,6 +114,7 @@ export type Database = {
           tenant_id: string
         }
         Update: {
+          branch_id?: string | null
           created_at?: string
           id?: string
           name?: string

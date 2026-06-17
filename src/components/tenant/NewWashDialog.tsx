@@ -217,6 +217,7 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
             input: {
               name: customerName.trim(),
               phone: normalizedPhone,
+              branch_id: branchId,
             },
           })
         }
@@ -239,6 +240,7 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
           input: {
             name: customerName.trim(),
             phone: normalizedPhone,
+            branch_id: branchId,
           },
         })
       }

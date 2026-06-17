@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PhoneInput } from "@/components/ui/phone-input"
 import { useAuth } from "@/auth/AuthProvider"
+import { useBranch } from "@/lib/tenant/branch-context"
 import { useCustomerMutations } from "@/lib/tenant/queries"
 import type { Customer } from "@/lib/tenant/customers"
 import { validateCustomer } from "@/lib/tenant/validators"
@@ -28,6 +29,7 @@ interface Props {
 export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Props) {
   const { t } = useTranslation()
   const { claims } = useAuth()
+  const { branchId } = useBranch()
   const mutations = useCustomerMutations()
 
   const [name, setName] = useState("")
@@ -77,7 +79,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Props)
       if (customer) {
         await mutations.update.mutateAsync({ id: customer.id, input: { name, phone: normalizedPhone } })
       } else {
-        await mutations.create.mutateAsync({ tenantId: claims.tenantId!, input: { name, phone: normalizedPhone } })
+        await mutations.create.mutateAsync({ tenantId: claims.tenantId!, input: { name, phone: normalizedPhone, branch_id: branchId } })
       }
       handleOpenChange(false)
       onSaved?.()
