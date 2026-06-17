@@ -8,6 +8,8 @@ import { canTransition, isPaid, remaining } from "@/lib/tenant/operations"
 import { statusBadgeClass } from "@/lib/tenant/status-style"
 import { type QueueOrder } from "@/lib/tenant/wash-orders"
 import { useWashOrderMutations } from "@/lib/tenant/queries"
+import { useAuth } from "@/auth/AuthProvider"
+import { canEdit } from "@/auth/claims"
 import { AssignStartDialog } from "./AssignStartDialog"
 import { PaymentDialog } from "./PaymentDialog"
 import { CancelWashDialog } from "./CancelWashDialog"
@@ -19,6 +21,8 @@ interface Props {
 
 export function WashCard({ order, branchId }: Props) {
   const { t } = useTranslation()
+  const { claims } = useAuth()
+  const allowEdit = canEdit(claims, "queue")
   const [assignOpen, setAssignOpen] = useState(false)
   const [payOpen, setPayOpen] = useState(false)
   const [cancelOpen, setCancelOpen] = useState(false)
@@ -129,7 +133,7 @@ export function WashCard({ order, branchId }: Props) {
             size="sm"
             className="gap-1.5"
             onClick={() => setAssignOpen(true)}
-            disabled={acting}
+            disabled={acting || !allowEdit}
           >
             <Play className="h-4 w-4" />
             {t("wash.start")}
@@ -141,7 +145,7 @@ export function WashCard({ order, branchId }: Props) {
             size="sm"
             className="gap-1.5"
             onClick={() => void handleComplete()}
-            disabled={acting}
+            disabled={acting || !allowEdit}
           >
             <Check className="h-4 w-4" />
             {t("wash.complete")}
@@ -154,7 +158,7 @@ export function WashCard({ order, branchId }: Props) {
             variant="outline"
             className="gap-1.5"
             onClick={() => setCancelOpen(true)}
-            disabled={acting}
+            disabled={acting || !allowEdit}
           >
             <X className="h-4 w-4" />
             {t("wash.cancel")}
@@ -167,7 +171,7 @@ export function WashCard({ order, branchId }: Props) {
             variant="secondary"
             className="gap-1.5"
             onClick={() => setPayOpen(true)}
-            disabled={acting}
+            disabled={acting || !allowEdit}
           >
             <Banknote className="h-4 w-4" />
             {t("payment.record")}

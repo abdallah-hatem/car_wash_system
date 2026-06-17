@@ -5,7 +5,13 @@
 
 ---
 
-## 1. Roles & Permissions — branch-scoped sub-users  ⏳ to discuss (raised 2026-06-15)
+## 1. Roles & Permissions — branch-scoped sub-users  ✅ SHIPPED (2026-06-17)
+
+> **Built** — see `docs/BUSINESS_LOGIC.md` §6.11. Shipped: predefined `owner`/`manager` roles,
+> **multi-branch** per user, a **per-user** `view`/`edit` permission map, owner-sets-password,
+> RLS + UI gating (disabled-not-hidden controls), owner-only `/app/users` + `manage-users` edge
+> function. Migrations 0016/0017. **Cloud-only remaining:** apply migrations to staging + prod
+> and deploy `manage-users`. The notes below are the original brainstorm (historical).
 
 **Goal:** an owner with multiple branches can add other users (managers / admins / cashiers)
 to help run the business, **scoped to specific branches** and with access to **specific

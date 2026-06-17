@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-17 (packages: optional free-text `description` column — textarea on the create/edit form, shown as a muted subtitle in the packages list; migration 0015).
+Last updated: 2026-06-17 (roles & permissions: branch-scoped sub-users — owner adds managers scoped to one+ branches with per-tab view/edit permissions; enforced in RLS + UI; `manage-users` edge fn + `/app/users`; migrations 0016/0017. See §6.11).
 
 ---
 
@@ -25,31 +25,42 @@ Edge Functions), PWA. Bilingual **English + Arabic (RTL)**, tablet-first respons
 |---|---|---|---|
 | **Platform admin** | Us, the SaaS operator | `/admin` console | row in `platform_admins`; JWT claim `is_platform_admin: true` |
 | **Tenant owner** | Owner of one carwash business | `/app` (tenant app) | `profiles.role = 'owner'`; JWT claims `tenant_id` + `app_role` |
-| **Tenant manager** | Day-to-day operator of a business | `/app` | `profiles.role = 'manager'` |
+| **Tenant manager (sub-user)** | Branch-scoped staff the owner adds | `/app` (limited) | `profiles.role = 'manager'` + `user_branches` + `profiles.permissions`; JWT `app_role` + `branch_ids` + `permissions` |
 | **Employee (washer)** | Staff who perform washes | — (not a login) | a row in `employees`; **not** an auth user |
 
-Operations are **counter-operated**: the owner/manager runs everything from a tablet at the
-counter. Washers are tracked as records and assigned to washes; they do not log in.
+Operations are **counter-operated**: owner/managers run everything from a tablet at the
+counter. The **owner** has full access to all branches and manages users + branches. A
+**manager** is a sub-user the owner creates, **scoped to one or more branches** and granted
+**per-tab `view`/`edit` permissions** (see §6.11). Washers are records, not logins.
 
 ## 3. Tenancy & security model (the backbone)
 
 - Every operational row carries a **`tenant_id`**. Branch-scoped rows also carry `branch_id`.
-- A Supabase **auth hook** (`custom_access_token_hook`) injects `tenant_id`, `app_role`, and
-  `is_platform_admin` into the user's JWT at token-issue time, read from `profiles` /
-  `platform_admins`. The app role is carried under **`app_role`** (not `role`): the JWT
-  `role` claim is left as GoTrue's default (`authenticated`) so PostgREST's role switching
-  (`jwt-role-claim-key` = `role`) sets a valid Postgres role.
+- A Supabase **auth hook** (`custom_access_token_hook`) injects `tenant_id`, `app_role`,
+  `is_platform_admin`, and — for sub-users — `branch_ids` (from `user_branches`) and
+  `permissions` (from `profiles.permissions`) into the JWT at token-issue time. The app role is
+  carried under **`app_role`** (not `role`): the JWT `role` claim is left as GoTrue's default
+  (`authenticated`) so PostgREST's role switching (`jwt-role-claim-key` = `role`) sets a valid
+  Postgres role.
 - **Postgres RLS** enforces isolation on every table: `tenant_id = current_tenant_id()`
   where `current_tenant_id()` reads the `tenant_id` JWT claim. A tenant physically cannot
   read or write another tenant's rows.
+- **Branch + permission gating (sub-users)** layers on top of tenant isolation via helpers
+  `current_app_role()`, `current_branch_ids()`, `current_permission()`, `can_access_branch()`,
+  `can_edit()`: `wash_orders`/`employees` reads are limited to the user's branch(es), `branches`
+  reads to the user's branch(es); writes require the matching tab's `edit` permission
+  (`queue`/`staff`/`customers`/`packages`), and `branches` writes are owner-only. Owners
+  short-circuit every check (full access). This is the real boundary; the UI gating (hidden
+  tabs, disabled controls) is defense-in-depth. See §6.11.
 - **`platform_admins`** is RLS-locked and revoked from `anon`/`authenticated` — only
   `service_role` / SECURITY DEFINER functions touch it (prevents privilege escalation).
-- **Suspension is enforced in the auth hook:** if the user's tenant `status <> 'active'`,
-  the hook withholds the `tenant_id`/`app_role` claims. With no tenant claim, RLS returns
-  nothing and the user is routed to `/no-access`. Effective on the next token refresh
-  (≤ ~1h) for already-logged-in users.
+- **Suspension / deactivation is enforced in the auth hook:** if the user's tenant
+  `status <> 'active'` **or the sub-user's `profiles.is_active = false`**, the hook withholds the
+  tenant claims. With no tenant claim, RLS returns nothing and the user is routed to
+  `/no-access`. Effective on the next token refresh (≤ ~1h) for already-logged-in users.
 - Secrets: frontend uses the **anon key only**; `service_role` key and DB password never
-  reach the client. The `create-business` Edge Function is the only path using service_role.
+  reach the client. The `create-business` and `manage-users` Edge Functions are the only paths
+  using service_role.
 
 ## 4. Data model (current)
 
@@ -59,7 +70,11 @@ Entities (all under Postgres `public`, all tenant-scoped except platform tables)
 - **`platform_admins`** — `user_id` → an auth user who is a platform admin.
 - **`branches`** — `tenant_id`, `name`, `address`. A tenant's physical locations.
 - **`profiles`** — links an auth user to a tenant + role. `user_id`, `tenant_id`,
-  `role` (`owner` | `manager`), `full_name`.
+  `role` (`owner` | `manager`), `full_name`, `permissions` (jsonb per-tab `view`/`edit` map —
+  managers only; owners ignore it), `is_active` (owner can deactivate a sub-user).
+- **`user_branches`** — which branches a `manager` sub-user is responsible for. `tenant_id`,
+  `user_id`, `branch_id` (PK `user_id`+`branch_id`, all FKs cascade). Owners need no rows
+  (they see all branches). Tenant-isolated by RLS.
 - **`customers`** — `tenant_id`, `name`, `phone`.
 - **`vehicles`** — `tenant_id`, `customer_id`, `plate_letters` (3 Arabic letters),
   `plate_digits` (1–4 Western digits), `plate_number` (derived canonical form
@@ -448,6 +463,43 @@ create a **Database Webhook** on `public.wash_orders` for **INSERT + UPDATE** po
 function URL (with the `x-webhook-secret` header if `WEBHOOK_SECRET` is set). Locally the
 function is tested directly (the webhook itself is a cloud step).
 
+### 6.11 Roles & permissions (branch-scoped sub-users) — BUILT
+
+**Goal:** an owner with one or more branches adds **sub-users** (role `manager`) who can run
+**specific branches** and access **specific tabs**, at `view` or `edit` level per tab.
+
+**Model.** Two roles via the existing `tenant_role` enum: `owner` (full access, all branches,
+manages users + branches) and `manager` (the sub-user). A manager's scope is `user_branches`
+(one+ branches) + `profiles.permissions` (a `{tab: 'view'|'edit'}` map; missing = no access).
+Gateable tabs: `dashboard`, `analytics` (view-only), `queue`, `washes` (view-only), `customers`,
+`packages`, `staff`. `branches` + `users` management are **owner-only**. Wash mutations
+(create/start/complete/cancel/pay) are all gated by `queue:'edit'`; the Washes tab is read-only
+(history) — RLS can't distinguish a "cancel" UPDATE from a "complete" one.
+
+**Enforcement (two layers).**
+- **DB / RLS (the boundary):** the auth hook injects `branch_ids` + `permissions`; helpers
+  `can_access_branch()` / `can_edit()` scope `wash_orders`/`employees`/`branches` reads to the
+  user's branch(es) and gate writes on the matching `edit` permission (§3). Owners short-circuit.
+- **UI (defense-in-depth):** the sidebar hides tabs the user can't `view`; `RequireTabAccess`
+  redirects a member who URL-navigates to a non-permitted tab to their first accessible tab;
+  `RequireOwner` guards `/app/branches` + `/app/users`; the branch switcher shows only the
+  user's branches (the branches-read RLS returns only those); within a permitted tab, edit
+  controls (New/Edit/Delete + queue ops) are **disabled (not hidden)** unless the user has `edit`.
+
+**User management.** Owner-only **`/app/users`** lists sub-users (branches + active + feature
+count) and an add/edit dialog sets email + password, branch multi-select, and a tab×level
+permission grid. All writes go through the **`manage-users`** edge function (service_role,
+owner-gated like create-business): `list`/`create`/`update`/`setActive`/`delete`/`resetPassword`.
+It only targets `manager` rows in the caller's tenant (never another owner/tenant), validates
+that assigned branches belong to the tenant, and rolls back an orphan auth user on partial create.
+Owner sets the password (no email provider). Permission/branch changes take effect on the
+sub-user's next token refresh / re-login.
+
+**Tests.** pgTAP `0018` (helpers, hook claims, branch-scoped reads, write-permission gating);
+Deno `manage-users/logic.test.ts` (validation + authorization guards); Vitest `claims.test.ts`
+(`canView`/`canEdit`/`isOwner`/`visibleBranches`, claim parsing). Migrations `0016` (helpers,
+profiles cols, `user_branches`, profiles RLS, auth hook) + `0017` (operational table RLS rewrite).
+
 ## 7. Cross-cutting conventions
 
 - **i18n:** all user-facing strings come from `src/i18n/locales/{en,ar}.json` (identical key
@@ -528,6 +580,15 @@ function is tested directly (the webhook itself is a cloud step).
   **Cloud-only remaining:** set `VITE_VAPID_PUBLIC_KEY` (Vercel) + `VAPID_*` secrets, deploy
   the function, and create the `wash_orders` INSERT+UPDATE **Database Webhook** → the fn URL.
 - **PWA + Web Push — Phase 3 (long-wait > 15 min) & Phase 4 (realtime live queue):** Planned.
+- **Roles & permissions (branch-scoped sub-users):** DONE (local). Owner adds `manager`
+  sub-users scoped to 1+ branches (`user_branches`) with a per-tab `view`/`edit` map
+  (`profiles.permissions`), enforced in **RLS** (branch-scoped reads + edit-gated writes via
+  `can_access_branch`/`can_edit`; auth hook injects `branch_ids` + `permissions`; `is_active`
+  deactivation) **and the UI** (sidebar hides un-viewable tabs, `RequireTabAccess`/`RequireOwner`
+  guards, branch switcher limited, edit controls **disabled-not-hidden**). Owner-only
+  `/app/users` + `manage-users` edge fn (service_role, owner-gated). Migrations 0016/0017;
+  pgTAP 0018; Deno (manage-users) + Vitest (claims). **Cloud-only remaining:** apply 0016/0017
+  to staging + prod DBs and deploy `manage-users`. See section 6.11.
 
 **Deferred (not in MVP):** inventory/chemicals, assets/machines/depreciation,
 payroll/commission, ratings/performance, appointments/booking, real payment

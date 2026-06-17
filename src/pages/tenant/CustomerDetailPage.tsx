@@ -26,6 +26,8 @@ import {
 import { isPaid } from "@/lib/tenant/operations"
 import { statusBadgeClass } from "@/lib/tenant/status-style"
 import type { Vehicle } from "@/lib/tenant/vehicles"
+import { useAuth } from "@/auth/AuthProvider"
+import { canEdit } from "@/auth/claims"
 
 function BackLink() {
   const { t } = useTranslation()
@@ -44,6 +46,8 @@ export default function CustomerDetailPage() {
   const { t, i18n } = useTranslation()
   const { id = null } = useParams()
   const navigate = useNavigate()
+  const { claims } = useAuth()
+  const allowEdit = canEdit(claims, "customers")
 
   const { data: customer, isLoading, isError } = useCustomer(id)
 
@@ -148,13 +152,14 @@ export default function CustomerDetailPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)} className="gap-1.5 min-h-[44px]">
+          <Button variant="outline" size="sm" disabled={!allowEdit} onClick={() => setEditOpen(true)} className="gap-1.5 min-h-[44px]">
             <Pencil className="h-4 w-4" />
             {t("common.edit")}
           </Button>
           <Button
             variant="outline"
             size="sm"
+            disabled={!allowEdit}
             onClick={() => { setDeleteError(null); setDeleteOpen(true) }}
             className="gap-1.5 min-h-[44px] text-destructive hover:text-destructive hover:bg-destructive/10"
           >
@@ -172,7 +177,7 @@ export default function CustomerDetailPage() {
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-semibold">{t("vehicles.title")}</h2>
-          <Button size="sm" onClick={handleAddVehicle} className="gap-1.5 min-h-[44px]">
+          <Button size="sm" disabled={!allowEdit} onClick={handleAddVehicle} className="gap-1.5 min-h-[44px]">
             <Plus className="h-4 w-4" />
             {t("vehicles.newVehicle")}
           </Button>
@@ -214,6 +219,7 @@ export default function CustomerDetailPage() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
+                          disabled={!allowEdit}
                           onClick={() => handleEditVehicle(vehicle)}
                           aria-label={t("common.edit")}
                           title={t("common.edit")}
@@ -224,7 +230,7 @@ export default function CustomerDetailPage() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          disabled={vehicleMutations.remove.isPending && confirmVehicle?.id === vehicle.id}
+                          disabled={(vehicleMutations.remove.isPending && confirmVehicle?.id === vehicle.id) || !allowEdit}
                           onClick={() => handleDeleteVehicleClick(vehicle)}
                           aria-label={t("common.delete")}
                           title={t("common.delete")}

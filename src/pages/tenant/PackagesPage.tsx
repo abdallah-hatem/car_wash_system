@@ -18,9 +18,13 @@ import { PackageDialog } from "@/components/tenant/PackageDialog"
 import { usePackagesPaged, usePackageMutations } from "@/lib/tenant/queries"
 import { PAGE_SIZE } from "@/lib/pagination"
 import type { Package } from "@/lib/tenant/packages"
+import { useAuth } from "@/auth/AuthProvider"
+import { canEdit } from "@/auth/claims"
 
 export default function PackagesPage() {
   const { t } = useTranslation()
+  const { claims } = useAuth()
+  const allowEdit = canEdit(claims, "packages")
 
   const [page, setPage] = useState(0)
   const { data, isLoading, isError, refetch } = usePackagesPaged(page)
@@ -74,7 +78,7 @@ export default function PackagesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">{t("packages.title")}</h1>
-        <Button onClick={handleNew} className="gap-1.5">
+        <Button onClick={handleNew} disabled={!allowEdit} className="gap-1.5">
           <Plus className="h-4 w-4" />
           {t("packages.newPackage")}
         </Button>
@@ -133,6 +137,7 @@ export default function PackagesPage() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
+                          disabled={!allowEdit}
                           onClick={() => handleEdit(pkg)}
                           aria-label={t("common.edit")}
                           title={t("common.edit")}
@@ -144,7 +149,7 @@ export default function PackagesPage() {
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            disabled={mutations.setActive.isPending}
+                            disabled={mutations.setActive.isPending || !allowEdit}
                             onClick={() => void handleToggleActive(pkg)}
                             aria-label={t("common.deactivate")}
                             title={t("common.deactivate")}
@@ -156,7 +161,7 @@ export default function PackagesPage() {
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            disabled={mutations.setActive.isPending}
+                            disabled={mutations.setActive.isPending || !allowEdit}
                             onClick={() => void handleToggleActive(pkg)}
                             aria-label={t("common.activate")}
                             title={t("common.activate")}
@@ -168,7 +173,7 @@ export default function PackagesPage() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          disabled={mutations.remove.isPending && confirmPkg?.id === pkg.id}
+                          disabled={(mutations.remove.isPending && confirmPkg?.id === pkg.id) || !allowEdit}
                           onClick={() => handleDeleteClick(pkg)}
                           aria-label={t("common.delete")}
                           title={t("common.delete")}

@@ -18,9 +18,13 @@ import { EmployeeDialog } from "@/components/tenant/EmployeeDialog"
 import { useEmployeesPaged, useBranches, useEmployeeMutations } from "@/lib/tenant/queries"
 import { PAGE_SIZE } from "@/lib/pagination"
 import type { Employee } from "@/lib/tenant/employees"
+import { useAuth } from "@/auth/AuthProvider"
+import { canEdit } from "@/auth/claims"
 
 export default function StaffPage() {
   const { t } = useTranslation()
+  const { claims } = useAuth()
+  const allowEdit = canEdit(claims, "staff")
 
   const [page, setPage] = useState(0)
   const { data, isLoading, isError, refetch } = useEmployeesPaged(page)
@@ -81,7 +85,7 @@ export default function StaffPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">{t("staff.title")}</h1>
-        <Button onClick={handleNew} className="gap-1.5">
+        <Button onClick={handleNew} disabled={!allowEdit} className="gap-1.5">
           <Plus className="h-4 w-4" />
           {t("staff.newEmployee")}
         </Button>
@@ -127,6 +131,7 @@ export default function StaffPage() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
+                          disabled={!allowEdit}
                           onClick={() => handleEdit(employee)}
                           aria-label={t("common.edit")}
                           title={t("common.edit")}
@@ -138,7 +143,7 @@ export default function StaffPage() {
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            disabled={mutations.setActive.isPending}
+                            disabled={mutations.setActive.isPending || !allowEdit}
                             onClick={() => void handleToggleActive(employee)}
                             aria-label={t("common.deactivate")}
                             title={t("common.deactivate")}
@@ -150,7 +155,7 @@ export default function StaffPage() {
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            disabled={mutations.setActive.isPending}
+                            disabled={mutations.setActive.isPending || !allowEdit}
                             onClick={() => void handleToggleActive(employee)}
                             aria-label={t("common.activate")}
                             title={t("common.activate")}
@@ -162,7 +167,7 @@ export default function StaffPage() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          disabled={mutations.remove.isPending && confirmEmployee?.id === employee.id}
+                          disabled={(mutations.remove.isPending && confirmEmployee?.id === employee.id) || !allowEdit}
                           onClick={() => handleDeleteClick(employee)}
                           aria-label={t("common.delete")}
                           title={t("common.delete")}
