@@ -1,6 +1,6 @@
-import { Navigate, Outlet } from "react-router-dom"
+import { Navigate, Outlet, useLocation } from "react-router-dom"
 import { useAuth } from "./AuthProvider"
-import { isOwner } from "./claims"
+import { isOwner, canView, firstAccessiblePath, TAB_SEGMENTS, type TabKey } from "./claims"
 
 export function RequireAuth() {
   const { session, loading } = useAuth()
@@ -30,5 +30,20 @@ export function RequireOwner() {
   const { claims, loading } = useAuth()
   if (loading) return null
   if (!isOwner(claims)) return <Navigate to="/app" replace />
+  return <Outlet />
+}
+
+// Per-tab access: derive the tab from the /app/<tab> path; a member without
+// `view` on it is redirected to their first accessible tab. Non-tab segments
+// (branches, users) pass through to their own guard (RequireOwner). This is a
+// UX boundary; data is independently protected by RLS.
+export function RequireTabAccess() {
+  const { claims, loading } = useAuth()
+  const location = useLocation()
+  if (loading) return null
+  const seg = location.pathname.split("/")[2] as TabKey | undefined
+  if (seg && TAB_SEGMENTS.includes(seg) && !canView(claims, seg)) {
+    return <Navigate to={firstAccessiblePath(claims)} replace />
+  }
   return <Outlet />
 }

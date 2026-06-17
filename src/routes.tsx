@@ -15,7 +15,7 @@ import AnalyticsPage from "./pages/tenant/AnalyticsPage"
 import UsersPage from "./pages/tenant/UsersPage"
 import { AppHeader } from "./components/AppHeader"
 import { TenantLayout } from "./components/tenant/TenantLayout"
-import { RequireAuth, RequireAdmin, RequireTenant, RequireOwner } from "./auth/guards"
+import { RequireAuth, RequireAdmin, RequireTenant, RequireOwner, RequireTabAccess } from "./auth/guards"
 
 export const router = createBrowserRouter([
   {
@@ -48,52 +48,60 @@ export const router = createBrowserRouter([
             element: <TenantLayout />,
             children: [
               {
-                index: true,
-                element: <Navigate to="/app/dashboard" replace />,
+                // Per-tab view gating (members). Owner-only areas are nested
+                // separately under RequireOwner below.
+                element: <RequireTabAccess />,
+                children: [
+                  {
+                    index: true,
+                    element: <Navigate to="/app/dashboard" replace />,
+                  },
+                  {
+                    path: "dashboard",
+                    element: <DashboardPage />,
+                  },
+                  {
+                    path: "analytics",
+                    element: <AnalyticsPage />,
+                  },
+                  {
+                    path: "packages",
+                    element: <PackagesPage />,
+                  },
+                  {
+                    path: "staff",
+                    element: <StaffPage />,
+                  },
+                  {
+                    path: "customers",
+                    element: <CustomersPage />,
+                  },
+                  {
+                    path: "customers/:id",
+                    element: <CustomerDetailPage />,
+                  },
+                  {
+                    path: "queue",
+                    element: <QueuePage />,
+                  },
+                  {
+                    path: "washes",
+                    element: <WashesPage />,
+                  },
+                  {
+                    path: "washes/:id",
+                    element: <WashDetailPage />,
+                  },
+                ],
               },
               {
-                path: "dashboard",
-                element: <DashboardPage />,
-              },
-              {
-                path: "analytics",
-                element: <AnalyticsPage />,
-              },
-              {
-                path: "branches",
-                element: <BranchesPage />,
-              },
-              {
-                path: "packages",
-                element: <PackagesPage />,
-              },
-              {
-                path: "staff",
-                element: <StaffPage />,
-              },
-              {
-                path: "customers",
-                element: <CustomersPage />,
-              },
-              {
-                path: "customers/:id",
-                element: <CustomerDetailPage />,
-              },
-              {
-                path: "queue",
-                element: <QueuePage />,
-              },
-              {
-                path: "washes",
-                element: <WashesPage />,
-              },
-              {
-                path: "washes/:id",
-                element: <WashDetailPage />,
-              },
-              {
+                // Owner-only: branch + user management.
                 element: <RequireOwner />,
                 children: [
+                  {
+                    path: "branches",
+                    element: <BranchesPage />,
+                  },
                   {
                     path: "users",
                     element: <UsersPage />,

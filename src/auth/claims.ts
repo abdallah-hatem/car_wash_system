@@ -91,3 +91,16 @@ export function visibleBranches<T extends { id: string }>(claims: AppClaims, bra
   const allowed = new Set(claims.branchIds)
   return branches.filter((b) => allowed.has(b.id))
 }
+
+/** Tab route segments under /app that are permission-gated. */
+export const TAB_SEGMENTS: TabKey[] = [
+  "dashboard", "analytics", "queue", "washes", "customers", "packages", "staff",
+]
+
+/** First /app path the user may land on. Owner → dashboard; member → first viewable tab. */
+export function firstAccessiblePath(claims: AppClaims): string {
+  if (isOwner(claims)) return "/app/dashboard"
+  const order: TabKey[] = ["dashboard", "queue", "washes", "customers", "analytics", "packages", "staff"]
+  const tab = order.find((t) => canView(claims, t))
+  return tab ? `/app/${tab}` : "/no-access"
+}
