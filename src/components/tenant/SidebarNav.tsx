@@ -1,6 +1,17 @@
 import { NavLink } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { BarChart3, Users, type LucideIcon } from "lucide-react"
+import {
+  BarChart3,
+  Building2,
+  Car,
+  LayoutDashboard,
+  ListChecks,
+  Package,
+  UserCog,
+  Users,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/auth/AuthProvider"
 import { canView, isOwner, type TabKey } from "@/auth/claims"
@@ -14,15 +25,15 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const { claims } = useAuth()
 
   const items: NavItem[] = [
-    { to: "/app/dashboard", label: t("nav.dashboard"), tab: "dashboard" },
+    { to: "/app/dashboard", label: t("nav.dashboard"), icon: LayoutDashboard, tab: "dashboard" },
     { to: "/app/analytics", label: t("nav.analytics"), icon: BarChart3, tab: "analytics" },
-    { to: "/app/queue", label: t("nav.queue"), tab: "queue" },
-    { to: "/app/washes", label: t("nav.washes"), tab: "washes" },
-    { to: "/app/customers", label: t("nav.customers"), tab: "customers" },
-    { to: "/app/branches", label: t("nav.branches"), ownerOnly: true },
-    { to: "/app/packages", label: t("nav.packages"), tab: "packages" },
-    { to: "/app/staff", label: t("nav.staff"), tab: "staff" },
-    { to: "/app/users", label: t("nav.users"), icon: Users, ownerOnly: true },
+    { to: "/app/queue", label: t("nav.queue"), icon: ListChecks, tab: "queue" },
+    { to: "/app/washes", label: t("nav.washes"), icon: Car, tab: "washes" },
+    { to: "/app/customers", label: t("nav.customers"), icon: Users, tab: "customers" },
+    { to: "/app/branches", label: t("nav.branches"), icon: Building2, ownerOnly: true },
+    { to: "/app/packages", label: t("nav.packages"), icon: Package, tab: "packages" },
+    { to: "/app/staff", label: t("nav.staff"), icon: Wrench, tab: "staff" },
+    { to: "/app/users", label: t("nav.users"), icon: UserCog, ownerOnly: true },
   ]
 
   // Owner sees everything; a member sees owner-only items never and tab items
