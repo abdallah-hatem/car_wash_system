@@ -3,8 +3,12 @@
 // All handlers are scoped to the CALLER'S tenant id (resolved authoritatively in
 // index.ts) and may only target `manager` rows in that tenant — never another
 // owner, never another tenant.
+//
+// New users get a Supabase set-password link (emailed via Resend, and also
+// returned so the owner can copy/hand it over). No owner-typed passwords.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { renderInviteEmail, renderResetEmail, sendEmail, type EmailLocale } from "../_shared/email.ts";
 
 export const TABS = [
   "dashboard", "analytics", "queue", "washes", "customers", "packages", "staff",
@@ -13,7 +17,7 @@ export type TabKey = (typeof TABS)[number];
 export type PermLevel = "none" | "view" | "edit";
 const LEVELS: PermLevel[] = ["none", "view", "edit"];
 
-export type Action = "create" | "update" | "setActive" | "delete" | "resetPassword";
+export type Action = "create" | "update" | "setActive" | "delete" | "resetPassword" | "list";
 
 export class ManageError extends Error {
   code: "invalid" | "email_exists" | "not_found" | "internal";
@@ -27,10 +31,11 @@ export class ManageError extends Error {
 export interface CreateInput {
   action: "create";
   email: string;
-  password: string;
   fullName: string;
   branchIds: string[];
   permissions: Partial<Record<TabKey, PermLevel>>;
+  appUrl?: string;
+  locale: EmailLocale;
 }
 export interface UpdateInput {
   action: "update";
@@ -41,7 +46,7 @@ export interface UpdateInput {
 }
 export interface SetActiveInput { action: "setActive"; userId: string; isActive: boolean }
 export interface DeleteInput { action: "delete"; userId: string }
-export interface ResetPasswordInput { action: "resetPassword"; userId: string; password: string }
+export interface ResetPasswordInput { action: "resetPassword"; userId: string; appUrl?: string; locale: EmailLocale }
 export interface ListInput { action: "list" }
 export type ValidInput =
   | CreateInput | UpdateInput | SetActiveInput | DeleteInput | ResetPasswordInput | ListInput;
@@ -57,7 +62,6 @@ export interface UserSummary {
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MIN_PASSWORD = 8;
 
 export function sanitizePermissions(v: unknown): Partial<Record<TabKey, PermLevel>> {
   const out: Partial<Record<TabKey, PermLevel>> = {};
@@ -77,6 +81,13 @@ function sanitizeBranchIds(v: unknown): string[] {
   return [...new Set(v.filter((x): x is string => typeof x === "string" && x.length > 0))];
 }
 
+function locale(v: unknown): EmailLocale {
+  return v === "ar" ? "ar" : "en";
+}
+function appUrl(v: unknown): string | undefined {
+  return typeof v === "string" && v.length > 0 ? v : undefined;
+}
+
 export function validateInput(body: unknown): ValidInput | ValidationError {
   if (typeof body !== "object" || body === null) return { error: "invalid" };
   const b = body as Record<string, unknown>;
@@ -84,14 +95,14 @@ export function validateInput(body: unknown): ValidInput | ValidationError {
 
   if (action === "create") {
     const email = typeof b.email === "string" ? b.email.trim() : "";
-    const password = typeof b.password === "string" ? b.password : "";
     const fullName = typeof b.fullName === "string" ? b.fullName.trim() : "";
     if (!EMAIL_RE.test(email)) return { error: "invalid" };
-    if (password.length < MIN_PASSWORD) return { error: "invalid" };
     return {
-      action, email, password, fullName,
+      action, email, fullName,
       branchIds: sanitizeBranchIds(b.branchIds),
       permissions: sanitizePermissions(b.permissions),
+      appUrl: appUrl(b.appUrl),
+      locale: locale(b.locale),
     };
   }
   if (action === "update") {
@@ -118,9 +129,8 @@ export function validateInput(body: unknown): ValidInput | ValidationError {
   }
   if (action === "resetPassword") {
     const userId = typeof b.userId === "string" ? b.userId : "";
-    const password = typeof b.password === "string" ? b.password : "";
-    if (!userId || password.length < MIN_PASSWORD) return { error: "invalid" };
-    return { action, userId, password };
+    if (!userId) return { error: "invalid" };
+    return { action, userId, appUrl: appUrl(b.appUrl), locale: locale(b.locale) };
   }
   return { error: "invalid" };
 }
@@ -128,8 +138,28 @@ export function validateInput(body: unknown): ValidInput | ValidationError {
 // deno-lint-ignore no-explicit-any
 type Admin = SupabaseClient<any, any, any>;
 
+// A strong random password the new user never sees — they set their own via the
+// emailed set-password link. Mixed classes satisfy any password policy.
+function randomPassword(): string {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (x) => x.toString(16).padStart(2, "0")).join("") + "Aa1!";
+}
+
+// Generate a Supabase set-password (recovery) action link, landing on /set-password.
+async function setPasswordLink(admin: Admin, email: string, appUrlVal?: string): Promise<string | null> {
+  const redirectTo = appUrlVal ? `${appUrlVal.replace(/\/$/, "")}/set-password` : undefined;
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "recovery",
+    email,
+    options: redirectTo ? { redirectTo } : undefined,
+  });
+  if (error) return null;
+  // deno-lint-ignore no-explicit-any
+  return ((data as any)?.properties?.action_link as string) ?? null;
+}
+
 // Guard: the target must be a `manager` profile in the caller's tenant.
-// Prevents an owner editing another owner, themselves, or a user in another tenant.
 async function assertTargetManager(admin: Admin, tenantId: string, userId: string): Promise<void> {
   const { data, error } = await admin
     .from("profiles").select("tenant_id, role").eq("user_id", userId).maybeSingle();
@@ -159,12 +189,14 @@ async function replaceBranches(admin: Admin, tenantId: string, userId: string, b
   if (insErr) throw new ManageError("internal", insErr.message);
 }
 
-export async function createUser(admin: Admin, tenantId: string, input: CreateInput): Promise<{ userId: string }> {
+export interface CreateResult { userId: string; actionLink: string | null; emailed: boolean }
+
+export async function createUser(admin: Admin, tenantId: string, input: CreateInput): Promise<CreateResult> {
   await assertBranchesInTenant(admin, tenantId, input.branchIds);
 
   const { data: created, error: createErr } = await admin.auth.admin.createUser({
     email: input.email,
-    password: input.password,
+    password: randomPassword(),
     email_confirm: true,
     user_metadata: { full_name: input.fullName },
   });
@@ -188,12 +220,21 @@ export async function createUser(admin: Admin, tenantId: string, input: CreateIn
     });
     if (profErr) throw new ManageError("internal", profErr.message);
     await replaceBranches(admin, tenantId, userId, input.branchIds);
-    return { userId };
   } catch (err) {
-    // Roll back the orphan auth user on any post-create failure.
+    // Roll back the orphan auth user on any profile/branch failure.
     try { await admin.auth.admin.deleteUser(userId); } catch (_) { /* best effort */ }
     throw err instanceof ManageError ? err : new ManageError("internal", "create failed");
   }
+
+  // User is committed — best-effort invite (email may be off until the domain
+  // verifies; the link is returned regardless so the owner can hand it over).
+  const actionLink = await setPasswordLink(admin, input.email, input.appUrl);
+  let emailed = false;
+  if (actionLink) {
+    const { subject, html } = renderInviteEmail({ name: input.fullName || undefined, actionUrl: actionLink, locale: input.locale });
+    emailed = (await sendEmail(input.email, subject, html)).ok;
+  }
+  return { userId, actionLink, emailed };
 }
 
 export async function updateUser(admin: Admin, tenantId: string, input: UpdateInput): Promise<void> {
@@ -223,15 +264,23 @@ export async function deleteUser(admin: Admin, tenantId: string, input: DeleteIn
   if (error) throw new ManageError("internal", error.message);
 }
 
-export async function resetPassword(admin: Admin, tenantId: string, input: ResetPasswordInput): Promise<void> {
+export interface ResetResult { actionLink: string | null; emailed: boolean }
+
+export async function resetPassword(admin: Admin, tenantId: string, input: ResetPasswordInput): Promise<ResetResult> {
   await assertTargetManager(admin, tenantId, input.userId);
-  const { error } = await admin.auth.admin.updateUserById(input.userId, { password: input.password });
-  if (error) throw new ManageError("internal", error.message);
+  const { data: u } = await admin.auth.admin.getUserById(input.userId);
+  const email = u?.user?.email ?? "";
+  if (!email) throw new ManageError("not_found", "user has no email");
+  const fullName = (u?.user?.user_metadata?.full_name as string | undefined) ?? undefined;
+
+  const actionLink = await setPasswordLink(admin, email, input.appUrl);
+  if (!actionLink) throw new ManageError("internal", "could not generate reset link");
+  const { subject, html } = renderResetEmail({ name: fullName, actionUrl: actionLink, locale: input.locale });
+  const emailed = (await sendEmail(email, subject, html)).ok;
+  return { actionLink, emailed };
 }
 
 // List the caller tenant's sub-users (managers) with email + branches + permissions.
-// Email lives in auth.users (only the service_role can read it), so this runs here
-// rather than as a direct client query.
 export async function listUsers(admin: Admin, tenantId: string): Promise<UserSummary[]> {
   const { data: profiles, error: profErr } = await admin
     .from("profiles")

@@ -76,15 +76,12 @@ Deno.serve(async (req) => {
 
   try {
     switch (input.action) {
-      case "create": {
-        const { userId } = await createUser(admin, tenantId, input);
-        return json({ userId }, 201);
-      }
+      case "create": return json(await createUser(admin, tenantId, input), 201);
       case "list": return json({ users: await listUsers(admin, tenantId) }, 200);
       case "update": await updateUser(admin, tenantId, input); return json({ ok: true }, 200);
       case "setActive": await setActive(admin, tenantId, input); return json({ ok: true }, 200);
       case "delete": await deleteUser(admin, tenantId, input); return json({ ok: true }, 200);
-      case "resetPassword": await resetPassword(admin, tenantId, input); return json({ ok: true }, 200);
+      case "resetPassword": return json(await resetPassword(admin, tenantId, input), 200);
     }
   } catch (err) {
     if (err instanceof ManageError) return json({ error: err.code }, statusForError(err.code));

@@ -8,28 +8,33 @@ import {
 } from "./logic.ts";
 
 // ── validateInput ─────────────────────────────────────────────────────────────
-Deno.test("validateInput: create — accepts + trims, sanitizes perms/branches", () => {
+Deno.test("validateInput: create — trims, sanitizes perms/branches, no password, default locale", () => {
   const r = validateInput({
     action: "create",
     email: "  m@x.test  ",
-    password: "secret12",
     fullName: "  Sam  ",
     branchIds: ["b1", "b1", "b2", 7],
     permissions: { queue: "edit", bogus: "edit", staff: "nope" },
+    appUrl: "https://app.test/",
   });
   assertEquals(r, {
     action: "create",
     email: "m@x.test",
-    password: "secret12",
     fullName: "Sam",
     branchIds: ["b1", "b2"],
     permissions: { queue: "edit" },
+    appUrl: "https://app.test/",
+    locale: "en",
   });
 });
 
-Deno.test("validateInput: create — rejects bad email / short password", () => {
-  assertObjectMatch(validateInput({ action: "create", email: "nope", password: "secret12" }), { error: "invalid" });
-  assertObjectMatch(validateInput({ action: "create", email: "m@x.test", password: "short" }), { error: "invalid" });
+Deno.test("validateInput: create — rejects bad email", () => {
+  assertObjectMatch(validateInput({ action: "create", email: "nope" }), { error: "invalid" });
+});
+
+Deno.test("validateInput: create — respects locale=ar", () => {
+  const r = validateInput({ action: "create", email: "m@x.test", locale: "ar" }) as { locale: string };
+  assertEquals(r.locale, "ar");
 });
 
 Deno.test("validateInput: update — userId required; optional fields pass through", () => {
@@ -46,12 +51,15 @@ Deno.test("validateInput: setActive needs a boolean", () => {
   });
 });
 
-Deno.test("validateInput: resetPassword enforces min length; delete needs userId", () => {
-  assertObjectMatch(validateInput({ action: "resetPassword", userId: "u1", password: "x" }), { error: "invalid" });
-  assertEquals(validateInput({ action: "delete", userId: "u1" }), { action: "delete", userId: "u1" });
+Deno.test("validateInput: resetPassword needs only a userId (+ optional appUrl/locale)", () => {
+  assertObjectMatch(validateInput({ action: "resetPassword" }), { error: "invalid" });
+  assertEquals(validateInput({ action: "resetPassword", userId: "u1", locale: "ar" }), {
+    action: "resetPassword", userId: "u1", appUrl: undefined, locale: "ar",
+  });
 });
 
-Deno.test("validateInput: rejects unknown action / non-object", () => {
+Deno.test("validateInput: delete needs userId; unknown action / non-object rejected", () => {
+  assertEquals(validateInput({ action: "delete", userId: "u1" }), { action: "delete", userId: "u1" });
   assertObjectMatch(validateInput({ action: "nuke", userId: "u1" }), { error: "invalid" });
   assertObjectMatch(validateInput(null), { error: "invalid" });
   assertObjectMatch(validateInput("nope"), { error: "invalid" });
@@ -66,8 +74,6 @@ Deno.test("sanitizePermissions keeps valid tab/level pairs only", () => {
 });
 
 // ── Handler guards (compact chainable mock) ───────────────────────────────────
-// A builder that is both chainable (returns itself) and awaitable (resolves a
-// canned response keyed by `${table}.${op}`); maybeSingle() is its own terminal.
 function makeAdmin(responses: Record<string, { data: unknown; error: unknown }>, hooks: {
   createUser?: () => { data: unknown; error: unknown };
 } = {}) {
@@ -98,6 +104,8 @@ function makeAdmin(responses: Record<string, { data: unknown; error: unknown }>,
         },
         deleteUser: () => { deleteUserCalls++; return Promise.resolve({ data: null, error: null }); },
         updateUserById: () => Promise.resolve({ data: null, error: null }),
+        getUserById: () => Promise.resolve({ data: { user: { email: "x@y.test", user_metadata: {} } }, error: null }),
+        generateLink: () => Promise.resolve({ data: { properties: { action_link: "https://app.test/set#tok" } }, error: null }),
       },
     },
     calls: () => ({ createUserCalls, deleteUserCalls }),
@@ -107,12 +115,11 @@ function makeAdmin(responses: Record<string, { data: unknown; error: unknown }>,
 }
 
 Deno.test("createUser: rejects a branch outside the caller tenant (before creating the auth user)", async () => {
-  // branches lookup returns 0 rows for a requested branch id -> invalid, no auth user created.
   const admin = makeAdmin({ "branches.select": { data: [], error: null } });
   await assertRejects(
     () => createUser(admin, "tenant-1", {
-      action: "create", email: "m@x.test", password: "secret12", fullName: "Sam",
-      branchIds: ["other-tenant-branch"], permissions: {},
+      action: "create", email: "m@x.test", fullName: "Sam",
+      branchIds: ["other-tenant-branch"], permissions: {}, locale: "en",
     }),
     ManageError,
   );
@@ -123,7 +130,7 @@ Deno.test("createUser: maps a duplicate-email auth error to email_exists", async
   const admin = makeAdmin({}, { createUser: () => ({ data: null, error: { message: "User already registered" } }) });
   const err = await assertRejects(
     () => createUser(admin, "tenant-1", {
-      action: "create", email: "dupe@x.test", password: "secret12", fullName: "", branchIds: [], permissions: {},
+      action: "create", email: "dupe@x.test", fullName: "", branchIds: [], permissions: {}, locale: "en",
     }),
     ManageError,
   );
