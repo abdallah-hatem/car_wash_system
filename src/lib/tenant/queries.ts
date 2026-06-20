@@ -318,7 +318,7 @@ export function useUserMutations() {
       onSuccess: inval,
     }),
     resetPassword: useMutation({
-      mutationFn: (a: { userId: string; password: string }) => users.resetUserPassword(a.userId, a.password),
+      mutationFn: (a: { userId: string; locale?: string }) => users.resetUserPassword(a.userId, a.locale),
     }),
   }
 }

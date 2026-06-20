@@ -12,10 +12,10 @@ export interface ManagedUser {
 
 export interface CreateUserInput {
   email: string
-  password: string
   fullName: string
   branchIds: string[]
   permissions: Partial<Record<TabKey, PermLevel>>
+  locale?: string
 }
 
 export interface UpdateUserInput {
@@ -23,6 +23,14 @@ export interface UpdateUserInput {
   fullName?: string
   branchIds?: string[]
   permissions?: Partial<Record<TabKey, PermLevel>>
+}
+
+// create/resetPassword email a set-password link and also return it so the owner
+// can copy/hand it over (email is best-effort until the domain is verified).
+export interface InviteResult {
+  userId?: string
+  actionLink: string | null
+  emailed: boolean
 }
 
 // Invoke the owner-only manage-users edge function. On error, surface the
@@ -48,8 +56,8 @@ export async function listUsers(): Promise<ManagedUser[]> {
   return data.users ?? []
 }
 
-export async function createUser(input: CreateUserInput): Promise<void> {
-  await invoke({ action: "create", ...input })
+export async function createUser(input: CreateUserInput): Promise<InviteResult> {
+  return invoke<InviteResult>({ action: "create", appUrl: window.location.origin, ...input })
 }
 
 export async function updateUser(input: UpdateUserInput): Promise<void> {
@@ -64,6 +72,6 @@ export async function deleteUser(userId: string): Promise<void> {
   await invoke({ action: "delete", userId })
 }
 
-export async function resetUserPassword(userId: string, password: string): Promise<void> {
-  await invoke({ action: "resetPassword", userId, password })
+export async function resetUserPassword(userId: string, locale?: string): Promise<InviteResult> {
+  return invoke<InviteResult>({ action: "resetPassword", userId, appUrl: window.location.origin, locale })
 }
