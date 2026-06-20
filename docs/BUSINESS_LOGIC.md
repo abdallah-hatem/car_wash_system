@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-17 (sidebar icons on every tab; customers track + show created `branch_id` — migration 0018, shown as a Branch column; branch selection moved from the global navbar dropdown to per-tab in-page `BranchFilter` on Queue + Dashboard — shared/persisted, hidden when one branch; + roles & permissions: branch-scoped sub-users with per-tab view/edit, RLS + UI gating, `manage-users` edge fn + `/app/users`, migrations 0016/0017. See §6.5, §6.6, §6.7, §6.11).
+Last updated: 2026-06-20 (transactional email via Resend — invites & password resets send a secure set-password link instead of a temp password; create-business + manage-users email + return the link, new `/set-password` screen, bilingual templates; see §6.1, §6.11, §6.12. Earlier 2026-06-17: sidebar icons; customers created-`branch_id` (migration 0018); per-tab `BranchFilter` replacing the navbar dropdown; roles & permissions branch-scoped sub-users, migrations 0016/0017 — §6.5/§6.6/§6.7/§6.11).
 
 ---
 
@@ -130,12 +130,13 @@ Guard targeting avoids redirect loops: a user with no tenant and not an admin la
 2. Clicks **New business**, enters business name + owner email + owner full name.
 3. Frontend calls the **`create-business` Edge Function** (service_role), which:
    - authoritatively verifies the caller is a platform admin (DB check, not just the claim),
-   - generates a random **temp password**,
-   - creates the owner auth user (email pre-confirmed),
+   - creates the owner auth user (random password the owner never uses; email pre-confirmed),
    - inserts the `tenant`, the owner `profile` (role `owner`), and a default **"Main Branch"**,
    - on any failure after user creation, deletes the orphaned auth user (atomic),
-   - returns the new business + the **temp password shown once**.
-4. Admin relays the temp password to the owner (out of band). Owner can change it later.
+   - generates a Supabase **set-password (invite) link**, emails it via Resend, and returns the
+     link + an `emailed` flag.
+4. The owner gets an **invite email** to set their own password (see §6.12); the admin screen
+   also shows a **copy-able link** to hand over directly if email is delayed.
 
 ### 6.2 Suspend / reactivate a business — BUILT
 - Admin toggles a business's `status` in the list (`tenants.status` update via RLS).
@@ -493,18 +494,47 @@ Gateable tabs: `dashboard`, `analytics` (view-only), `queue`, `washes` (view-onl
   controls (New/Edit/Delete + queue ops) are **disabled (not hidden)** unless the user has `edit`.
 
 **User management.** Owner-only **`/app/users`** lists sub-users (branches + active + feature
-count) and an add/edit dialog sets email + password, branch multi-select, and a tab×level
-permission grid. All writes go through the **`manage-users`** edge function (service_role,
+count) and an add/edit dialog with email, branch multi-select, and a tab×level permission grid
+(**no password field**). All writes go through the **`manage-users`** edge function (service_role,
 owner-gated like create-business): `list`/`create`/`update`/`setActive`/`delete`/`resetPassword`.
 It only targets `manager` rows in the caller's tenant (never another owner/tenant), validates
 that assigned branches belong to the tenant, and rolls back an orphan auth user on partial create.
-Owner sets the password (no email provider). Permission/branch changes take effect on the
-sub-user's next token refresh / re-login.
+**Create** emails the new user a set-password (invite) link and **resetPassword** emails a reset
+link (both via Resend, see §6.12) — and both **return the link** so the owner can copy/hand it
+over directly. No owner-typed passwords. Permission/branch changes take effect on the sub-user's
+next token refresh / re-login.
 
 **Tests.** pgTAP `0018` (helpers, hook claims, branch-scoped reads, write-permission gating);
 Deno `manage-users/logic.test.ts` (validation + authorization guards); Vitest `claims.test.ts`
 (`canView`/`canEdit`/`isOwner`/`visibleBranches`, claim parsing). Migrations `0016` (helpers,
 profiles cols, `user_branches`, profiles RLS, auth hook) + `0017` (operational table RLS rewrite).
+
+### 6.12 Transactional email — invites & password resets (Resend) — BUILT (local)
+
+**Goal:** instead of relaying a temporary password, new users (tenant owners via create-business,
+sub-users via manage-users) and password resets get a **secure set-password link** by email; the
+user clicks it and **sets their own password** — no plaintext password is stored or sent.
+
+**How.** The edge functions generate a Supabase **recovery (set-password) action link**
+(`auth.admin.generateLink`, `redirectTo = <appUrl>/set-password`, where `appUrl` is the caller's
+browser origin so it's environment-correct), then email it via **Resend** from the shared
+`_shared/email.ts` module (branded, **bilingual EN/AR** invite + reset templates;
+`RESEND_API_KEY` + `EMAIL_FROM` are function secrets). The link is **also returned** to the
+caller so the owner/admin can copy and hand it over — so the flow works even **before** the
+sending domain is verified (email is best-effort; the copy-link is the always-available fallback).
+
+**Set-password screen** (`/set-password`, public): Supabase parses the recovery token from the
+URL hash (`detectSessionInUrl`), the user picks a password (`auth.updateUser`), then lands in the
+app. Invalid/expired links show a friendly message.
+
+**Per-environment config:** `redirectTo` is environment-correct automatically (browser origin),
+but Supabase only honors an allow-listed redirect — so each environment's `/set-password` URL must
+be in **`additional_redirect_urls`** (local is in `config.toml`; staging/prod set in their auth
+config). Sending domain: **`washflow.khalidelewa.com`** (verified in Resend).
+
+**Tests:** Deno `_shared/email.test.ts` (template rendering + soft-fail send) + the manage-users /
+create-business validation tests. Cloud go-live: set `RESEND_API_KEY`/`EMAIL_FROM` secrets +
+allow-list URLs on staging/prod, redeploy the functions.
 
 ## 7. Cross-cutting conventions
 
