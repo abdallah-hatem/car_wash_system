@@ -39,20 +39,24 @@ export interface CreateBusinessInput {
   businessName: string
   ownerEmail: string
   ownerFullName: string
+  locale?: string
 }
 
 export interface CreateBusinessResult {
   tenantId: string
   businessName: string
   ownerEmail: string
-  tempPassword: string
+  // The owner is emailed a set-password (invite) link; it's also returned so the
+  // admin can copy/hand it over. `emailed` reflects whether the email went out.
+  actionLink: string | null
+  emailed: boolean
 }
 
 export async function createBusiness(
   input: CreateBusinessInput,
 ): Promise<CreateBusinessResult> {
   const { data, error } = await supabase.functions.invoke("create-business", {
-    body: input,
+    body: { ...input, appUrl: window.location.origin },
   })
   if (error) {
     let code = "generic"
