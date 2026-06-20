@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router-dom"
 import LoginPage from "./pages/LoginPage"
+import SetPasswordPage from "./pages/SetPasswordPage"
 import NoAccessPage from "./pages/NoAccessPage"
 import BusinessesPage from "./pages/admin/BusinessesPage"
 import BranchesPage from "./pages/tenant/BranchesPage"
@@ -21,6 +22,11 @@ export const router = createBrowserRouter([
   {
     path: "/login",
     element: <LoginPage />,
+  },
+  {
+    // Public — lands here from the emailed invite / password-reset link.
+    path: "/set-password",
+    element: <SetPasswordPage />,
   },
   {
     element: <RequireAuth />,

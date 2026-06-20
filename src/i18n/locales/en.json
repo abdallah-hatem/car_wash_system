@@ -43,6 +43,20 @@
     "title": "No workspace assigned",
     "body": "Your account isn't linked to a business yet. Please contact your administrator."
   },
+  "setPassword": {
+    "title": "Set your password",
+    "subtitle": "Choose a password to finish setting up your WashFlow account.",
+    "password": "New password",
+    "confirm": "Confirm password",
+    "hint": "At least 8 characters",
+    "submit": "Set password & continue",
+    "tooShort": "Password must be at least 8 characters.",
+    "mismatch": "Passwords don't match.",
+    "error": "Couldn't set your password. The link may have expired — ask for a new one.",
+    "invalidTitle": "Link expired or invalid",
+    "invalidBody": "This password link is no longer valid. Please request a new invite or reset.",
+    "toLogin": "Go to sign in"
+  },
   "nav": {
     "branches": "Branches",
     "packages": "Packages",
