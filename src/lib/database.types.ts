@@ -98,6 +98,7 @@ export type Database = {
       }
       customers: {
         Row: {
+          branch_id: string | null
           created_at: string
           id: string
           name: string
@@ -105,6 +106,7 @@ export type Database = {
           tenant_id: string
         }
         Insert: {
+          branch_id?: string | null
           created_at?: string
           id?: string
           name: string
@@ -112,6 +114,7 @@ export type Database = {
           tenant_id: string
         }
         Update: {
+          branch_id?: string | null
           created_at?: string
           id?: string
           name?: string
@@ -176,6 +179,7 @@ export type Database = {
       packages: {
         Row: {
           created_at: string
+          description: string | null
           duration_minutes: number | null
           id: string
           is_active: boolean
@@ -185,6 +189,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          description?: string | null
           duration_minutes?: number | null
           id?: string
           is_active?: boolean
@@ -194,6 +199,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          description?: string | null
           duration_minutes?: number | null
           id?: string
           is_active?: boolean
@@ -293,6 +299,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          lang: string
+          p256dh: string
+          tenant_id: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          lang?: string
+          p256dh: string
+          tenant_id?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          lang?: string
+          p256dh?: string
+          tenant_id?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"

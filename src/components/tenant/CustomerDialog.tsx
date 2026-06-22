@@ -11,10 +11,13 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PhoneInput } from "@/components/ui/phone-input"
 import { useAuth } from "@/auth/AuthProvider"
+import { useBranch } from "@/lib/tenant/branch-context"
 import { useCustomerMutations } from "@/lib/tenant/queries"
 import type { Customer } from "@/lib/tenant/customers"
 import { validateCustomer } from "@/lib/tenant/validators"
+import { isValidEgyptianMobile, formatPhoneForStore } from "@/lib/tenant/phone"
 
 interface Props {
   open: boolean
@@ -26,6 +29,7 @@ interface Props {
 export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Props) {
   const { t } = useTranslation()
   const { claims } = useAuth()
+  const { branchId } = useBranch()
   const mutations = useCustomerMutations()
 
   const [name, setName] = useState("")
@@ -59,16 +63,23 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Props)
       return
     }
 
+    if (phone.trim() && !isValidEgyptianMobile(phone)) {
+      setFieldError(t("validation.phone_invalid"))
+      return
+    }
+
     if (!customer && !claims.tenantId) {
       setFieldError(t("customers.errors.generic"))
       return
     }
 
+    const normalizedPhone = phone.trim() ? formatPhoneForStore(phone) : null
+
     try {
       if (customer) {
-        await mutations.update.mutateAsync({ id: customer.id, input: { name, phone: phone || null } })
+        await mutations.update.mutateAsync({ id: customer.id, input: { name, phone: normalizedPhone } })
       } else {
-        await mutations.create.mutateAsync({ tenantId: claims.tenantId!, input: { name, phone: phone || null } })
+        await mutations.create.mutateAsync({ tenantId: claims.tenantId!, input: { name, phone: normalizedPhone, branch_id: branchId } })
       }
       handleOpenChange(false)
       onSaved?.()
@@ -102,21 +113,18 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Props)
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="customer-phone">
-                {t("customers.phone")}{" "}
-                <span className="text-muted-foreground text-xs">({t("common.optional")})</span>
-              </Label>
-              <Input
-                id="customer-phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                disabled={submitting}
-                className="min-h-[44px]"
-                autoComplete="off"
-                type="tel"
-              />
-            </div>
+            <PhoneInput
+              id="customer-phone"
+              value={phone}
+              onChange={setPhone}
+              disabled={submitting}
+              label={
+                <>
+                  {t("customers.phone")}{" "}
+                  <span className="text-muted-foreground text-xs">({t("common.optional")})</span>
+                </>
+              }
+            />
 
             {fieldError && (
               <p role="alert" className="text-sm text-destructive">

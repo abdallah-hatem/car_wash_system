@@ -7,7 +7,9 @@ import * as vehicles from "./vehicles"
 import * as washOrders from "./wash-orders"
 import * as payments from "./payments"
 import * as dashboard from "./dashboard"
-import { listWashes, type WashFilters } from "./washes"
+import * as users from "./users"
+import { listWashes, listCustomerWashes, getWash, listWashesForStats, type WashFilters, type StatsFilters } from "./washes"
+import { computeWashStats } from "./wash-stats"
 import { PAGE_SIZE } from "@/lib/pagination"
 
 export const keys = {
@@ -20,6 +22,8 @@ export const keys = {
   queue: (branchId: string) => ["queue", branchId] as const,
   dashboard: (branchId: string) => ["dashboard", branchId] as const,
   washes: ["washes"] as const,
+  washStats: (f: StatsFilters) => ["washStats", f] as const,
+  users: ["users"] as const,
 }
 
 // ─── Query hooks ────────────────────────────────────────────────────────────
@@ -50,6 +54,14 @@ export function usePackagesPaged(page: number) {
 
 export function useEmployeesPaged(page: number) {
   return useQuery({ queryKey: ["employees", "page", page] as const, queryFn: () => employees.listEmployeesPaged(page, PAGE_SIZE), placeholderData: keepPreviousData })
+}
+
+export function useCustomer(id: string | null) {
+  return useQuery({
+    queryKey: ["customers", "detail", id] as const,
+    queryFn: () => customers.getCustomer(id!),
+    enabled: !!id,
+  })
 }
 
 export function useCustomersPaged(page: number, search = "") {
@@ -88,12 +100,44 @@ export function useWashes(filters: WashFilters, page = 0) {
   return useQuery({ queryKey: [...keys.washes, filters, page], queryFn: () => listWashes(filters, page, PAGE_SIZE), placeholderData: keepPreviousData })
 }
 
+export function useCustomerWashes(customerId: string | null) {
+  return useQuery({
+    queryKey: ["washes", "byCustomer", customerId] as const,
+    queryFn: () => listCustomerWashes(customerId!),
+    enabled: !!customerId,
+  })
+}
+
+export function useWash(id: string | null) {
+  return useQuery({
+    queryKey: ["washes", "detail", id] as const,
+    queryFn: () => getWash(id!),
+    enabled: !!id,
+  })
+}
+
+export function useWashStats(filters: StatsFilters) {
+  return useQuery({
+    queryKey: keys.washStats(filters),
+    queryFn: () => listWashesForStats(filters),
+    // Aggregate in `select` so the heavy work is cached per query result and the
+    // component receives a ready-to-render stats bundle (+ the capped flag).
+    select: (res) => ({ stats: computeWashStats(res.washes), capped: res.capped }),
+    placeholderData: keepPreviousData,
+  })
+}
+
 export function useDashboard(branchId: string | null) {
   return useQuery({
     queryKey: keys.dashboard(branchId ?? ""),
     queryFn: () => dashboard.getTodayStats(branchId!),
     enabled: !!branchId,
   })
+}
+
+// Owner-only: the tenant's sub-users (managers). enabled-gated by the caller.
+export function useUsers(enabled = true) {
+  return useQuery({ queryKey: keys.users, queryFn: users.listUsers, enabled })
 }
 
 // ─── Mutation hooks ──────────────────────────────────────────────────────────
@@ -249,6 +293,32 @@ export function useWashOrderMutations(branchId: string | null) {
     cancel: useMutation({
       mutationFn: (a: { id: string; reason: string }) => washOrders.cancelWashOrder(a.id, a.reason),
       onSuccess: inval,
+    }),
+  }
+}
+
+export function useUserMutations() {
+  const qc = useQueryClient()
+  const inval = () => qc.invalidateQueries({ queryKey: keys.users })
+  return {
+    create: useMutation({
+      mutationFn: (input: users.CreateUserInput) => users.createUser(input),
+      onSuccess: inval,
+    }),
+    update: useMutation({
+      mutationFn: (input: users.UpdateUserInput) => users.updateUser(input),
+      onSuccess: inval,
+    }),
+    setActive: useMutation({
+      mutationFn: (a: { userId: string; isActive: boolean }) => users.setUserActive(a.userId, a.isActive),
+      onSuccess: inval,
+    }),
+    remove: useMutation({
+      mutationFn: (userId: string) => users.deleteUser(userId),
+      onSuccess: inval,
+    }),
+    resetPassword: useMutation({
+      mutationFn: (a: { userId: string; locale?: string }) => users.resetUserPassword(a.userId, a.locale),
     }),
   }
 }

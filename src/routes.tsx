@@ -1,22 +1,32 @@
 import { createBrowserRouter, Navigate } from "react-router-dom"
 import LoginPage from "./pages/LoginPage"
+import SetPasswordPage from "./pages/SetPasswordPage"
 import NoAccessPage from "./pages/NoAccessPage"
 import BusinessesPage from "./pages/admin/BusinessesPage"
 import BranchesPage from "./pages/tenant/BranchesPage"
 import PackagesPage from "./pages/tenant/PackagesPage"
 import StaffPage from "./pages/tenant/StaffPage"
 import CustomersPage from "./pages/tenant/CustomersPage"
+import CustomerDetailPage from "./pages/tenant/CustomerDetailPage"
 import QueuePage from "./pages/tenant/QueuePage"
 import WashesPage from "./pages/tenant/WashesPage"
+import WashDetailPage from "./pages/tenant/WashDetailPage"
 import DashboardPage from "./pages/tenant/DashboardPage"
+import AnalyticsPage from "./pages/tenant/AnalyticsPage"
+import UsersPage from "./pages/tenant/UsersPage"
 import { AppHeader } from "./components/AppHeader"
 import { TenantLayout } from "./components/tenant/TenantLayout"
-import { RequireAuth, RequireAdmin, RequireTenant } from "./auth/guards"
+import { RequireAuth, RequireAdmin, RequireTenant, RequireOwner, RequireTabAccess } from "./auth/guards"
 
 export const router = createBrowserRouter([
   {
     path: "/login",
     element: <LoginPage />,
+  },
+  {
+    // Public — lands here from the emailed invite / password-reset link.
+    path: "/set-password",
+    element: <SetPasswordPage />,
   },
   {
     element: <RequireAuth />,
@@ -44,36 +54,65 @@ export const router = createBrowserRouter([
             element: <TenantLayout />,
             children: [
               {
-                index: true,
-                element: <Navigate to="/app/dashboard" replace />,
+                // Per-tab view gating (members). Owner-only areas are nested
+                // separately under RequireOwner below.
+                element: <RequireTabAccess />,
+                children: [
+                  {
+                    index: true,
+                    element: <Navigate to="/app/dashboard" replace />,
+                  },
+                  {
+                    path: "dashboard",
+                    element: <DashboardPage />,
+                  },
+                  {
+                    path: "analytics",
+                    element: <AnalyticsPage />,
+                  },
+                  {
+                    path: "packages",
+                    element: <PackagesPage />,
+                  },
+                  {
+                    path: "staff",
+                    element: <StaffPage />,
+                  },
+                  {
+                    path: "customers",
+                    element: <CustomersPage />,
+                  },
+                  {
+                    path: "customers/:id",
+                    element: <CustomerDetailPage />,
+                  },
+                  {
+                    path: "queue",
+                    element: <QueuePage />,
+                  },
+                  {
+                    path: "washes",
+                    element: <WashesPage />,
+                  },
+                  {
+                    path: "washes/:id",
+                    element: <WashDetailPage />,
+                  },
+                ],
               },
               {
-                path: "dashboard",
-                element: <DashboardPage />,
-              },
-              {
-                path: "branches",
-                element: <BranchesPage />,
-              },
-              {
-                path: "packages",
-                element: <PackagesPage />,
-              },
-              {
-                path: "staff",
-                element: <StaffPage />,
-              },
-              {
-                path: "customers",
-                element: <CustomersPage />,
-              },
-              {
-                path: "queue",
-                element: <QueuePage />,
-              },
-              {
-                path: "washes",
-                element: <WashesPage />,
+                // Owner-only: branch + user management.
+                element: <RequireOwner />,
+                children: [
+                  {
+                    path: "branches",
+                    element: <BranchesPage />,
+                  },
+                  {
+                    path: "users",
+                    element: <UsersPage />,
+                  },
+                ],
               },
             ],
           },

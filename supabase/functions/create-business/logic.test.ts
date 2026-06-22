@@ -54,5 +54,7 @@ Deno.test("validateInput: accepts and trims valid input", () => {
     businessName: "Acme Wash",
     ownerEmail: "acme@owner.test",
     ownerFullName: "Acme Owner",
+    appUrl: undefined,
+    locale: "en",
   });
 });

@@ -31,6 +31,27 @@ Per feature, in order — do not skip steps:
 
 Never push to `production` without explicit permission.
 
+## Deployment Environments (REQUIRED)
+
+Three environments, each with its **own Supabase project (DB)** and Vercel deploy. Always
+develop and test locally first; only green code reaches `dev`.
+
+| Env | Branch → Vercel | Supabase project (ref) |
+|-----|-----------------|------------------------|
+| **Local** | — (Docker Supabase) | local, disposable |
+| **Testing / staging** | `dev` → `car-wash-system-testing.vercel.app` | `car_wash_staging` (`tjvnojfsvcyvlvpqzjft`) |
+| **Production** | `production` → `car-wash-system-six.vercel.app` | `car_wash` (`vgxqqdwcmnburttgjwsf`) |
+
+Rules:
+- **Develop + run the full suite locally** (pgTAP + Vitest + build, all green) **before pushing.**
+- `dev` **auto-deploys to the shared testing site** — a broken push breaks QA for everyone.
+  Never push WIP/red code to `dev`; push coherent, green increments and keep messy work local.
+- `production` deploys only from the `production` branch, **only on explicit go-ahead.**
+- Each env has its own data, auth hook, and platform admin — **testing must never run against
+  the production DB.** Cloud creds (DB passwords, access token, admin logins) live only in
+  gitignored `supabase_credentials.md` / `admin_creds.md`; env-var setup is in `DEPLOY.md`.
+  Never commit secrets.
+
 ## UI Conventions (REQUIRED for every screen)
 
 - **Responsive, tablet-first.** Every screen must work at mobile (~375px) and tablet

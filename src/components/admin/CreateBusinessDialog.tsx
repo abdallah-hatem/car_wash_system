@@ -26,7 +26,7 @@ interface Props {
 type ViewState = "form" | "success"
 
 export function CreateBusinessDialog({ open, onOpenChange, onCreated }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   const [businessName, setBusinessName] = useState("")
   const [ownerEmail, setOwnerEmail] = useState("")
@@ -67,7 +67,7 @@ export function CreateBusinessDialog({ open, onOpenChange, onCreated }: Props) {
 
     setSubmitting(true)
     try {
-      const res = await create.mutateAsync({ businessName, ownerEmail, ownerFullName })
+      const res = await create.mutateAsync({ businessName, ownerEmail, ownerFullName, locale: i18n.language })
       setResult(res)
       setView("success")
     } catch (err) {
@@ -81,9 +81,9 @@ export function CreateBusinessDialog({ open, onOpenChange, onCreated }: Props) {
   }
 
   async function handleCopy() {
-    if (!result) return
+    if (!result?.actionLink) return
     try {
-      await navigator.clipboard.writeText(result.tempPassword)
+      await navigator.clipboard.writeText(result.actionLink)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
@@ -182,27 +182,31 @@ export function CreateBusinessDialog({ open, onOpenChange, onCreated }: Props) {
               <DialogTitle>{t("admin.create.successTitle")}</DialogTitle>
             </DialogHeader>
 
-            <p className="text-sm text-muted-foreground">
-              {result?.ownerEmail}
+            <p className="text-sm text-foreground">
+              {result?.emailed
+                ? t("admin.create.emailedTo", { email: result.ownerEmail })
+                : t("admin.create.notEmailed")}
             </p>
 
-            <div className="flex flex-col gap-1.5">
-              <Label>{t("admin.create.tempPasswordLabel")}</Label>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 rounded-md border bg-muted px-3 py-2 font-mono text-sm select-all break-all">
-                  {result?.tempPassword}
-                </code>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopy}
-                  className="shrink-0"
-                >
-                  {copied ? t("admin.create.copied") : t("admin.create.copy")}
-                </Button>
+            {result?.actionLink && (
+              <div className="flex flex-col gap-1.5">
+                <Label>{t("admin.create.linkLabel")}</Label>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 rounded-md border bg-muted px-3 py-2 font-mono text-xs select-all break-all">
+                    {result.actionLink}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopy}
+                    className="shrink-0"
+                  >
+                    {copied ? t("admin.create.copied") : t("admin.create.copy")}
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
 
             <DialogFooter>
               <Button type="button" onClick={handleDone} className="w-full gap-1.5">

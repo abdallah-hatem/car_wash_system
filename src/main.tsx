@@ -1,3 +1,4 @@
+/// <reference types="vite-plugin-pwa/client" />
 import React from "react"
 import ReactDOM from "react-dom/client"
 import { RouterProvider } from "react-router-dom"
@@ -7,6 +8,7 @@ import { I18nDirection } from "./i18n/I18nDirection"
 import { AuthProvider } from "@/auth/AuthProvider"
 import { router } from "@/routes"
 import { queryClient } from "@/lib/query"
+import { AppShell } from "@/components/AppShell"
 import "./index.css"
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -14,7 +16,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <I18nDirection>
         <AuthProvider>
-          <RouterProvider router={router} />
+          <AppShell>
+            <RouterProvider router={router} />
+          </AppShell>
         </AuthProvider>
       </I18nDirection>
     </QueryClientProvider>

@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
+import { useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { Car, Pencil, Plus, Search, Trash2 } from "lucide-react"
+import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -13,14 +14,19 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Pager } from "@/components/ui/pager"
+import { TableSkeleton } from "@/components/ui/skeletons"
 import { CustomerDialog } from "@/components/tenant/CustomerDialog"
-import { CustomerDetailDialog } from "@/components/tenant/CustomerDetailDialog"
-import { useCustomersPaged, useCustomerMutations } from "@/lib/tenant/queries"
+import { useCustomersPaged, useCustomerMutations, useBranches } from "@/lib/tenant/queries"
 import { PAGE_SIZE } from "@/lib/pagination"
 import type { Customer } from "@/lib/tenant/customers"
+import { useAuth } from "@/auth/AuthProvider"
+import { canEdit } from "@/auth/claims"
 
 export default function CustomersPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { claims } = useAuth()
+  const allowEdit = canEdit(claims, "customers")
 
   const [page, setPage] = useState(0)
   const [search, setSearch] = useState("")
@@ -52,6 +58,12 @@ export default function CustomersPage() {
   const rows: Customer[] = data?.rows ?? []
   const total = data?.total ?? 0
 
+  const { data: branches = [] } = useBranches()
+  const branchName = useMemo(() => {
+    const m = new Map(branches.map((b) => [b.id, b.name]))
+    return (id: string | null) => (id ? m.get(id) ?? "—" : "—")
+  }, [branches])
+
   const mutations = useCustomerMutations()
 
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -59,8 +71,6 @@ export default function CustomersPage() {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [confirmCustomer, setConfirmCustomer] = useState<Customer | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
-  const [detailOpen, setDetailOpen] = useState(false)
-  const [detailCustomer, setDetailCustomer] = useState<Customer | null>(null)
 
   function handleNew() {
     setEditing(null)
@@ -73,8 +83,7 @@ export default function CustomersPage() {
   }
 
   function handleManage(customer: Customer) {
-    setDetailCustomer(customer)
-    setDetailOpen(true)
+    navigate(`/app/customers/${customer.id}`)
   }
 
   function handleDeleteClick(customer: Customer) {
@@ -101,7 +110,7 @@ export default function CustomersPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">{t("customers.title")}</h1>
-        <Button onClick={handleNew} className="gap-1.5">
+        <Button onClick={handleNew} disabled={!allowEdit} className="gap-1.5">
           <Plus className="h-4 w-4" />
           {t("customers.newCustomer")}
         </Button>
@@ -128,7 +137,7 @@ export default function CustomersPage() {
       )}
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+        <TableSkeleton columns={5} />
       ) : isError ? (
         <div className="flex flex-col gap-2">
           <p role="alert" className="text-sm text-destructive">{t("customers.errors.generic")}</p>
@@ -150,6 +159,7 @@ export default function CustomersPage() {
                 <TableRow>
                   <TableHead className="text-start">{t("customers.name")}</TableHead>
                   <TableHead className="text-start">{t("customers.phone")}</TableHead>
+                  <TableHead className="text-start">{t("customers.branch")}</TableHead>
                   <TableHead className="text-start">{t("customers.vehicleCount")}</TableHead>
                   <TableHead className="text-start">{t("common.actions")}</TableHead>
                 </TableRow>
@@ -157,8 +167,17 @@ export default function CustomersPage() {
               <TableBody>
                 {rows.map((customer) => (
                   <TableRow key={customer.id}>
-                    <TableCell className="font-medium">{customer.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <button
+                        type="button"
+                        onClick={() => handleManage(customer)}
+                        className="text-start hover:underline focus-visible:underline outline-none"
+                      >
+                        {customer.name}
+                      </button>
+                    </TableCell>
                     <TableCell>{customer.phone ?? "—"}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{branchName(customer.branch_id)}</TableCell>
                     <TableCell>{customer.vehicle_count}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
@@ -166,15 +185,16 @@ export default function CustomersPage() {
                           variant="ghost"
                           size="icon-sm"
                           onClick={() => handleManage(customer)}
-                          aria-label={t("vehicles.title")}
-                          title={t("vehicles.title")}
+                          aria-label={t("common.view")}
+                          title={t("common.view")}
                           className="text-muted-foreground hover:text-foreground"
                         >
-                          <Car className="h-4 w-4" />
+                          <Eye className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon-sm"
+                          disabled={!allowEdit}
                           onClick={() => handleEdit(customer)}
                           aria-label={t("common.edit")}
                           title={t("common.edit")}
@@ -185,7 +205,7 @@ export default function CustomersPage() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          disabled={mutations.remove.isPending && confirmCustomer?.id === customer.id}
+                          disabled={(mutations.remove.isPending && confirmCustomer?.id === customer.id) || !allowEdit}
                           onClick={() => handleDeleteClick(customer)}
                           aria-label={t("common.delete")}
                           title={t("common.delete")}
@@ -209,14 +229,6 @@ export default function CustomersPage() {
         onOpenChange={setDialogOpen}
         customer={editing}
       />
-
-      {detailCustomer && (
-        <CustomerDetailDialog
-          open={detailOpen}
-          onOpenChange={setDetailOpen}
-          customer={detailCustomer}
-        />
-      )}
 
       <ConfirmDialog
         open={confirmOpen}

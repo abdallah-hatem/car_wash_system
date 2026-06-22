@@ -83,10 +83,43 @@
   animation: cw-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Branch-switch toast: slides up from the bottom and fades in. */
+@keyframes wf-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* RTL variant — the translateX flip is opposite in RTL (+50%) */
+@keyframes wf-toast-in-rtl {
+  from {
+    opacity: 0;
+    transform: translateX(50%) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(50%) translateY(0);
+  }
+}
+
+.wf-toast {
+  animation: wf-toast-in 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+[dir="rtl"] .wf-toast {
+  animation-name: wf-toast-in-rtl;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cw-droplet,
   .cw-shine,
-  .cw-rise {
+  .cw-rise,
+  .wf-toast {
     animation: none;
   }
 }
@@ -153,4 +186,16 @@
 
 html[lang="ar"] body {
   font-family: "Cairo", system-ui, sans-serif;
+}
+
+/* Hide the up/down spin buttons on number inputs, app-wide. Scroll-to-change is
+   disabled in the shared Input component (blur on wheel for type="number"). */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }

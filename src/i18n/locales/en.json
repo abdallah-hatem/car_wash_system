@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Sudsly",
+    "appName": "WashFlow",
     "signOut": "Sign out",
     "language": "Language",
     "create": "Create",
@@ -20,6 +20,7 @@
     "empty": "Nothing here yet.",
     "retry": "Retry",
     "actions": "Actions",
+    "view": "View",
     "optional": "optional"
   },
   "auth": {
@@ -42,6 +43,20 @@
     "title": "No workspace assigned",
     "body": "Your account isn't linked to a business yet. Please contact your administrator."
   },
+  "setPassword": {
+    "title": "Set your password",
+    "subtitle": "Choose a password to finish setting up your WashFlow account.",
+    "password": "New password",
+    "confirm": "Confirm password",
+    "hint": "At least 8 characters",
+    "submit": "Set password & continue",
+    "tooShort": "Password must be at least 8 characters.",
+    "mismatch": "Passwords don't match.",
+    "error": "Couldn't set your password. The link may have expired — ask for a new one.",
+    "invalidTitle": "Link expired or invalid",
+    "invalidBody": "This password link is no longer valid. Please request a new invite or reset.",
+    "toLogin": "Go to sign in"
+  },
   "nav": {
     "branches": "Branches",
     "packages": "Packages",
@@ -50,8 +65,60 @@
     "queue": "Queue",
     "washes": "Washes",
     "dashboard": "Dashboard",
+    "analytics": "Analytics",
+    "users": "Users",
     "comingSoon": "coming soon",
     "menu": "Open menu"
+  },
+  "users": {
+    "title": "Users",
+    "subtitle": "Staff who can sign in — scoped to branches and features",
+    "newUser": "New user",
+    "editUser": "Edit user",
+    "user": "User",
+    "email": "Email",
+    "password": "Password",
+    "passwordHint": "At least 8 characters",
+    "newPasswordOptional": "New password (leave blank to keep)",
+    "fullName": "Full name",
+    "branches": "Branches",
+    "branchesHint": "Which branches this user can operate",
+    "noBranches": "No branches",
+    "noBranchesAvailable": "No branches yet — add one first.",
+    "access": "Access",
+    "featureCount": "{{n}} features",
+    "permissions": "Permissions",
+    "permissionsHint": "What this user can see and do",
+    "level": {
+      "none": "No access",
+      "view": "View",
+      "edit": "Edit"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "empty": "No users yet. Add staff to help run your branches.",
+    "claimsNote": "Changes take effect the next time the user signs in.",
+    "sendInvite": "Send invite",
+    "inviteHint": "We'll email them a link to set their own password.",
+    "inviteSent": "Invite sent",
+    "resetReady": "Reset link ready",
+    "emailedTo": "We emailed a set-password link to {{email}}.",
+    "notEmailed": "Email isn't active yet — copy this link and share it with them:",
+    "setPasswordLink": "Set-password link",
+    "linkHint": "This link lets them set their password. It expires after a while.",
+    "copyLink": "Copy link",
+    "copied": "Copied!",
+    "sendReset": "Send password reset",
+    "done": "Done",
+    "deleteTitle": "Delete user?",
+    "deleteBody": "This permanently removes their sign-in access.",
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "invalid": "Please check the form and try again.",
+      "email_exists": "That email is already registered.",
+      "not_found": "User not found.",
+      "forbidden": "Only the owner can manage users."
+    }
   },
   "branches": {
     "title": "Branches",
@@ -69,6 +136,8 @@
     "title": "Packages",
     "newPackage": "New package",
     "name": "Name",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional notes about this package",
     "price": "Price",
     "duration": "Duration",
     "minutes": "min",
@@ -96,10 +165,15 @@
     "newCustomer": "New customer",
     "name": "Name",
     "phone": "Phone",
+    "branch": "Branch",
     "vehicleCount": "Vehicles",
     "empty": "No customers yet.",
     "deleteWarn": "Deleting this customer will unlink their vehicles. Continue?",
     "detailTitle": "Customer details",
+    "washHistory": "Wash history",
+    "noWashes": "No washes yet.",
+    "back": "Back to customers",
+    "notFound": "Customer not found",
     "errors": {
       "generic": "Something went wrong. Please try again."
     }
@@ -135,7 +209,8 @@
     "price_invalid": "Price must be a positive number.",
     "plate_required": "Plate number is required.",
     "letters_required": "Please enter exactly 3 Arabic letters.",
-    "digits_required": "Please enter 1 to 4 digits."
+    "digits_required": "Please enter 1 to 4 digits.",
+    "phone_invalid": "Egyptian mobile: 11 digits starting 010, 011, 012, or 015"
   },
   "status": {
     "waiting": "Waiting",
@@ -161,6 +236,7 @@
     "plate": "Plate number",
     "findOrAddVehicle": "Find or add vehicle",
     "newVehicle": "New vehicle",
+    "vehicleHelperText": "Select a car, or add a new one",
     "customer": "Customer",
     "customerName": "Customer name",
     "customerPhone": "Customer phone",
@@ -193,7 +269,8 @@
       "generic": "Something went wrong. Please try again.",
       "package_required": "Please select a package.",
       "price_invalid": "Price must be a positive number.",
-      "plate_required": "Plate number is required."
+      "plate_required": "Plate number is required.",
+      "vehicle_required": "Please select or add a vehicle."
     },
     "noStaffAtBranch": "No staff assigned to this branch — start without one or add staff."
   },
@@ -238,11 +315,28 @@
     "colPrice": "Price",
     "colPaid": "Paid",
     "colReason": "Reason",
+    "platePlaceholder": "Search by plate",
     "empty": "No washes found for the selected filters.",
     "capped": "Showing the {{n}} most recent washes. Narrow your filters to see more.",
     "errors": {
       "generic": "Something went wrong. Please try again."
-    }
+    },
+    "back": "Back to washes",
+    "notFound": "Wash not found",
+    "sectionCustomer": "Customer",
+    "sectionVehicle": "Vehicle",
+    "sectionService": "Service",
+    "sectionTimeline": "Timeline",
+    "sectionPayments": "Payments",
+    "queued": "Queued",
+    "started": "Started",
+    "completed": "Completed",
+    "cancelledAt": "Cancelled at",
+    "waitDuration": "Wait",
+    "serviceDuration": "Service duration",
+    "noPayments": "No payments recorded",
+    "totalPaid": "Total paid",
+    "colPaidAt": "Paid at"
   },
   "pager": {
     "range": "{{from}}–{{to}} of {{total}}",
@@ -259,6 +353,50 @@
     "errors": {
       "generic": "Something went wrong. Please try again."
     }
+  },
+  "analytics": {
+    "title": "Analytics",
+    "dateRange": "Date range",
+    "branch": "Branch",
+    "allBranches": "All branches",
+    "empty": "No washes in this period. Adjust the filters or start a new wash.",
+    "noChartData": "No data for this period",
+    "capped": "Showing the first {{n}} washes. Narrow the date range or branch to see all.",
+    "kpi": {
+      "revenue": "Revenue",
+      "washes": "Washes",
+      "avgTicket": "Avg ticket",
+      "completionRate": "Completion rate",
+      "avgWait": "Avg wait",
+      "avgService": "Avg service"
+    },
+    "charts": {
+      "revenueTrend": "Revenue trend",
+      "byStatus": "Washes by status",
+      "byWeekday": "Busiest weekdays",
+      "byHour": "Busiest hours",
+      "topPackages": "Top packages",
+      "byBranch": "By branch",
+      "cancellations": "Cancellations by reason",
+      "topEmployees": "Top employees"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "branch": {
+    "nowViewing": "Now viewing {{branch}}"
+  },
+  "pwa": {
+    "updateAvailable": "A new version is available",
+    "reload": "Reload"
+  },
+  "notify": {
+    "enable": "Enable notifications",
+    "disable": "Disable notifications",
+    "enabled": "Notifications on",
+    "blocked": "Notifications blocked in browser settings",
+    "unsupported": "Install the app to enable notifications"
   },
   "admin": {
     "title": "Businesses",
@@ -282,6 +420,9 @@
       "cancel": "Cancel",
       "creating": "Creating…",
       "successTitle": "Business created",
+      "emailedTo": "We emailed a set-password link to {{email}}.",
+      "notEmailed": "Email isn't active yet — copy this link and send it to the owner:",
+      "linkLabel": "Set-password link",
       "tempPasswordLabel": "Temporary password",
       "copy": "Copy",
       "copied": "Copied!",

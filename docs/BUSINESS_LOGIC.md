@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-13 (customer search by name/plate/phone; page size 10).
+Last updated: 2026-06-20 (transactional email via Resend — invites & password resets send a secure set-password link instead of a temp password; create-business + manage-users email + return the link, new `/set-password` screen, bilingual templates; see §6.1, §6.11, §6.12. Earlier 2026-06-17: sidebar icons; customers created-`branch_id` (migration 0018); per-tab `BranchFilter` replacing the navbar dropdown; roles & permissions branch-scoped sub-users, migrations 0016/0017 — §6.5/§6.6/§6.7/§6.11).
 
 ---
 
@@ -25,31 +25,42 @@ Edge Functions), PWA. Bilingual **English + Arabic (RTL)**, tablet-first respons
 |---|---|---|---|
 | **Platform admin** | Us, the SaaS operator | `/admin` console | row in `platform_admins`; JWT claim `is_platform_admin: true` |
 | **Tenant owner** | Owner of one carwash business | `/app` (tenant app) | `profiles.role = 'owner'`; JWT claims `tenant_id` + `app_role` |
-| **Tenant manager** | Day-to-day operator of a business | `/app` | `profiles.role = 'manager'` |
+| **Tenant manager (sub-user)** | Branch-scoped staff the owner adds | `/app` (limited) | `profiles.role = 'manager'` + `user_branches` + `profiles.permissions`; JWT `app_role` + `branch_ids` + `permissions` |
 | **Employee (washer)** | Staff who perform washes | — (not a login) | a row in `employees`; **not** an auth user |
 
-Operations are **counter-operated**: the owner/manager runs everything from a tablet at the
-counter. Washers are tracked as records and assigned to washes; they do not log in.
+Operations are **counter-operated**: owner/managers run everything from a tablet at the
+counter. The **owner** has full access to all branches and manages users + branches. A
+**manager** is a sub-user the owner creates, **scoped to one or more branches** and granted
+**per-tab `view`/`edit` permissions** (see §6.11). Washers are records, not logins.
 
 ## 3. Tenancy & security model (the backbone)
 
 - Every operational row carries a **`tenant_id`**. Branch-scoped rows also carry `branch_id`.
-- A Supabase **auth hook** (`custom_access_token_hook`) injects `tenant_id`, `app_role`, and
-  `is_platform_admin` into the user's JWT at token-issue time, read from `profiles` /
-  `platform_admins`. The app role is carried under **`app_role`** (not `role`): the JWT
-  `role` claim is left as GoTrue's default (`authenticated`) so PostgREST's role switching
-  (`jwt-role-claim-key` = `role`) sets a valid Postgres role.
+- A Supabase **auth hook** (`custom_access_token_hook`) injects `tenant_id`, `app_role`,
+  `is_platform_admin`, and — for sub-users — `branch_ids` (from `user_branches`) and
+  `permissions` (from `profiles.permissions`) into the JWT at token-issue time. The app role is
+  carried under **`app_role`** (not `role`): the JWT `role` claim is left as GoTrue's default
+  (`authenticated`) so PostgREST's role switching (`jwt-role-claim-key` = `role`) sets a valid
+  Postgres role.
 - **Postgres RLS** enforces isolation on every table: `tenant_id = current_tenant_id()`
   where `current_tenant_id()` reads the `tenant_id` JWT claim. A tenant physically cannot
   read or write another tenant's rows.
+- **Branch + permission gating (sub-users)** layers on top of tenant isolation via helpers
+  `current_app_role()`, `current_branch_ids()`, `current_permission()`, `can_access_branch()`,
+  `can_edit()`: `wash_orders`/`employees` reads are limited to the user's branch(es), `branches`
+  reads to the user's branch(es); writes require the matching tab's `edit` permission
+  (`queue`/`staff`/`customers`/`packages`), and `branches` writes are owner-only. Owners
+  short-circuit every check (full access). This is the real boundary; the UI gating (hidden
+  tabs, disabled controls) is defense-in-depth. See §6.11.
 - **`platform_admins`** is RLS-locked and revoked from `anon`/`authenticated` — only
   `service_role` / SECURITY DEFINER functions touch it (prevents privilege escalation).
-- **Suspension is enforced in the auth hook:** if the user's tenant `status <> 'active'`,
-  the hook withholds the `tenant_id`/`app_role` claims. With no tenant claim, RLS returns
-  nothing and the user is routed to `/no-access`. Effective on the next token refresh
-  (≤ ~1h) for already-logged-in users.
+- **Suspension / deactivation is enforced in the auth hook:** if the user's tenant
+  `status <> 'active'` **or the sub-user's `profiles.is_active = false`**, the hook withholds the
+  tenant claims. With no tenant claim, RLS returns nothing and the user is routed to
+  `/no-access`. Effective on the next token refresh (≤ ~1h) for already-logged-in users.
 - Secrets: frontend uses the **anon key only**; `service_role` key and DB password never
-  reach the client. The `create-business` Edge Function is the only path using service_role.
+  reach the client. The `create-business` and `manage-users` Edge Functions are the only paths
+  using service_role.
 
 ## 4. Data model (current)
 
@@ -59,16 +70,21 @@ Entities (all under Postgres `public`, all tenant-scoped except platform tables)
 - **`platform_admins`** — `user_id` → an auth user who is a platform admin.
 - **`branches`** — `tenant_id`, `name`, `address`. A tenant's physical locations.
 - **`profiles`** — links an auth user to a tenant + role. `user_id`, `tenant_id`,
-  `role` (`owner` | `manager`), `full_name`.
-- **`customers`** — `tenant_id`, `name`, `phone`.
+  `role` (`owner` | `manager`), `full_name`, `permissions` (jsonb per-tab `view`/`edit` map —
+  managers only; owners ignore it), `is_active` (owner can deactivate a sub-user).
+- **`user_branches`** — which branches a `manager` sub-user is responsible for. `tenant_id`,
+  `user_id`, `branch_id` (PK `user_id`+`branch_id`, all FKs cascade). Owners need no rows
+  (they see all branches). Tenant-isolated by RLS.
+- **`customers`** — `tenant_id`, `name`, `phone`, `branch_id` (the branch where the customer
+  was first registered — informational; customers stay tenant-wide/visible across branches).
 - **`vehicles`** — `tenant_id`, `customer_id`, `plate_letters` (3 Arabic letters),
   `plate_digits` (1–4 Western digits), `plate_number` (derived canonical form
   `"<letters> <digits>"`; indexed for `ilike` search), `make`, `model`, `color`.
   Per-tenant uniqueness enforced by DB unique index
   `vehicles_tenant_plate_unique(tenant_id, plate_letters, plate_digits)` — the same plate
   may exist across different tenants but never twice within the same tenant.
-- **`packages`** — wash offerings. `tenant_id`, `name`, `price`, `duration_minutes`,
-  `is_active`.
+- **`packages`** — wash offerings. `tenant_id`, `name`, `description` (optional free text),
+  `price`, `duration_minutes`, `is_active`.
 - **`employees`** — washers (not users). `tenant_id`, `branch_id`, `name`, `phone`,
   `is_active`.
 - **`wash_orders`** — the operations hub. `tenant_id`, `branch_id`, `customer_id`,
@@ -80,6 +96,13 @@ Entities (all under Postgres `public`, all tenant-scoped except platform tables)
   `transfer`), `paid_at`. (Manual recording — no real processor in MVP.)
 - **`audit_log`** — generic trigger-written log (`tenant_id`, `table_name`, `row_id`,
   `action`, `actor`, `at`) on `wash_orders`, `payments`, `customers`.
+- **`push_subscriptions`** — one row per browser/device web-push subscription
+  (`tenant_id`, `user_id`, `endpoint` (unique), `p256dh`, `auth`, `lang`, `user_agent`,
+  `created_at`). `tenant_id` defaults to `current_tenant_id()` and `user_id` to `auth.uid()`
+  **server-side via column DEFAULTs**, so the client only ever sends the push fields and
+  cannot spoof another tenant. Tenant-isolated by the `tenant_isolation` RLS policy; read by
+  the `notify-wash-event` edge function with the `service_role` to send pushes. (Migration
+  `0014_push_subscriptions.sql`; pgTAP `0017_push_subscriptions_test.sql`.)
 
 Relationships: a `tenant` has many branches/customers/vehicles/packages/employees/wash_orders;
 a `wash_order` ties together customer + vehicle + package + assigned employee + branch, and
@@ -107,12 +130,13 @@ Guard targeting avoids redirect loops: a user with no tenant and not an admin la
 2. Clicks **New business**, enters business name + owner email + owner full name.
 3. Frontend calls the **`create-business` Edge Function** (service_role), which:
    - authoritatively verifies the caller is a platform admin (DB check, not just the claim),
-   - generates a random **temp password**,
-   - creates the owner auth user (email pre-confirmed),
+   - creates the owner auth user (random password the owner never uses; email pre-confirmed),
    - inserts the `tenant`, the owner `profile` (role `owner`), and a default **"Main Branch"**,
    - on any failure after user creation, deletes the orphaned auth user (atomic),
-   - returns the new business + the **temp password shown once**.
-4. Admin relays the temp password to the owner (out of band). Owner can change it later.
+   - generates a Supabase **set-password (invite) link**, emails it via Resend, and returns the
+     link + an `emailed` flag.
+4. The owner gets an **invite email** to set their own password (see §6.12); the admin screen
+   also shows a **copy-able link** to hand over directly if email is delayed.
 
 ### 6.2 Suspend / reactivate a business — BUILT
 - Admin toggles a business's `status` in the list (`tenants.status` update via RLS).
@@ -132,7 +156,8 @@ Queue and Dashboard are placeholders marked "coming soon".
 - **Branches** (`/app/branches`): list, create, edit, delete. "Main Branch" seeded by
   onboarding. Delete blocked if branch has associated wash orders.
 - **Packages** (`/app/packages`): list, create, edit, activate/deactivate, delete.
-  Fields: name, price, optional duration (minutes), is_active.
+  Fields: name, optional description (free text, shown as a subtitle in the list),
+  price, optional duration (minutes), is_active.
 - **Staff** (`/app/staff`): list, create, edit, activate/deactivate, delete. Fields:
   name, optional phone, optional branch assignment, is_active.
 
@@ -182,13 +207,18 @@ Vehicles use the **Egyptian licence plate format**: 3 Arabic letters + 1–4 dig
   `new Error("duplicate")`; VehicleDialog and NewWashDialog surface `t("vehicles.errors.duplicate")`
   ("A vehicle with this plate already exists.") with the dialog staying open.
 
-**Per-customer vehicles (CustomerDetailDialog):**
+**Per-customer vehicles + wash history (dedicated page `/app/customers/:id`):**
 - Opened from the "Vehicles" button in the customer list row, or by clicking a plate
   search result.
 - Shows customer name + phone, then a table of linked vehicles (plate, make, model,
   color) with **Add vehicle / Edit vehicle / Delete vehicle** actions.
 - Vehicle count in the customer list row reflects the live count.
 - All vehicle mutations trigger `onChanged()` to refresh the outer customer list.
+- Below the vehicles, a **Wash history** table lists the customer's recent washes (date,
+  plate, package, status, price, paid/unpaid) via `listCustomerWashes(customer_id)`
+  (`useCustomerWashes`, keyed under `["washes"]` so wash mutations refresh it).
+- The **Washes** history page also has a debounced plate-number search (numeral-agnostic via
+  `normalizePlateSearch`, inner-joins `vehicles` when active).
 
 **Plate search (PlateSearch component):**
 - Debounced (300 ms) `ilike '%<normalised_term>%'` query against `vehicles.plate_number`.
@@ -214,9 +244,13 @@ policy (tenant A reads only its own rows).
 **`/app/queue`** — the counter-operator's main screen. A 3-column Kanban board
 (Waiting / In Progress / Done) scoped to the currently-selected branch.
 
-**Branch context:** the header branch selector (BranchSelector component) persists
-the chosen branch in `localStorage` via BranchProvider. All queue reads/writes use this
-`branchId`. Switching branches re-fetches and filters to that branch only.
+**Branch context:** an in-page **branch filter** at the top of the Queue (`BranchFilter`
+component) persists the chosen branch in `localStorage` via BranchProvider — the same shared
+context the Dashboard's filter reads, so a pick on one carries to the other. All queue
+reads/writes use this `branchId`; switching re-fetches and filters to that branch only. The
+filter is **hidden when the user has a single branch** (single-branch tenants and members
+locked to one branch). New Wash uses the selected branch. (The old global navbar dropdown was
+removed in favor of these per-tab filters.)
 
 **Wash order status flow:**
 ```
@@ -298,8 +332,9 @@ at 375 px. No horizontal overflow at 375 px or 820 px. Cairo font in Arabic.
 - **Status breakdown:** Waiting / In Progress / Done / Cancelled counts from today's orders.
 - **Empty state:** when both revenue and washes are 0, shows "No activity today." message.
 
-**Branch context:** uses the same `BranchProvider`/`BranchSelector` as the queue page.
-Switching branches in the header immediately re-fetches and updates all KPI cards.
+**Branch context:** the Dashboard has its own in-page `BranchFilter` (top-right, beside
+Refresh) bound to the same shared `BranchProvider` as the Queue — switching re-fetches and
+updates all KPI cards. Hidden when the user has a single branch.
 
 **Refresh button:** manual refresh re-fetches all KPI data. 44px min touch-target.
 
@@ -316,6 +351,47 @@ revenue sum scoped to branch A, wash count scoped to branch A, row-level isolati
   (`BranchSelector + LanguageSwitcher + SignOut`) was 4 px too wide in RTL; fixed by
   adding `min-w-0 overflow-hidden` to the container and `shrink` + `max-w-[130px]` to
   `BranchSelector`. Verified: `body.scrollWidth === body.clientWidth = 375` after fix.
+
+### 6.7a Analytics / Statistics — BUILT
+
+**`/app/analytics`** — a tenant-wide analytics dashboard over a chosen **date range** and
+**branch** (default: last 30 days, all branches). Reachable from the sidebar (`nav.analytics`,
+chart icon, placed right after Dashboard).
+
+**Data path:** `listWashesForStats({ from, to, branchId })` (`src/lib/tenant/washes.ts`)
+fetches **all** matching `wash_orders` in the range with no pagination, capped at
+`STATS_LIMIT = 5000` rows (ordered newest-first), embedding package/branch/employee names
+and `payments(amount, paid_at)`. RLS scopes to the tenant automatically; the branch filter is
+optional ("all" = no branch filter). A `capped` flag is returned when the row cap is hit so
+the UI can note "showing first N". The `useWashStats` query hook (`queries.ts`,
+`placeholderData: keepPreviousData` for smooth refilter) runs the records through a **pure,
+unit-tested aggregation module** `src/lib/tenant/wash-stats.ts` (`computeWashStats`) in its
+`select`. The aggregations are empty-safe (zeros / nulls / empty arrays) and use
+locale-independent `YYYY-MM-DD` day keys.
+
+**Metrics (all pure functions in `wash-stats.ts`, tested in `wash-stats.test.ts`):**
+- **KPIs:** total revenue (sum of all payments in range), wash count, avg ticket
+  (revenue ÷ completed count, null-guarded), completion rate (done ÷ total), avg wait
+  (`diffMinutes(created_at, started_at)` over started washes), avg service
+  (`diffMinutes(started_at, completed_at)` over completed washes).
+- **Time series:** `revenueByDay` (by each payment's `paid_at` day — cross-day correct),
+  `washesByDay` (by `created_at`), `washesByWeekday` (Sun–Sat), `washesByHour` (0–23).
+- **Breakdowns:** `statusBreakdown` (waiting/in_progress/done/cancelled), `topPackages`
+  (count + revenue), `byBranch` (count + revenue), `cancellationsByReason` (cancelled only),
+  `topEmployees` (completed-wash count per employee).
+
+**UI (`src/pages/tenant/AnalyticsPage.tsx`):** card-based, teal-accented, icon-chip card
+headers matching the WashDetail design. KPI cards row + a charts grid built with **Recharts**
+via the **shadcn chart component** (`src/components/ui/chart.tsx`): revenue trend (area, full
+width, teal gradient), washes-by-status donut (status colors matching `statusBadgeClass`),
+busiest weekdays (bar, localized labels), busiest hours (bar, `HH:00`), top packages
+(horizontal bar, revenue in tooltip), by-branch (washes + revenue bars, rendered only when
+>1 branch), cancellations-by-reason (ranked list + share bars), top employees (ranked list).
+Skeleton loading mirrors the KPI + charts layout; empty state when no washes in range; error
+state with retry; a subtle note when the data cap is hit. Fully i18n (`analytics.*` +
+`nav.analytics` in en/ar, parity-tested), RTL-correct (logical utilities; numeric axes stay
+LTR per convention), tablet-first responsive (KPI grid + charts reflow at 375 px). Uses the
+anon Supabase client (RLS-scoped).
 
 ### 6.8 JWT role claim conflict — RESOLVED (2026-06-11)
 **Was:** the `custom_access_token_hook` wrote `role = "owner" | "manager"` into the JWT
@@ -344,6 +420,122 @@ the operation itself is correct at every layer (verified via REST 204 and a full
 run of Start/Complete/Payment); the error was the stale dual-React bundle crashing the
 queue's dialogs, now prevented by dedupe.
 
+### 6.10 PWA + Web Push notifications — IN PROGRESS (Plan: pwa-push-notifications)
+
+The app is an installable **PWA** with a custom service worker that handles `push` and
+`notificationclick` (Phase 1 — DONE). **Web push** for wash-lifecycle events is delivered
+per-tenant (Phase 2).
+
+**Events that notify (per tenant):**
+1. **New wash queued** — `wash_orders` INSERT with status `waiting` → `queued`.
+2. **Wash completed** — `wash_orders` UPDATE where status transitions to `done` and the wash
+   is fully paid (sum of `payments.amount` ≥ `price`) → `completed`.
+3. **Wash done & awaiting payment** — the same `done` transition when paid < `price` →
+   `done_unpaid`.
+4. **Long wait (> 15 min)** — **Planned** (Phase 3, `pg_cron` + `wait_notified_at`).
+
+**Subscriptions:** the **Enable-notifications** toggle (bell) in the tenant header
+(`NotificationsToggle` in `TenantLayout`) requests Notification permission, subscribes via the
+service worker's `PushManager` using `VITE_VAPID_PUBLIC_KEY`, and **upserts** the subscription
+(by `endpoint`) into `push_subscriptions` through the **anon** client — `tenant_id`/`user_id`
+are filled by DB defaults. Unsubscribe removes the `PushManager` subscription and deletes the
+row. The control reflects state (subscribed / unsubscribed / denied / unsupported); on browsers
+without push (e.g. iOS Safari before "Add to Home Screen") it shows a disabled bell with a hint
+rather than disappearing. Localized (en/ar), RTL, ≥ 44 px. Per device.
+(`src/lib/notify/subscriptions.ts`: `pushSupported`, `currentPushState`, `enablePush`,
+`disablePush`; VAPID-key encoder `src/lib/notify/push.ts`.)
+
+**Send pipeline — `notify-wash-event` edge function** (`supabase/functions/notify-wash-event/`):
+receives a Supabase **Database Webhook** payload (`{ type, record, old_record }`) for
+`public.wash_orders` INSERT + UPDATE. A **pure** classifier (`classify.ts`, Deno-tested)
+maps the row change to `queued` / `completed` / `null`. For a `completed` (→`done`) result the
+function queries `payments` for that wash (via **service_role**) and downgrades to `done_unpaid`
+when paid < `price`. It then loads that tenant's `push_subscriptions` (service_role, bypassing
+RLS — server-side only) and sends each one a push via **`web-push`** (VAPID), pruning any
+subscription that returns **404/410**. Notification copy is a tiny server-side i18n map
+(`copy.ts`) keyed by the subscription's `lang`; the body includes the plate when known; title
+"WashFlow" (ar "واش فلو"). The function is guarded by an optional shared-secret header
+(`WEBHOOK_SECRET`) and returns a JSON summary `{ classified, sent, pruned, … }`.
+
+**Security:** the VAPID **private key** lives only as an edge-function env var
+(`VAPID_PRIVATE_KEY`); the **public key** ships to the client (`VITE_VAPID_PUBLIC_KEY`, public
+by design). `push_subscriptions` is tenant-isolated by RLS; the send function reads it via
+`service_role` server-side only — never exposed to the client. A user only ever receives their
+own tenant's events.
+
+**Cloud wiring (per environment — not done in code; see "Build status & scope"):** set
+`VITE_VAPID_PUBLIC_KEY` (Vercel) + `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT`
+(and optionally `WEBHOOK_SECRET`) as Supabase function secrets; deploy `notify-wash-event`; and
+create a **Database Webhook** on `public.wash_orders` for **INSERT + UPDATE** pointing at the
+function URL (with the `x-webhook-secret` header if `WEBHOOK_SECRET` is set). Locally the
+function is tested directly (the webhook itself is a cloud step).
+
+### 6.11 Roles & permissions (branch-scoped sub-users) — BUILT
+
+**Goal:** an owner with one or more branches adds **sub-users** (role `manager`) who can run
+**specific branches** and access **specific tabs**, at `view` or `edit` level per tab.
+
+**Model.** Two roles via the existing `tenant_role` enum: `owner` (full access, all branches,
+manages users + branches) and `manager` (the sub-user). A manager's scope is `user_branches`
+(one+ branches) + `profiles.permissions` (a `{tab: 'view'|'edit'}` map; missing = no access).
+Gateable tabs: `dashboard`, `analytics` (view-only), `queue`, `washes` (view-only), `customers`,
+`packages`, `staff`. `branches` + `users` management are **owner-only**. Wash mutations
+(create/start/complete/cancel/pay) are all gated by `queue:'edit'`; the Washes tab is read-only
+(history) — RLS can't distinguish a "cancel" UPDATE from a "complete" one.
+
+**Enforcement (two layers).**
+- **DB / RLS (the boundary):** the auth hook injects `branch_ids` + `permissions`; helpers
+  `can_access_branch()` / `can_edit()` scope `wash_orders`/`employees`/`branches` reads to the
+  user's branch(es) and gate writes on the matching `edit` permission (§3). Owners short-circuit.
+- **UI (defense-in-depth):** the sidebar hides tabs the user can't `view`; `RequireTabAccess`
+  redirects a member who URL-navigates to a non-permitted tab to their first accessible tab;
+  `RequireOwner` guards `/app/branches` + `/app/users`; the branch switcher shows only the
+  user's branches (the branches-read RLS returns only those); within a permitted tab, edit
+  controls (New/Edit/Delete + queue ops) are **disabled (not hidden)** unless the user has `edit`.
+
+**User management.** Owner-only **`/app/users`** lists sub-users (branches + active + feature
+count) and an add/edit dialog with email, branch multi-select, and a tab×level permission grid
+(**no password field**). All writes go through the **`manage-users`** edge function (service_role,
+owner-gated like create-business): `list`/`create`/`update`/`setActive`/`delete`/`resetPassword`.
+It only targets `manager` rows in the caller's tenant (never another owner/tenant), validates
+that assigned branches belong to the tenant, and rolls back an orphan auth user on partial create.
+**Create** emails the new user a set-password (invite) link and **resetPassword** emails a reset
+link (both via Resend, see §6.12) — and both **return the link** so the owner can copy/hand it
+over directly. No owner-typed passwords. Permission/branch changes take effect on the sub-user's
+next token refresh / re-login.
+
+**Tests.** pgTAP `0018` (helpers, hook claims, branch-scoped reads, write-permission gating);
+Deno `manage-users/logic.test.ts` (validation + authorization guards); Vitest `claims.test.ts`
+(`canView`/`canEdit`/`isOwner`/`visibleBranches`, claim parsing). Migrations `0016` (helpers,
+profiles cols, `user_branches`, profiles RLS, auth hook) + `0017` (operational table RLS rewrite).
+
+### 6.12 Transactional email — invites & password resets (Resend) — BUILT (local)
+
+**Goal:** instead of relaying a temporary password, new users (tenant owners via create-business,
+sub-users via manage-users) and password resets get a **secure set-password link** by email; the
+user clicks it and **sets their own password** — no plaintext password is stored or sent.
+
+**How.** The edge functions generate a Supabase **recovery (set-password) action link**
+(`auth.admin.generateLink`, `redirectTo = <appUrl>/set-password`, where `appUrl` is the caller's
+browser origin so it's environment-correct), then email it via **Resend** from the shared
+`_shared/email.ts` module (branded, **bilingual EN/AR** invite + reset templates;
+`RESEND_API_KEY` + `EMAIL_FROM` are function secrets). The link is **also returned** to the
+caller so the owner/admin can copy and hand it over — so the flow works even **before** the
+sending domain is verified (email is best-effort; the copy-link is the always-available fallback).
+
+**Set-password screen** (`/set-password`, public): Supabase parses the recovery token from the
+URL hash (`detectSessionInUrl`), the user picks a password (`auth.updateUser`), then lands in the
+app. Invalid/expired links show a friendly message.
+
+**Per-environment config:** `redirectTo` is environment-correct automatically (browser origin),
+but Supabase only honors an allow-listed redirect — so each environment's `/set-password` URL must
+be in **`additional_redirect_urls`** (local is in `config.toml`; staging/prod set in their auth
+config). Sending domain: **`washflow.khalidelewa.com`** (verified in Resend).
+
+**Tests:** Deno `_shared/email.test.ts` (template rendering + soft-fail send) + the manage-users /
+create-business validation tests. Cloud go-live: set `RESEND_API_KEY`/`EMAIL_FROM` secrets +
+allow-list URLs on staging/prod, redeploy the functions.
+
 ## 7. Cross-cutting conventions
 
 - **i18n:** all user-facing strings come from `src/i18n/locales/{en,ar}.json` (identical key
@@ -357,10 +549,10 @@ queue's dialogs, now prevented by dedupe.
 - **Data fetching (reactive):** the frontend uses **TanStack Query**. Components read data
   via query hooks (`src/lib/tenant/queries.ts`, `src/lib/admin-queries.ts`); mutations
   **invalidate the related query keys** on success, so any add/edit/delete refreshes all
-  related views automatically (e.g. creating a branch updates the navbar dropdown; recording
+  related views automatically (e.g. creating a branch updates the branch filters; recording
   a payment updates the dashboard) — no manual refresh. The branch context
-  (`branch-context.tsx`) is a `useBranches()` consumer, so the navbar branch selector is
-  reactive. Realtime/multi-client sync is deferred.
+  (`branch-context.tsx`) is a `useBranches()` consumer, so the in-page branch filters
+  (Queue + Dashboard) stay reactive. Realtime/multi-client sync is deferred.
 - **Confirmations:** destructive actions use a custom `ConfirmDialog` (shadcn AlertDialog,
   `src/components/ui/confirm-dialog.tsx`) — no native `window.confirm`.
 - **Session resilience:** a `401` from the data/functions API signs the user out and the
@@ -379,7 +571,7 @@ queue's dialogs, now prevented by dedupe.
   customer CRUD, per-customer vehicle CRUD (nested detail dialog), debounced plate search
   with wildcard-escaped `ilike` query, RTL/responsive at 375 px–820 px, pgTAP RLS
   isolation test `0012_customers_vehicles_rls_test.sql` (5 assertions: isolation,
-  plate search, audit trigger). `CustomerDetailDialog` overflow fix applied
+  plate search, audit trigger). `the customer detail page (`/app/customers/:id`)` overflow fix applied
   (`min-w-0` on flex column + table wrapper). See section 6.5.
 - **Egyptian plate model (Task 5):** DONE. Vehicles use Egyptian structured plate:
   3 Arabic letters + 1–4 digits stored as `plate_letters`/`plate_digits` +
@@ -406,11 +598,39 @@ queue's dialogs, now prevented by dedupe.
 
 **Plan 3 — COMPLETE (3A + 3B + 3C + 3D + Egyptian plate model all done).**
 
+- **Wash detail page (`/app/washes/:id`):** DONE. Read-only detail page for a single wash order — plate + status header, customer (name + phone, name links to `/app/customers/:id`), vehicle, service (package / price / employee / branch), timeline (queued / started / completed or cancelled-at + cancellation reason, wait and service durations), payments breakdown (table of amount + method + paid_at, total paid, remaining, paid/unpaid badge). Reachable by clicking the plate cell in the Washes history list.
+
+- **Analytics / Statistics page (`/app/analytics`):** DONE. Tenant-wide analytics over a date range + branch filter (default last 30 days, all branches). Pure unit-tested aggregation module `wash-stats.ts` (KPIs: revenue, washes, avg ticket, completion rate, avg wait, avg service; series: revenue-by-day, washes-by-day/weekday/hour; breakdowns: status, top packages, by branch, cancellations-by-reason, top employees). Data fetched by `listWashesForStats` (no pagination, capped at 5000, RLS-scoped) via `useWashStats`. Charts built with Recharts + the shadcn chart component (`src/components/ui/chart.tsx`), teal-themed: revenue area trend, status donut, weekday/hour bars, top-packages horizontal bar, by-branch bars (only when >1 branch), cancellations + top-employees lists. KPI cards + icon-chip card headers matching WashDetail quality; skeleton/empty/error states; cap note; en/ar parity (`analytics.*` + `nav.analytics`); RTL + tablet-first responsive. Sidebar link added after Dashboard. Unit tests: `wash-stats.test.ts` (29 tests). See section 6.7a.
+
+- **PWA + Web Push — Phase 1 (PWA foundation):** DONE. `vite-plugin-pwa` (injectManifest),
+  custom `src/sw.ts` with precache + offline shell + `push`/`notificationclick` handlers,
+  manifest + icons, update toast, pure VAPID-key encoder `src/lib/notify/push.ts`.
+- **PWA + Web Push — Phase 2 (web push core):** DONE (local). `push_subscriptions` table +
+  RLS (migration `0014_push_subscriptions.sql`, pgTAP `0017_push_subscriptions_test.sql`,
+  4 assertions: server-side tenant_id/user_id defaults, RLS isolation, unique endpoint).
+  `notify-wash-event` edge function (pure `classify.ts` + Deno test, payment-check for
+  `done_unpaid`, service_role sub-load, `web-push` send + 404/410 prune, server-side i18n
+  copy, optional `WEBHOOK_SECRET`). Client `subscriptions.ts` (support detection,
+  enable/disable, anon upsert). Enable-notifications bell in the tenant header
+  (`NotificationsToggle`), localized/RTL/≥44 px/graceful-when-unsupported. See section 6.10.
+  **Cloud-only remaining:** set `VITE_VAPID_PUBLIC_KEY` (Vercel) + `VAPID_*` secrets, deploy
+  the function, and create the `wash_orders` INSERT+UPDATE **Database Webhook** → the fn URL.
+- **PWA + Web Push — Phase 3 (long-wait > 15 min) & Phase 4 (realtime live queue):** Planned.
+- **Roles & permissions (branch-scoped sub-users):** DONE (local). Owner adds `manager`
+  sub-users scoped to 1+ branches (`user_branches`) with a per-tab `view`/`edit` map
+  (`profiles.permissions`), enforced in **RLS** (branch-scoped reads + edit-gated writes via
+  `can_access_branch`/`can_edit`; auth hook injects `branch_ids` + `permissions`; `is_active`
+  deactivation) **and the UI** (sidebar hides un-viewable tabs, `RequireTabAccess`/`RequireOwner`
+  guards, branch switcher limited, edit controls **disabled-not-hidden**). Owner-only
+  `/app/users` + `manage-users` edge fn (service_role, owner-gated). Migrations 0016/0017;
+  pgTAP 0018; Deno (manage-users) + Vitest (claims). **Cloud-only remaining:** apply 0016/0017
+  to staging + prod DBs and deploy `manage-users`. See section 6.11.
+
 **Deferred (not in MVP):** inventory/chemicals, assets/machines/depreciation,
-payroll/commission, analytics suite, ratings/performance, appointments/booking, push
-notifications, real payment processing, admin usage-metrics/billing, support impersonation,
-email-invite onboarding (we use temp-password), per-user/server-side language persistence,
-multi-owner-per-tenant, editing an owner's email/password from admin.
+payroll/commission, ratings/performance, appointments/booking, real payment
+processing, admin usage-metrics/billing, support impersonation, email-invite onboarding (we
+use temp-password), per-user/server-side language persistence, multi-owner-per-tenant, editing
+an owner's email/password from admin. (Push notifications: see Phases 1–2 above — now built.)
 
 ## 9. Known follow-ups / tech debt
 

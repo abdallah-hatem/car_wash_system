@@ -18,7 +18,7 @@ insert into public.branches (tenant_id, name)
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
-  '{"tenant_id":"00000000-0000-0000-0000-00000000aa01","role":"owner"}',
+  '{"tenant_id":"00000000-0000-0000-0000-00000000aa01","app_role":"owner","role":"authenticated"}',
   true
 );
 

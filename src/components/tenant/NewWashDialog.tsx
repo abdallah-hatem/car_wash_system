@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PhoneInput } from "@/components/ui/phone-input"
 import {
   Select,
   SelectContent,
@@ -23,8 +24,10 @@ import { searchVehiclesByPlate, type PlateMatch } from "@/lib/tenant/vehicles"
 import { listPackages, type Package } from "@/lib/tenant/packages"
 import { validateNewWash } from "@/lib/tenant/operations"
 import { validateEgyptianPlate } from "@/lib/tenant/validators"
+import { isValidEgyptianMobile, formatPhoneForStore, sanitizePhoneInput } from "@/lib/tenant/phone"
 import { PlateInput, type PlateValue } from "@/components/tenant/PlateInput"
 import { useWashOrderMutations, useCustomerMutations, useVehicleMutations } from "@/lib/tenant/queries"
+import { RowsSkeleton } from "@/components/ui/skeletons"
 
 interface Props {
   open: boolean
@@ -143,6 +146,7 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
     if (match.customer_name) {
       setCustomerName(match.customer_name)
     }
+    setCustomerPhone(match.customer_phone ? sanitizePhoneInput(match.customer_phone) : "")
   }
 
   function handleClearVehicle() {
@@ -159,12 +163,20 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
     if (pkg) setPrice(String(pkg.price))
   }
 
+  // Derived: a new vehicle is being created when showDetails is open and no existing vehicle is selected
+  const hasNewVehicle = !selectedVehicle && showDetails
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
 
     const numPrice = parseFloat(price)
-    const validErr = validateNewWash({ package_id: packageId, price: numPrice })
+    const validErr = validateNewWash({
+      package_id: packageId,
+      price: numPrice,
+      vehicle_id: selectedVehicle?.id ?? null,
+      has_new_vehicle: hasNewVehicle,
+    })
     if (validErr) {
       setError(t(`wash.errors.${validErr}`))
       return
@@ -179,10 +191,18 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
       }
     }
 
+    // Validate phone if provided
+    if (customerPhone.trim() && !isValidEgyptianMobile(customerPhone)) {
+      setError(t("validation.phone_invalid"))
+      return
+    }
+
     if (!claims.tenantId) {
       setError(t("wash.errors.generic"))
       return
     }
+
+    const normalizedPhone = customerPhone.trim() ? formatPhoneForStore(customerPhone) : null
 
     setSubmitting(true)
     try {
@@ -196,7 +216,8 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
             tenantId: claims.tenantId,
             input: {
               name: customerName.trim(),
-              phone: customerPhone.trim() || null,
+              phone: normalizedPhone,
+              branch_id: branchId,
             },
           })
         }
@@ -218,7 +239,8 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
           tenantId: claims.tenantId,
           input: {
             name: customerName.trim(),
-            phone: customerPhone.trim() || null,
+            phone: normalizedPhone,
+            branch_id: branchId,
           },
         })
       }
@@ -259,7 +281,10 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
           <div className="flex flex-col gap-4 py-4">
             {/* Vehicle / Plate search box (stays as free-text for searching existing vehicles) */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="new-wash-plate">{t("wash.plate")}</Label>
+              <Label htmlFor="new-wash-plate">
+                {t("wash.plate")}{" "}
+                <span aria-hidden="true" className="text-destructive">*</span>
+              </Label>
               <div className="flex gap-2">
                 <Input
                   id="new-wash-plate"
@@ -312,7 +337,7 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
               )}
 
               {plateSearching && (
-                <p className="text-xs text-muted-foreground">{t("common.loading")}</p>
+                <RowsSkeleton rows={2} />
               )}
 
               {/* New vehicle details toggle */}
@@ -356,6 +381,10 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
                   />
                 </div>
               )}
+
+              {!selectedVehicle && !hasNewVehicle && (
+                <p className="text-xs text-muted-foreground">{t("wash.vehicleHelperText")}</p>
+              )}
             </div>
 
             {/* Customer (optional quick add) */}
@@ -374,21 +403,18 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="new-wash-customer-phone">
-                {t("wash.customerPhone")}{" "}
-                <span className="text-muted-foreground text-xs">({t("common.optional")})</span>
-              </Label>
-              <Input
-                id="new-wash-customer-phone"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                disabled={submitting || (!!selectedVehicle && !!selectedVehicle.customer_id)}
-                className="min-h-[44px]"
-                autoComplete="off"
-                type="tel"
-              />
-            </div>
+            <PhoneInput
+              id="new-wash-customer-phone"
+              value={customerPhone}
+              onChange={setCustomerPhone}
+              disabled={submitting || (!!selectedVehicle && !!selectedVehicle.customer_id)}
+              label={
+                <>
+                  {t("wash.customerPhone")}{" "}
+                  <span className="text-muted-foreground text-xs">({t("common.optional")})</span>
+                </>
+              }
+            />
 
             {/* Package */}
             <div className="flex flex-col gap-1.5">
@@ -459,7 +485,11 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
             >
               {t("common.cancel")}
             </Button>
-            <Button type="submit" disabled={submitting} className="gap-1.5">
+            <Button
+              type="submit"
+              disabled={submitting || (!selectedVehicle && !hasNewVehicle)}
+              className="gap-1.5"
+            >
               {!submitting && <Plus className="h-4 w-4" />}
               {submitting ? t("common.loading") : t("wash.create")}
             </Button>

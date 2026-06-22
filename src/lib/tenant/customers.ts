@@ -7,8 +7,32 @@ export interface Customer {
   id: string
   name: string
   phone: string | null
+  branch_id: string | null
   created_at: string
   vehicle_count: number
+}
+
+// Columns selected for a Customer (+ vehicle count via the FK relationship).
+const CUSTOMER_SELECT = "id,name,phone,branch_id,created_at,vehicles(count)"
+
+interface RawCustomer {
+  id: string
+  name: string
+  phone: string | null
+  branch_id: string | null
+  created_at: string
+  vehicles: Array<{ count: number }>
+}
+
+function mapCustomer(c: RawCustomer): Customer {
+  return {
+    id: c.id,
+    name: c.name,
+    phone: c.phone,
+    branch_id: c.branch_id,
+    created_at: c.created_at,
+    vehicle_count: c.vehicles?.[0]?.count ?? 0,
+  }
 }
 
 /** Escape LIKE special characters: \, %, _ */
@@ -76,24 +100,11 @@ export async function listCustomersPaged(
     // No search — full paginated list
     const { data, error, count } = await supabase
       .from("customers")
-      .select("id,name,phone,created_at,vehicles(count)", { count: "exact" })
+      .select(CUSTOMER_SELECT, { count: "exact" })
       .order("created_at", { ascending: false })
       .range(from, to)
     if (error) throw error
-    const rows = ((data ?? []) as unknown as Array<{
-      id: string
-      name: string
-      phone: string | null
-      created_at: string
-      vehicles: Array<{ count: number }>
-    }>).map((c) => ({
-      id: c.id,
-      name: c.name,
-      phone: c.phone,
-      created_at: c.created_at,
-      vehicle_count: c.vehicles?.[0]?.count ?? 0,
-    }))
-    return { rows, total: count ?? 0 }
+    return { rows: ((data ?? []) as unknown as RawCustomer[]).map(mapCustomer), total: count ?? 0 }
   }
 
   // Search — filter by matching ids
@@ -102,52 +113,37 @@ export async function listCustomersPaged(
 
   const { data, error } = await supabase
     .from("customers")
-    .select("id,name,phone,created_at,vehicles(count)")
+    .select(CUSTOMER_SELECT)
     .in("id", ids)
     .order("created_at", { ascending: false })
     .range(from, to)
   if (error) throw error
+  return { rows: ((data ?? []) as unknown as RawCustomer[]).map(mapCustomer), total: ids.length }
+}
 
-  const rows = ((data ?? []) as unknown as Array<{
-    id: string
-    name: string
-    phone: string | null
-    created_at: string
-    vehicles: Array<{ count: number }>
-  }>).map((c) => ({
-    id: c.id,
-    name: c.name,
-    phone: c.phone,
-    created_at: c.created_at,
-    vehicle_count: c.vehicles?.[0]?.count ?? 0,
-  }))
-  return { rows, total: ids.length }
+export async function getCustomer(id: string): Promise<Customer | null> {
+  const { data, error } = await supabase
+    .from("customers")
+    .select(CUSTOMER_SELECT)
+    .eq("id", id)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) return null
+  return mapCustomer(data as unknown as RawCustomer)
 }
 
 export async function listCustomers(): Promise<Customer[]> {
   const { data, error } = await supabase
     .from("customers")
-    .select("id,name,phone,created_at,vehicles(count)")
+    .select(CUSTOMER_SELECT)
     .order("created_at", { ascending: false })
   if (error) throw error
-  return ((data ?? []) as unknown as Array<{
-    id: string
-    name: string
-    phone: string | null
-    created_at: string
-    vehicles: Array<{ count: number }>
-  }>).map((c) => ({
-    id: c.id,
-    name: c.name,
-    phone: c.phone,
-    created_at: c.created_at,
-    vehicle_count: c.vehicles?.[0]?.count ?? 0,
-  }))
+  return ((data ?? []) as unknown as RawCustomer[]).map(mapCustomer)
 }
 
 export async function createCustomer(
   tenantId: string,
-  input: { name: string; phone?: string | null },
+  input: { name: string; phone?: string | null; branch_id?: string | null },
 ): Promise<string> {
   const { data, error } = await supabase
     .from("customers")
@@ -155,6 +151,7 @@ export async function createCustomer(
       tenant_id: tenantId,
       name: input.name.trim(),
       phone: input.phone?.trim() || null,
+      branch_id: input.branch_id ?? null,
     })
     .select("id")
     .single()

@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { SidebarNav } from "./SidebarNav"
-import { BranchSelector } from "./BranchSelector"
+import { NotificationsToggle } from "./NotificationsToggle"
 import { BranchProvider } from "@/lib/tenant/branch-context"
 import { Menu } from "lucide-react"
 
@@ -26,7 +26,7 @@ function TenantLayoutInner() {
           <span className="font-semibold">{t("common.appName")}</span>
         </div>
         <div className="flex items-center gap-1 min-w-0 overflow-hidden">
-          <BranchSelector />
+          <NotificationsToggle />
           <LanguageSwitcher />
           <Button type="button" variant="ghost" size="sm" className="min-h-[44px] shrink-0" onClick={() => void signOut()}>
             {t("common.signOut")}
@@ -34,7 +34,7 @@ function TenantLayoutInner() {
         </div>
       </header>
 
-      <div className="lg:grid lg:grid-cols-[220px_1fr]">
+      <div className="lg:grid lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="hidden lg:block border-e p-3">
           <SidebarNav />
         </aside>
@@ -48,7 +48,7 @@ function TenantLayoutInner() {
           </div>
         )}
 
-        <main className="p-4 sm:p-6">
+        <main className="p-4 sm:p-6 min-w-0">
           <Outlet />
         </main>
       </div>

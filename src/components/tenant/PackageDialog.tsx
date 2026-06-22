@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/auth/AuthProvider"
 import { usePackageMutations } from "@/lib/tenant/queries"
@@ -29,6 +30,7 @@ export function PackageDialog({ open, onOpenChange, pkg, onSaved }: Props) {
   const mutations = usePackageMutations()
 
   const [name, setName] = useState("")
+  const [description, setDescription] = useState("")
   const [price, setPrice] = useState("")
   const [durationMinutes, setDurationMinutes] = useState("")
   const [isActive, setIsActive] = useState(true)
@@ -37,6 +39,7 @@ export function PackageDialog({ open, onOpenChange, pkg, onSaved }: Props) {
   useEffect(() => {
     if (open) {
       setName(pkg?.name ?? "")
+      setDescription(pkg?.description ?? "")
       setPrice(pkg?.price != null ? String(pkg.price) : "")
       setDurationMinutes(pkg?.duration_minutes != null ? String(pkg.duration_minutes) : "")
       setIsActive(pkg?.is_active ?? true)
@@ -47,6 +50,7 @@ export function PackageDialog({ open, onOpenChange, pkg, onSaved }: Props) {
   function handleOpenChange(next: boolean) {
     if (!next) {
       setName("")
+      setDescription("")
       setPrice("")
       setDurationMinutes("")
       setIsActive(true)
@@ -75,9 +79,9 @@ export function PackageDialog({ open, onOpenChange, pkg, onSaved }: Props) {
 
     try {
       if (pkg) {
-        await mutations.update.mutateAsync({ id: pkg.id, input: { name, price: priceNum, duration_minutes: durationNum, is_active: isActive } })
+        await mutations.update.mutateAsync({ id: pkg.id, input: { name, description, price: priceNum, duration_minutes: durationNum, is_active: isActive } })
       } else {
-        await mutations.create.mutateAsync({ tenantId: claims.tenantId!, input: { name, price: priceNum, duration_minutes: durationNum, is_active: isActive } })
+        await mutations.create.mutateAsync({ tenantId: claims.tenantId!, input: { name, description, price: priceNum, duration_minutes: durationNum, is_active: isActive } })
       }
       handleOpenChange(false)
       onSaved?.()
@@ -108,6 +112,22 @@ export function PackageDialog({ open, onOpenChange, pkg, onSaved }: Props) {
                 disabled={submitting}
                 className="min-h-[44px]"
                 autoComplete="off"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="pkg-description">
+                {t("packages.description")}{" "}
+                <span className="text-muted-foreground text-xs">({t("common.optional")})</span>
+              </Label>
+              <Textarea
+                id="pkg-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                disabled={submitting}
+                rows={3}
+                maxLength={500}
+                placeholder={t("packages.descriptionPlaceholder")}
               />
             </div>
 
