@@ -35,6 +35,14 @@ export function validateCancelReason(reason: string): boolean {
 }
 
 /**
+ * A wash can only go in_progress with an assigned staff member.
+ * Returns an error key when no employee is selected, else null.
+ */
+export function validateStart(employeeId: string | null | undefined): string | null {
+  return employeeId ? null : "employee_required"
+}
+
+/**
  * Staff selectable for a wash at a given branch: active employees assigned to that
  * branch, plus unassigned "floater" staff (branch_id null) who can work anywhere.
  */

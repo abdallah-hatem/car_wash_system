@@ -6,6 +6,7 @@ import {
   remaining,
   validateNewWash,
   validateCancelReason,
+  validateStart,
   availableEmployees,
 } from "./operations"
 
@@ -70,6 +71,16 @@ describe("validateNewWash", () => {
   })
   it("passes when a new vehicle is being created", () => {
     expect(validateNewWash({ package_id: "p1", price: 25, has_new_vehicle: true })).toBeNull()
+  })
+})
+describe("validateStart", () => {
+  it("requires an assigned staff member to start a wash", () => {
+    expect(validateStart(null)).toBe("employee_required")
+    expect(validateStart(undefined)).toBe("employee_required")
+    expect(validateStart("")).toBe("employee_required")
+  })
+  it("passes when a staff member is selected", () => {
+    expect(validateStart("emp-1")).toBeNull()
   })
 })
 describe("validateCancelReason", () => {

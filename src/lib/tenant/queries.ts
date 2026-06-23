@@ -282,7 +282,7 @@ export function useWashOrderMutations(branchId: string | null) {
       onSuccess: inval,
     }),
     start: useMutation({
-      mutationFn: (a: { id: string; employeeId: string | null }) =>
+      mutationFn: (a: { id: string; employeeId: string }) =>
         washOrders.startWashOrder(a.id, a.employeeId),
       onSuccess: inval,
     }),

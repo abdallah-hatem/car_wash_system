@@ -51,9 +51,17 @@ insert into public.payments (id, tenant_id, wash_order_id, amount, method) value
    '00000000-0000-0000-0000-000000001341',
    50.00, 'cash');
 
--- Update: advance the order from waiting → in_progress
+-- Tenant A adds a staff member (a wash can't go in_progress without one — 0019)
+insert into public.employees (id, tenant_id, branch_id, name) values
+  ('00000000-0000-0000-0000-000000001361',
+   '00000000-0000-0000-0000-000000001301',
+   '00000000-0000-0000-0000-000000001311',
+   'Worker-A');
+
+-- Update: advance the order from waiting → in_progress (with assigned staff)
 update public.wash_orders
-   set status = 'in_progress', started_at = now()
+   set status = 'in_progress', started_at = now(),
+       assigned_employee_id = '00000000-0000-0000-0000-000000001361'
  where id = '00000000-0000-0000-0000-000000001341';
 
 -- ── Assertions ───────────────────────────────────────────────────────────────

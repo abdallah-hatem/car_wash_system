@@ -244,7 +244,7 @@
     "price": "السعر",
     "notes": "ملاحظات",
     "assignEmployee": "تعيين موظف",
-    "noEmployee": "بدون موظف",
+    "selectEmployee": "اختر موظفًا",
     "start": "بدء",
     "complete": "إتمام",
     "cancel": "إلغاء",
@@ -270,9 +270,10 @@
       "package_required": "يرجى اختيار باقة.",
       "price_invalid": "يجب أن يكون السعر رقمًا موجبًا.",
       "plate_required": "رقم اللوحة مطلوب.",
-      "vehicle_required": "يرجى اختيار مركبة أو إضافة مركبة جديدة."
+      "vehicle_required": "يرجى اختيار مركبة أو إضافة مركبة جديدة.",
+      "employee_required": "يرجى تعيين موظف لبدء الغسيل."
     },
-    "noStaffAtBranch": "لا يوجد موظفون في هذا الفرع — ابدأ بدون موظف أو أضف موظفين."
+    "noStaffAtBranch": "لا يوجد موظفون في هذا الفرع — أضف موظفين قبل بدء الغسيل."
   },
   "payment": {
     "title": "تسجيل دفعة",

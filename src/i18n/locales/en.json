@@ -244,7 +244,7 @@
     "price": "Price",
     "notes": "Notes",
     "assignEmployee": "Assign employee",
-    "noEmployee": "No employee",
+    "selectEmployee": "Select a staff member",
     "start": "Start",
     "complete": "Complete",
     "cancel": "Cancel",
@@ -270,9 +270,10 @@
       "package_required": "Please select a package.",
       "price_invalid": "Price must be a positive number.",
       "plate_required": "Plate number is required.",
-      "vehicle_required": "Please select or add a vehicle."
+      "vehicle_required": "Please select or add a vehicle.",
+      "employee_required": "Please assign a staff member to start the wash."
     },
-    "noStaffAtBranch": "No staff assigned to this branch — start without one or add staff."
+    "noStaffAtBranch": "No staff assigned to this branch — add staff before starting a wash."
   },
   "payment": {
     "title": "Record payment",

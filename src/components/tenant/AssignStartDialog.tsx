@@ -20,12 +20,10 @@ import {
 import { useEmployees } from "@/lib/tenant/queries"
 import { availableEmployees } from "@/lib/tenant/operations"
 
-const NO_EMPLOYEE_VALUE = "__none__"
-
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onConfirm: (employeeId: string | null) => void
+  onConfirm: (employeeId: string) => void
   branchId: string
   loading?: boolean
 }
@@ -33,17 +31,21 @@ interface Props {
 export function AssignStartDialog({ open, onOpenChange, onConfirm, branchId, loading = false }: Props) {
   const { t } = useTranslation()
   const { data: all = [], isLoading } = useEmployees()
-  const [selected, setSelected] = useState<string>(NO_EMPLOYEE_VALUE)
+  const [selected, setSelected] = useState<string>("")
 
   // Only active staff for the selected branch (plus unassigned floaters).
   const employees = availableEmployees(all, branchId)
 
   useEffect(() => {
-    if (open) setSelected(NO_EMPLOYEE_VALUE)
+    if (open) setSelected("")
   }, [open])
 
+  // A wash can't go in_progress without an assigned staff member.
+  const canStart = selected !== "" && !isLoading && !loading
+
   function handleConfirm() {
-    onConfirm(selected === NO_EMPLOYEE_VALUE ? null : selected)
+    if (!selected) return
+    onConfirm(selected)
   }
 
   return (
@@ -55,13 +57,15 @@ export function AssignStartDialog({ open, onOpenChange, onConfirm, branchId, loa
 
         <div className="flex flex-col gap-4 py-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="assign-employee">{t("wash.assignEmployee")}</Label>
+            <Label htmlFor="assign-employee">
+              {t("wash.assignEmployee")}{" "}
+              <span aria-hidden="true" className="text-destructive">*</span>
+            </Label>
             <Select value={selected} onValueChange={setSelected} disabled={isLoading || loading}>
               <SelectTrigger id="assign-employee" className="min-h-[44px]">
-                <SelectValue placeholder={t("wash.noEmployee")} />
+                <SelectValue placeholder={t("wash.selectEmployee")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NO_EMPLOYEE_VALUE}>{t("wash.noEmployee")}</SelectItem>
                 {employees.map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.name}
@@ -87,7 +91,7 @@ export function AssignStartDialog({ open, onOpenChange, onConfirm, branchId, loa
           <Button
             type="button"
             onClick={handleConfirm}
-            disabled={isLoading || loading}
+            disabled={!canStart}
             className="gap-1.5"
           >
             {!loading && <Play className="h-4 w-4" />}
