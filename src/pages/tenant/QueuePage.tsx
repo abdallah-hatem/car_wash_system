@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useBranch } from "@/lib/tenant/branch-context"
-import { useQueue } from "@/lib/tenant/queries"
-import { isPaid } from "@/lib/tenant/operations"
+import { useQueue, useEmployees } from "@/lib/tenant/queries"
+import { isPaid, hasAvailableStaff } from "@/lib/tenant/operations"
 import { useAuth } from "@/auth/AuthProvider"
 import { canEdit } from "@/auth/claims"
 import { WashCard } from "@/components/tenant/WashCard"
@@ -27,6 +27,12 @@ export default function QueuePage() {
   const [newWashOpen, setNewWashOpen] = useState(false)
 
   const { data: orders = [], isLoading, isError, refetch } = useQueue(branchId)
+  const { data: employees = [] } = useEmployees()
+
+  // A wash can't go in_progress without an assigned staff member, so block
+  // creating one at a branch that has no available staff (it'd be un-startable).
+  const staffAvailable = hasAvailableStaff(employees, branchId)
+  const canCreateWash = allowEdit && staffAvailable
 
   // Partition orders:
   // - Waiting: status === 'waiting'
@@ -57,12 +63,22 @@ export default function QueuePage() {
       {/* Page header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-bold">{t("queue.title")}</h1>
-        <div className="flex items-center gap-2">
-          <BranchFilter />
-          <Button className="gap-1.5" disabled={!allowEdit} onClick={() => setNewWashOpen(true)}>
-            <Plus className="h-4 w-4" />
-            {t("queue.newWash")}
-          </Button>
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-2">
+            <BranchFilter />
+            <Button
+              className="gap-1.5"
+              disabled={!canCreateWash}
+              title={allowEdit && !staffAvailable ? t("queue.noStaffToCreate") : undefined}
+              onClick={() => setNewWashOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              {t("queue.newWash")}
+            </Button>
+          </div>
+          {allowEdit && !staffAvailable && (
+            <p className="text-xs text-muted-foreground text-end">{t("queue.noStaffToCreate")}</p>
+          )}
         </div>
       </div>
 

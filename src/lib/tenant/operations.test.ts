@@ -8,6 +8,7 @@ import {
   validateCancelReason,
   validateStart,
   availableEmployees,
+  hasAvailableStaff,
 } from "./operations"
 
 describe("availableEmployees", () => {
@@ -19,6 +20,18 @@ describe("availableEmployees", () => {
   it("with no branch selected, returns only floaters", () => {
     const list = [e("a", "b1"), e("c", null)]
     expect(availableEmployees(list, null).map((x) => x.id)).toEqual(["c"])
+  })
+})
+
+describe("hasAvailableStaff", () => {
+  const e = (id: string, branch_id: string | null, is_active = true) => ({ id, branch_id, is_active })
+  it("true when an active staff member serves the branch (or is a floater)", () => {
+    expect(hasAvailableStaff([e("a", "b1")], "b1")).toBe(true)
+    expect(hasAvailableStaff([e("c", null)], "b1")).toBe(true)
+  })
+  it("false when no active staff serve the branch", () => {
+    expect(hasAvailableStaff([], "b1")).toBe(false)
+    expect(hasAvailableStaff([e("a", "b2"), e("d", "b1", false)], "b1")).toBe(false)
   })
 })
 

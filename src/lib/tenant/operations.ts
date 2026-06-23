@@ -54,3 +54,16 @@ export function availableEmployees<T extends { is_active: boolean; branch_id: st
     (e) => e.is_active && (e.branch_id === branchId || e.branch_id === null),
   )
 }
+
+/**
+ * Whether a branch has at least one staff member who could run a wash.
+ * Gates creating a new wash: with no available staff the wash could never be
+ * started (a wash can't go in_progress without an assigned employee), so we
+ * block creation up front instead of letting it pile up un-startable.
+ */
+export function hasAvailableStaff<T extends { is_active: boolean; branch_id: string | null }>(
+  employees: T[],
+  branchId: string | null,
+): boolean {
+  return availableEmployees(employees, branchId).length > 0
+}

@@ -228,6 +228,7 @@
     "emptyInProgress": "No orders in progress.",
     "emptyDone": "No completed orders today.",
     "branch": "Branch",
+    "noStaffToCreate": "Add a staff member to this branch before creating a wash.",
     "errors": {
       "generic": "Something went wrong. Please try again."
     }

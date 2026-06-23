@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-23 (a wash can't go `in_progress` without an assigned staff member — Start dialog requires a staff selection, DB CHECK constraint `wash_orders_in_progress_needs_employee` migration 0019; see §6 Operations/Start flow. Earlier 2026-06-20: transactional email via Resend — invites & password resets send a secure set-password link instead of a temp password; create-business + manage-users email + return the link, new `/set-password` screen, bilingual templates; see §6.1, §6.11, §6.12. Earlier 2026-06-17: sidebar icons; customers created-`branch_id` (migration 0018); per-tab `BranchFilter` replacing the navbar dropdown; roles & permissions branch-scoped sub-users, migrations 0016/0017 — §6.5/§6.6/§6.7/§6.11).
+Last updated: 2026-06-23 (a wash can't go `in_progress` without an assigned staff member — Start dialog requires a staff selection, DB CHECK constraint `wash_orders_in_progress_needs_employee` migration 0019; **New Wash is also blocked when a branch has no available staff** (`hasAvailableStaff`) so washes can't pile up un-startable; see §6 Operations/Start flow. Earlier 2026-06-20: transactional email via Resend — invites & password resets send a secure set-password link instead of a temp password; create-business + manage-users email + return the link, new `/set-password` screen, bilingual templates; see §6.1, §6.11, §6.12. Earlier 2026-06-17: sidebar icons; customers created-`branch_id` (migration 0018); per-tab `BranchFilter` replacing the navbar dropdown; roles & permissions branch-scoped sub-users, migrations 0016/0017 — §6.5/§6.6/§6.7/§6.11).
 
 ---
 
@@ -265,6 +265,12 @@ waiting → in_progress → done
 - `cancelled`: removed from board (not displayed). Allowed from `waiting` or `in_progress`.
 - Status transitions validated both client-side (`canTransition()` in `operations.ts`) and
   enforced by the DB state machine via `wash_orders.status` update.
+
+**Creating a wash requires available staff:** the **New Wash** button is disabled (with a
+hint) when the selected branch has no active staff member (`hasAvailableStaff()` over the
+same active+branch/floater set as the Start dialog). Rationale: a wash can't go `in_progress`
+without an assigned employee, so a branch with zero staff could only ever accumulate
+un-startable `waiting` orders. Add staff (Staff tab) first.
 
 **New wash dialog (NewWashDialog):**
 - Free-text plate search field (debounced, numeral-agnostic via `normalizePlateSearch`) —
