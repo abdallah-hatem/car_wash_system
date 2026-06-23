@@ -218,7 +218,8 @@ function useWeekdayLabels(locale: string): string[] {
 }
 
 function RevenueTrendChart({ stats, locale }: { stats: WashStats; locale: string }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isRtl = i18n.dir() === "rtl"
   const data = stats.revenueByDay
   if (data.length === 0) return <ChartEmpty />
 
@@ -241,6 +242,7 @@ function RevenueTrendChart({ stats, locale }: { stats: WashStats; locale: string
         <CartesianGrid vertical={false} />
         <XAxis
           dataKey="date"
+          reversed={isRtl}
           tickLine={false}
           axisLine={false}
           tickMargin={8}
@@ -248,6 +250,7 @@ function RevenueTrendChart({ stats, locale }: { stats: WashStats; locale: string
           tickFormatter={fmtAxis}
         />
         <YAxis
+          orientation={isRtl ? "right" : "left"}
           tickLine={false}
           axisLine={false}
           width={44}
@@ -353,7 +356,8 @@ function StatusLegend({ stats }: { stats: WashStats }) {
 }
 
 function WeekdayChart({ stats, locale }: { stats: WashStats; locale: string }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isRtl = i18n.dir() === "rtl"
   const labels = useWeekdayLabels(locale)
   const data = stats.washesByWeekday.map((d) => ({
     label: labels[d.weekday],
@@ -369,8 +373,8 @@ function WeekdayChart({ stats, locale }: { stats: WashStats; locale: string }) {
     <ChartContainer config={config} className="aspect-auto h-[240px] w-full">
       <BarChart data={data} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
         <CartesianGrid vertical={false} />
-        <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
-        <YAxis tickLine={false} axisLine={false} width={32} allowDecimals={false} />
+        <XAxis dataKey="label" reversed={isRtl} tickLine={false} axisLine={false} tickMargin={8} />
+        <YAxis orientation={isRtl ? "right" : "left"} tickLine={false} axisLine={false} width={32} allowDecimals={false} />
         <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
         <Bar dataKey="count" fill={TEAL} radius={[6, 6, 0, 0]} maxBarSize={44} />
       </BarChart>
@@ -379,7 +383,8 @@ function WeekdayChart({ stats, locale }: { stats: WashStats; locale: string }) {
 }
 
 function HourChart({ stats }: { stats: WashStats }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isRtl = i18n.dir() === "rtl"
   const data = stats.washesByHour.map((d) => ({
     hour: d.hour,
     label: `${String(d.hour).padStart(2, "0")}:00`,
@@ -397,12 +402,13 @@ function HourChart({ stats }: { stats: WashStats }) {
         <CartesianGrid vertical={false} />
         <XAxis
           dataKey="label"
+          reversed={isRtl}
           tickLine={false}
           axisLine={false}
           tickMargin={8}
           interval={2}
         />
-        <YAxis tickLine={false} axisLine={false} width={32} allowDecimals={false} />
+        <YAxis orientation={isRtl ? "right" : "left"} tickLine={false} axisLine={false} width={32} allowDecimals={false} />
         <ChartTooltip
           cursor={false}
           content={<ChartTooltipContent labelKey="label" hideLabel />}
@@ -415,7 +421,8 @@ function HourChart({ stats }: { stats: WashStats }) {
 
 /** Top packages — horizontal bar by count, revenue shown in the tooltip. */
 function TopPackagesChart({ stats, locale }: { stats: WashStats; locale: string }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isRtl = i18n.dir() === "rtl"
   const data = stats.topPackages.slice(0, 8)
   if (data.length === 0) return <ChartEmpty />
 
@@ -433,10 +440,18 @@ function TopPackagesChart({ stats, locale }: { stats: WashStats; locale: string 
         margin={{ left: 4, right: 16, top: 4, bottom: 4 }}
       >
         <CartesianGrid horizontal={false} />
-        <XAxis type="number" tickLine={false} axisLine={false} allowDecimals={false} hide />
+        <XAxis
+          type="number"
+          tickLine={false}
+          axisLine={false}
+          allowDecimals={false}
+          hide
+          reversed={isRtl}
+        />
         <YAxis
           type="category"
           dataKey="name"
+          orientation={isRtl ? "right" : "left"}
           tickLine={false}
           axisLine={false}
           width={110}
@@ -470,7 +485,7 @@ function TopPackagesChart({ stats, locale }: { stats: WashStats; locale: string 
         <Bar dataKey="count" fill={TEAL} radius={5} maxBarSize={28}>
           <LabelList
             dataKey="count"
-            position="insideRight"
+            position={isRtl ? "insideLeft" : "insideRight"}
             className="fill-primary-foreground"
             fontSize={11}
           />
@@ -482,7 +497,8 @@ function TopPackagesChart({ stats, locale }: { stats: WashStats; locale: string 
 
 /** By-branch — washes + revenue (dual bar). Rendered only when >1 branch present. */
 function BranchChart({ stats, locale }: { stats: WashStats; locale: string }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isRtl = i18n.dir() === "rtl"
   const data = stats.byBranch
   if (data.length === 0) return <ChartEmpty />
 
@@ -497,12 +513,19 @@ function BranchChart({ stats, locale }: { stats: WashStats; locale: string }) {
         <CartesianGrid vertical={false} />
         <XAxis
           dataKey="name"
+          reversed={isRtl}
           tickLine={false}
           axisLine={false}
           tickMargin={8}
           tickFormatter={(v: string) => (v.length > 12 ? `${v.slice(0, 11)}…` : v)}
         />
-        <YAxis tickLine={false} axisLine={false} width={40} allowDecimals={false} />
+        <YAxis
+          orientation={isRtl ? "right" : "left"}
+          tickLine={false}
+          axisLine={false}
+          width={40}
+          allowDecimals={false}
+        />
         <ChartTooltip
           cursor={false}
           content={

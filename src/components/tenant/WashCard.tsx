@@ -34,7 +34,7 @@ export function WashCard({ order, branchId }: Props) {
   const paid = isPaid(order.price, order.payments)
   const rem = remaining(order.price, order.payments)
 
-  async function handleStart(employeeId: string | null) {
+  async function handleStart(employeeId: string) {
     if (!canTransition(order.status, "in_progress")) return
     setActing(true)
     setError(null)
@@ -182,7 +182,7 @@ export function WashCard({ order, branchId }: Props) {
       <AssignStartDialog
         open={assignOpen}
         onOpenChange={setAssignOpen}
-        onConfirm={(empId) => void handleStart(empId)}
+        onConfirm={(empId: string) => void handleStart(empId)}
         branchId={branchId}
         loading={acting}
       />

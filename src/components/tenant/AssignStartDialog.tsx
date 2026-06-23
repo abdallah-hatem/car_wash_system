@@ -17,15 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useEmployees } from "@/lib/tenant/queries"
-import { availableEmployees } from "@/lib/tenant/operations"
-
-const NO_EMPLOYEE_VALUE = "__none__"
+import { useEmployees, useQueue } from "@/lib/tenant/queries"
+import { availableEmployees, busyEmployeeIds } from "@/lib/tenant/operations"
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onConfirm: (employeeId: string | null) => void
+  onConfirm: (employeeId: string) => void
   branchId: string
   loading?: boolean
 }
@@ -33,17 +31,25 @@ interface Props {
 export function AssignStartDialog({ open, onOpenChange, onConfirm, branchId, loading = false }: Props) {
   const { t } = useTranslation()
   const { data: all = [], isLoading } = useEmployees()
-  const [selected, setSelected] = useState<string>(NO_EMPLOYEE_VALUE)
+  const { data: orders = [] } = useQueue(branchId)
+  const [selected, setSelected] = useState<string>("")
 
-  // Only active staff for the selected branch (plus unassigned floaters).
+  // Active staff for the selected branch (plus unassigned floaters).
   const employees = availableEmployees(all, branchId)
+  // Staff currently occupied by an in-progress wash — shown but not selectable.
+  const busy = busyEmployeeIds(orders)
+  const freeCount = employees.filter((e) => !busy.has(e.id)).length
 
   useEffect(() => {
-    if (open) setSelected(NO_EMPLOYEE_VALUE)
+    if (open) setSelected("")
   }, [open])
 
+  // A wash can only start with an assigned, free staff member.
+  const canStart = selected !== "" && !busy.has(selected) && !isLoading && !loading
+
   function handleConfirm() {
-    onConfirm(selected === NO_EMPLOYEE_VALUE ? null : selected)
+    if (!selected || busy.has(selected)) return
+    onConfirm(selected)
   }
 
   return (
@@ -55,22 +61,35 @@ export function AssignStartDialog({ open, onOpenChange, onConfirm, branchId, loa
 
         <div className="flex flex-col gap-4 py-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="assign-employee">{t("wash.assignEmployee")}</Label>
+            <Label htmlFor="assign-employee">
+              {t("wash.assignEmployee")}{" "}
+              <span aria-hidden="true" className="text-destructive">*</span>
+            </Label>
             <Select value={selected} onValueChange={setSelected} disabled={isLoading || loading}>
               <SelectTrigger id="assign-employee" className="min-h-[44px]">
-                <SelectValue placeholder={t("wash.noEmployee")} />
+                <SelectValue placeholder={t("wash.selectEmployee")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NO_EMPLOYEE_VALUE}>{t("wash.noEmployee")}</SelectItem>
-                {employees.map((e) => (
-                  <SelectItem key={e.id} value={e.id}>
-                    {e.name}
-                  </SelectItem>
-                ))}
+                {employees.map((e) => {
+                  const isBusy = busy.has(e.id)
+                  return (
+                    <SelectItem key={e.id} value={e.id} disabled={isBusy}>
+                      {e.name}
+                      {isBusy && (
+                        <span className="ms-2 text-xs text-muted-foreground">
+                          · {t("wash.busy")}
+                        </span>
+                      )}
+                    </SelectItem>
+                  )
+                })}
               </SelectContent>
             </Select>
             {!isLoading && employees.length === 0 && (
               <p className="text-xs text-muted-foreground">{t("wash.noStaffAtBranch")}</p>
+            )}
+            {!isLoading && employees.length > 0 && freeCount === 0 && (
+              <p className="text-xs text-muted-foreground">{t("wash.allStaffBusy")}</p>
             )}
           </div>
         </div>
@@ -87,7 +106,7 @@ export function AssignStartDialog({ open, onOpenChange, onConfirm, branchId, loa
           <Button
             type="button"
             onClick={handleConfirm}
-            disabled={isLoading || loading}
+            disabled={!canStart}
             className="gap-1.5"
           >
             {!loading && <Play className="h-4 w-4" />}

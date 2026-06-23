@@ -6,7 +6,7 @@
 > required step — see CLAUDE.md). Keep it accurate to what the code actually does; mark
 > anything not yet built as **Planned**.
 
-Last updated: 2026-06-20 (transactional email via Resend — invites & password resets send a secure set-password link instead of a temp password; create-business + manage-users email + return the link, new `/set-password` screen, bilingual templates; see §6.1, §6.11, §6.12. Earlier 2026-06-17: sidebar icons; customers created-`branch_id` (migration 0018); per-tab `BranchFilter` replacing the navbar dropdown; roles & permissions branch-scoped sub-users, migrations 0016/0017 — §6.5/§6.6/§6.7/§6.11).
+Last updated: 2026-06-23 (a wash can't go `in_progress` without an assigned staff member — Start dialog requires a staff selection, DB CHECK constraint `wash_orders_in_progress_needs_employee` migration 0019; **New Wash is also blocked when a branch has no active staff** (`hasActiveStaff`) so washes can't pile up un-startable; Start picker shows busy staff (on an in-progress wash) as disabled/"Busy" and only allows free ones (`busyEmployeeIds`); see §6 Operations/Start flow. Earlier 2026-06-20: transactional email via Resend — invites & password resets send a secure set-password link instead of a temp password; create-business + manage-users email + return the link, new `/set-password` screen, bilingual templates; see §6.1, §6.11, §6.12. Earlier 2026-06-17: sidebar icons; customers created-`branch_id` (migration 0018); per-tab `BranchFilter` replacing the navbar dropdown; roles & permissions branch-scoped sub-users, migrations 0016/0017 — §6.5/§6.6/§6.7/§6.11).
 
 ---
 
@@ -258,12 +258,21 @@ waiting → in_progress → done
        ↘              ↘
         cancelled      cancelled
 ```
-- `waiting`: car arrived, in queue. Actions: **Start** (→ in_progress), **Cancel**.
+- `waiting`: car arrived, in queue. Actions: **Start** (→ in_progress, requires an assigned
+  staff member), **Cancel**.
 - `in_progress`: actively being washed. Actions: **Complete** (→ done), **Cancel**.
 - `done`: finished. No further status changes. Shows **paid/unpaid** + remaining balance.
 - `cancelled`: removed from board (not displayed). Allowed from `waiting` or `in_progress`.
 - Status transitions validated both client-side (`canTransition()` in `operations.ts`) and
   enforced by the DB state machine via `wash_orders.status` update.
+
+**Creating a wash requires staff to exist:** the **New Wash** button is disabled (with a
+hint) when the selected branch has no active staff member at all (`hasActiveStaff()` over the
+same active+branch/floater set as the Start dialog). Rationale: a wash can't go `in_progress`
+without an assigned employee, so a branch with zero staff could only ever accumulate
+un-startable `waiting` orders. Note this is existence-based, not free/busy: when staff exist
+but are all busy you can still create a wash — it queues in `waiting` until one frees up.
+Add staff (Staff tab) first.
 
 **New wash dialog (NewWashDialog):**
 - Free-text plate search field (debounced, numeral-agnostic via `normalizePlateSearch`) —
@@ -279,8 +288,18 @@ waiting → in_progress → done
   `status = 'waiting'`.
 
 **Start flow (AssignStartDialog):**
-- "Start" button opens a dialog to optionally assign an active employee.
+- "Start" button opens a dialog to assign an active employee. **A free staff member is
+  required** — the dialog has no "no employee" option and Start stays disabled until a
+  selectable staff member is chosen (`validateStart()` in `operations.ts`).
+- **"Available" = active staff at the branch who are NOT currently on an in-progress wash.**
+  All of the branch's active staff are listed, but anyone already assigned to an in-progress
+  wash (`busyEmployeeIds()` over the queue) is shown **disabled and tagged "Busy"** and can't
+  be picked — they free up when their wash is completed/cancelled. If every staff member is
+  busy, an "all staff busy" hint shows and Start stays disabled (the wash waits).
 - Commits `status = 'in_progress'`, `started_at`, and `assigned_employee_id`.
+- **A wash cannot be `in_progress` without an assigned staff member** — enforced at the DB by
+  CHECK constraint `wash_orders_in_progress_needs_employee` (migration 0019), plus a guard in
+  `startWashOrder()`. If a branch has no staff, you must add staff before starting a wash.
 
 **Complete:**
 - "Complete" button sets `status = 'done'`, `completed_at = now()`.

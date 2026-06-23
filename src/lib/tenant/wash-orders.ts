@@ -47,7 +47,10 @@ export async function createWashOrder(tenantId: string, input: {
   if (error) throw error
   return data.id
 }
-export async function startWashOrder(id: string, employeeId: string | null): Promise<void> {
+// A wash can only start with an assigned staff member (DB CHECK constraint
+// wash_orders_in_progress_needs_employee enforces this too).
+export async function startWashOrder(id: string, employeeId: string): Promise<void> {
+  if (!employeeId) throw new Error("employee_required")
   const { error } = await supabase.from("wash_orders")
     .update({ status: "in_progress", started_at: new Date().toISOString(), assigned_employee_id: employeeId }).eq("id", id)
   if (error) throw error

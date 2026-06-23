@@ -298,7 +298,7 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
                   autoComplete="off"
                   placeholder={t("wash.findOrAddVehicle")}
                 />
-                {selectedVehicle && (
+                {selectedVehicle ? (
                   <Button
                     type="button"
                     variant="outline"
@@ -308,6 +308,20 @@ export function NewWashDialog({ open, onOpenChange, branchId, onCreated }: Props
                     disabled={submitting}
                   >
                     ×
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant={showDetails ? "default" : "outline"}
+                    size="sm"
+                    className="min-h-[44px] min-w-[44px] px-3"
+                    onClick={() => setShowDetails((v) => !v)}
+                    disabled={submitting}
+                    aria-pressed={showDetails}
+                    aria-label={t("wash.newVehicle")}
+                    title={t("wash.newVehicle")}
+                  >
+                    <Plus className="h-4 w-4" />
                   </Button>
                 )}
               </div>
