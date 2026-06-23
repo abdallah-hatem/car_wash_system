@@ -274,7 +274,9 @@
       "vehicle_required": "Please select or add a vehicle.",
       "employee_required": "Please assign a staff member to start the wash."
     },
-    "noStaffAtBranch": "No staff assigned to this branch — add staff before starting a wash."
+    "noStaffAtBranch": "No staff assigned to this branch — add staff before starting a wash.",
+    "busy": "Busy",
+    "allStaffBusy": "All staff are on other washes right now."
   },
   "payment": {
     "title": "Record payment",

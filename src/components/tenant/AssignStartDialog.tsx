@@ -17,8 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useEmployees } from "@/lib/tenant/queries"
-import { availableEmployees } from "@/lib/tenant/operations"
+import { useEmployees, useQueue } from "@/lib/tenant/queries"
+import { availableEmployees, busyEmployeeIds } from "@/lib/tenant/operations"
 
 interface Props {
   open: boolean
@@ -31,20 +31,24 @@ interface Props {
 export function AssignStartDialog({ open, onOpenChange, onConfirm, branchId, loading = false }: Props) {
   const { t } = useTranslation()
   const { data: all = [], isLoading } = useEmployees()
+  const { data: orders = [] } = useQueue(branchId)
   const [selected, setSelected] = useState<string>("")
 
-  // Only active staff for the selected branch (plus unassigned floaters).
+  // Active staff for the selected branch (plus unassigned floaters).
   const employees = availableEmployees(all, branchId)
+  // Staff currently occupied by an in-progress wash — shown but not selectable.
+  const busy = busyEmployeeIds(orders)
+  const freeCount = employees.filter((e) => !busy.has(e.id)).length
 
   useEffect(() => {
     if (open) setSelected("")
   }, [open])
 
-  // A wash can't go in_progress without an assigned staff member.
-  const canStart = selected !== "" && !isLoading && !loading
+  // A wash can only start with an assigned, free staff member.
+  const canStart = selected !== "" && !busy.has(selected) && !isLoading && !loading
 
   function handleConfirm() {
-    if (!selected) return
+    if (!selected || busy.has(selected)) return
     onConfirm(selected)
   }
 
@@ -66,15 +70,26 @@ export function AssignStartDialog({ open, onOpenChange, onConfirm, branchId, loa
                 <SelectValue placeholder={t("wash.selectEmployee")} />
               </SelectTrigger>
               <SelectContent>
-                {employees.map((e) => (
-                  <SelectItem key={e.id} value={e.id}>
-                    {e.name}
-                  </SelectItem>
-                ))}
+                {employees.map((e) => {
+                  const isBusy = busy.has(e.id)
+                  return (
+                    <SelectItem key={e.id} value={e.id} disabled={isBusy}>
+                      {e.name}
+                      {isBusy && (
+                        <span className="ms-2 text-xs text-muted-foreground">
+                          · {t("wash.busy")}
+                        </span>
+                      )}
+                    </SelectItem>
+                  )
+                })}
               </SelectContent>
             </Select>
             {!isLoading && employees.length === 0 && (
               <p className="text-xs text-muted-foreground">{t("wash.noStaffAtBranch")}</p>
+            )}
+            {!isLoading && employees.length > 0 && freeCount === 0 && (
+              <p className="text-xs text-muted-foreground">{t("wash.allStaffBusy")}</p>
             )}
           </div>
         </div>

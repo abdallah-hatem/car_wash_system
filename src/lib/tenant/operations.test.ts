@@ -8,7 +8,8 @@ import {
   validateCancelReason,
   validateStart,
   availableEmployees,
-  hasAvailableStaff,
+  hasActiveStaff,
+  busyEmployeeIds,
 } from "./operations"
 
 describe("availableEmployees", () => {
@@ -23,15 +24,32 @@ describe("availableEmployees", () => {
   })
 })
 
-describe("hasAvailableStaff", () => {
+describe("hasActiveStaff", () => {
   const e = (id: string, branch_id: string | null, is_active = true) => ({ id, branch_id, is_active })
   it("true when an active staff member serves the branch (or is a floater)", () => {
-    expect(hasAvailableStaff([e("a", "b1")], "b1")).toBe(true)
-    expect(hasAvailableStaff([e("c", null)], "b1")).toBe(true)
+    expect(hasActiveStaff([e("a", "b1")], "b1")).toBe(true)
+    expect(hasActiveStaff([e("c", null)], "b1")).toBe(true)
   })
   it("false when no active staff serve the branch", () => {
-    expect(hasAvailableStaff([], "b1")).toBe(false)
-    expect(hasAvailableStaff([e("a", "b2"), e("d", "b1", false)], "b1")).toBe(false)
+    expect(hasActiveStaff([], "b1")).toBe(false)
+    expect(hasActiveStaff([e("a", "b2"), e("d", "b1", false)], "b1")).toBe(false)
+  })
+})
+
+describe("busyEmployeeIds", () => {
+  const o = (status: string, assigned_employee_id: string | null) => ({ status, assigned_employee_id })
+  it("collects employees on in-progress washes only", () => {
+    const ids = busyEmployeeIds([
+      o("in_progress", "e1"),
+      o("in_progress", "e2"),
+      o("waiting", "e3"),
+      o("done", "e4"),
+      o("in_progress", null),
+    ])
+    expect([...ids].sort()).toEqual(["e1", "e2"])
+  })
+  it("is empty when nothing is in progress", () => {
+    expect(busyEmployeeIds([o("waiting", "e1"), o("done", "e2")]).size).toBe(0)
   })
 })
 

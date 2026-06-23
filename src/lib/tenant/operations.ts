@@ -56,14 +56,29 @@ export function availableEmployees<T extends { is_active: boolean; branch_id: st
 }
 
 /**
- * Whether a branch has at least one staff member who could run a wash.
- * Gates creating a new wash: with no available staff the wash could never be
- * started (a wash can't go in_progress without an assigned employee), so we
- * block creation up front instead of letting it pile up un-startable.
+ * Whether a branch has at least one active staff member at all.
+ * Gates creating a new wash: with zero staff the wash could never be started
+ * (a wash can't go in_progress without an assigned employee), so we block
+ * creation up front. Washes CAN still be queued when staff exist but are all
+ * busy — they wait until a free staff member is assigned.
  */
-export function hasAvailableStaff<T extends { is_active: boolean; branch_id: string | null }>(
+export function hasActiveStaff<T extends { is_active: boolean; branch_id: string | null }>(
   employees: T[],
   branchId: string | null,
 ): boolean {
   return availableEmployees(employees, branchId).length > 0
+}
+
+/**
+ * Set of employee ids currently occupied by an in-progress wash. Such staff are
+ * "busy" — shown in the Start picker but not selectable until their wash is done.
+ */
+export function busyEmployeeIds(
+  orders: { status: string; assigned_employee_id: string | null }[],
+): Set<string> {
+  return new Set(
+    orders
+      .filter((o) => o.status === "in_progress" && o.assigned_employee_id)
+      .map((o) => o.assigned_employee_id as string),
+  )
 }

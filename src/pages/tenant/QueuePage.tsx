@@ -4,7 +4,7 @@ import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useBranch } from "@/lib/tenant/branch-context"
 import { useQueue, useEmployees } from "@/lib/tenant/queries"
-import { isPaid, hasAvailableStaff } from "@/lib/tenant/operations"
+import { isPaid, hasActiveStaff } from "@/lib/tenant/operations"
 import { useAuth } from "@/auth/AuthProvider"
 import { canEdit } from "@/auth/claims"
 import { WashCard } from "@/components/tenant/WashCard"
@@ -30,8 +30,9 @@ export default function QueuePage() {
   const { data: employees = [] } = useEmployees()
 
   // A wash can't go in_progress without an assigned staff member, so block
-  // creating one at a branch that has no available staff (it'd be un-startable).
-  const staffAvailable = hasAvailableStaff(employees, branchId)
+  // creating one at a branch that has NO active staff at all (it'd be
+  // un-startable). Washes can still queue when staff exist but are all busy.
+  const staffAvailable = hasActiveStaff(employees, branchId)
   const canCreateWash = allowEdit && staffAvailable
 
   // Partition orders:
