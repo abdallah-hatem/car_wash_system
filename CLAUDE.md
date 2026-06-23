@@ -26,10 +26,18 @@ Per feature, in order — do not skip steps:
 1. Build the feature.
 2. Write **all** unit tests, edge-case tests, and a **full-flow test** for it.
 3. Run the complete test suite **locally** against Docker Supabase — everything green.
-4. Push to `dev`.
-5. Ship to `production` only on explicit go-ahead.
+4. **Verify it RUNNING locally in a real browser** — drive the app yourself against
+   local Docker Supabase (`npm run dev` + a browser you control: the Playwright MCP /
+   Chrome MCP / Claude-in-Chrome, or any agentic browser tool). Actually click through
+   the changed flow and confirm the behavior before pushing. **Do NOT push to `dev` to
+   "see if it works" — `dev` auto-deploys to the shared staging site; treating staging
+   as your test bed breaks QA for everyone.** Staging is for the user's review of
+   already-verified work, not your first look at it.
+5. Push to `dev` (→ staging) only after steps 3 **and** 4 pass locally.
+6. Ship to `production` only on explicit go-ahead.
 
-Never push to `production` without explicit permission.
+Never push to `production` without explicit permission. Never push UNVERIFIED code to
+`dev` — local browser verification (step 4) is mandatory, not optional.
 
 ## Deployment Environments (REQUIRED)
 
