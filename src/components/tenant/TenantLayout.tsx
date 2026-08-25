@@ -23,7 +23,7 @@ function TenantLayoutInner() {
             aria-label={t("nav.menu")} onClick={() => setDrawerOpen((v) => !v)}>
             <Menu className="h-5 w-5" />
           </Button>
-          <Link to="/app/dashboard" aria-label={t("common.appName")}
+          <Link to="/app" aria-label={t("common.appName")}
             className="flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <img src="/favicon.svg" alt="" className="h-7 w-7 rounded-md" />
             <span className="font-semibold">{t("common.appName")}</span>

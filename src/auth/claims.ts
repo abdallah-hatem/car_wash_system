@@ -97,10 +97,11 @@ export const TAB_SEGMENTS: TabKey[] = [
   "dashboard", "analytics", "queue", "washes", "customers", "packages", "staff",
 ]
 
-/** First /app path the user may land on. Owner → dashboard; member → first viewable tab. */
+/** First /app path the user may land on. Owner → queue; member → first viewable tab.
+ *  Queue leads because it is the day-to-day working screen — see the /app index redirect. */
 export function firstAccessiblePath(claims: AppClaims): string {
-  if (isOwner(claims)) return "/app/dashboard"
-  const order: TabKey[] = ["dashboard", "queue", "washes", "customers", "analytics", "packages", "staff"]
+  if (isOwner(claims)) return "/app/queue"
+  const order: TabKey[] = ["queue", "dashboard", "washes", "customers", "analytics", "packages", "staff"]
   const tab = order.find((t) => canView(claims, t))
   return tab ? `/app/${tab}` : "/no-access"
 }
