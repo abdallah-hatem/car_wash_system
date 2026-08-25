@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react"
+import { Eye, GitBranch, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -15,6 +15,13 @@ import { Input } from "@/components/ui/input"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Pager } from "@/components/ui/pager"
 import { TableSkeleton } from "@/components/ui/skeletons"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { CustomerDialog } from "@/components/tenant/CustomerDialog"
 import { useCustomersPaged, useCustomerMutations, useBranches } from "@/lib/tenant/queries"
 import { PAGE_SIZE } from "@/lib/pagination"
@@ -30,6 +37,7 @@ export default function CustomersPage() {
 
   const [page, setPage] = useState(0)
   const [search, setSearch] = useState("")
+  const [branchFilter, setBranchFilter] = useState("all")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -54,7 +62,11 @@ export default function CustomersPage() {
     setPage(0)
   }, [debouncedSearch])
 
-  const { data, isLoading, isError, refetch, isPlaceholderData } = useCustomersPaged(page, debouncedSearch)
+  const { data, isLoading, isError, refetch, isPlaceholderData } = useCustomersPaged(
+    page,
+    debouncedSearch,
+    branchFilter,
+  )
   const rows: Customer[] = data?.rows ?? []
   const total = data?.total ?? 0
 
@@ -116,20 +128,46 @@ export default function CustomersPage() {
         </Button>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          id="customer-filter"
-          type="search"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
+      {/* Filter bar — search and branch share one row; search shrinks to fit */}
+      <div className="flex items-center gap-2">
+        <div className="relative min-w-0 flex-1 max-w-sm">
+          <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            id="customer-filter"
+            type="search"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(0)
+            }}
+            placeholder={t("customerSearch.placeholder")}
+            className="min-h-[44px] ps-9"
+            autoComplete="off"
+          />
+        </div>
+
+        {/* Branch filter */}
+        <Select
+          value={branchFilter}
+          onValueChange={(v) => {
+            setBranchFilter(v)
             setPage(0)
           }}
-          placeholder={t("customerSearch.placeholder")}
-          className="min-h-[44px] ps-9"
-          autoComplete="off"
-        />
+        >
+          <SelectTrigger
+            className="min-h-[44px] w-auto min-w-[140px] max-w-[200px] shrink-0 gap-1.5 text-sm"
+            aria-label={t("customers.branch")}
+          >
+            <GitBranch className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t("customers.allBranches")}</SelectItem>
+            {branches.map((b) => (
+              <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {deleteError && (
@@ -228,6 +266,7 @@ export default function CustomersPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         customer={editing}
+        defaultBranchId={branchFilter !== "all" ? branchFilter : undefined}
       />
 
       <ConfirmDialog

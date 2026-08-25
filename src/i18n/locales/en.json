@@ -166,6 +166,8 @@
     "name": "Name",
     "phone": "Phone",
     "branch": "Branch",
+    "allBranches": "All branches",
+    "selectBranch": "Select a branch",
     "vehicleCount": "Vehicles",
     "empty": "No customers yet.",
     "deleteWarn": "Deleting this customer will unlink their vehicles. Continue?",

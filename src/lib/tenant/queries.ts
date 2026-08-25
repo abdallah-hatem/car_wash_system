@@ -64,10 +64,10 @@ export function useCustomer(id: string | null) {
   })
 }
 
-export function useCustomersPaged(page: number, search = "") {
+export function useCustomersPaged(page: number, search = "", branchId = "all") {
   return useQuery({
-    queryKey: ["customers", "page", page, search] as const,
-    queryFn: () => customers.listCustomersPaged(page, PAGE_SIZE, search),
+    queryKey: ["customers", "page", page, search, branchId] as const,
+    queryFn: () => customers.listCustomersPaged(page, PAGE_SIZE, search, branchId),
     placeholderData: keepPreviousData,
   })
 }

@@ -1,0 +1,28 @@
+-- Restore Data API table privileges for the service_role role.
+--
+-- Companion to migration 0020, which restored these grants for anon +
+-- authenticated but omitted service_role. Everything the app does as a signed-in
+-- user therefore worked, while the edge functions — the only callers that use the
+-- service_role key — failed with "permission denied for table ...".
+--
+-- Symptom this fixes: the owner-only Users tab showed "Something went wrong."
+-- because manage-users could not read public.profiles for its owner gate.
+-- create-business (tenants, platform_admins, branches, profiles) and
+-- notify-wash-event (payments, push_subscriptions) hit the same wall.
+--
+-- Cloud projects (staging/prod) were created before the 2026-05-30 flip and
+-- already carry these grants, so this migration is a harmless idempotent no-op
+-- there — same as 0020.
+--
+-- SECURITY: service_role bypasses RLS by design and is never exposed to the
+-- browser (only edge functions hold the key; the client ships the anon key).
+-- Authorization for these paths lives inside the functions themselves — e.g.
+-- manage-users resolves the caller to an ACTIVE OWNER via service_role before
+-- performing any action.
+grant select, insert, update, delete on all tables in schema public to service_role;
+
+-- NOTE: unlike 0020, platform_admins is deliberately NOT revoked here.
+-- 0008 revokes it from anon/authenticated on purpose so the admin roster is
+-- denied at the privilege level; service_role is the trusted backend path that
+-- create-business relies on to read it. Revoking it here would trade this bug
+-- for a broken business-onboarding flow.
