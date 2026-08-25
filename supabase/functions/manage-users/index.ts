@@ -42,39 +42,42 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
-  const authHeader = req.headers.get("Authorization") ?? "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length).trim() : "";
-  if (!token) return json({ error: "missing_token" }, 401);
-
-  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-
-  // Verify token -> caller id.
-  const { data: userData, error: userErr } = await admin.auth.getUser(token);
-  if (userErr || !userData?.user) return json({ error: "invalid_token" }, 401);
-  const callerId = userData.user.id;
-
-  // Authoritative owner gate: caller must be an ACTIVE OWNER. Derive tenant_id here;
-  // never trust a client-supplied tenant_id.
-  const { data: ownerProfile, error: ownerErr } = await admin
-    .from("profiles")
-    .select("tenant_id, role, is_active")
-    .eq("user_id", callerId)
-    .maybeSingle();
-  if (ownerErr) return json({ error: "internal_error" }, 500);
-  if (!ownerProfile || ownerProfile.role !== "owner" || ownerProfile.is_active !== true) {
-    return json({ error: "forbidden" }, 403);
-  }
-  const tenantId = ownerProfile.tenant_id as string;
-
-  let body: unknown;
-  try { body = await req.json(); } catch (_) { return json({ error: "invalid_json" }, 400); }
-
-  const input = validateInput(body);
-  if ("error" in input) return json({ error: input.error }, 400);
-
+  // Everything below runs inside one try: an uncaught throw here (a failed
+  // fetch, a bad payload) would otherwise escape to the edge runtime, which
+  // answers with its own opaque 500 that the UI can only render as "generic".
   try {
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length).trim() : "";
+    if (!token) return json({ error: "missing_token" }, 401);
+
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    // Verify token -> caller id.
+    const { data: userData, error: userErr } = await admin.auth.getUser(token);
+    if (userErr || !userData?.user) return json({ error: "invalid_token" }, 401);
+    const callerId = userData.user.id;
+
+    // Authoritative owner gate: caller must be an ACTIVE OWNER. Derive tenant_id here;
+    // never trust a client-supplied tenant_id.
+    const { data: ownerProfile, error: ownerErr } = await admin
+      .from("profiles")
+      .select("tenant_id, role, is_active")
+      .eq("user_id", callerId)
+      .maybeSingle();
+    if (ownerErr) return json({ error: "internal_error" }, 500);
+    if (!ownerProfile || ownerProfile.role !== "owner" || ownerProfile.is_active !== true) {
+      return json({ error: "forbidden" }, 403);
+    }
+    const tenantId = ownerProfile.tenant_id as string;
+
+    let body: unknown;
+    try { body = await req.json(); } catch (_) { return json({ error: "invalid_json" }, 400); }
+
+    const input = validateInput(body);
+    if ("error" in input) return json({ error: input.error }, 400);
+
     switch (input.action) {
       case "create": return json(await createUser(admin, tenantId, input), 201);
       case "list": return json({ users: await listUsers(admin, tenantId) }, 200);
@@ -85,6 +88,7 @@ Deno.serve(async (req) => {
     }
   } catch (err) {
     if (err instanceof ManageError) return json({ error: err.code }, statusForError(err.code));
+    console.error("manage-users failed:", err);
     return json({ error: "internal_error" }, 500);
   }
 });
