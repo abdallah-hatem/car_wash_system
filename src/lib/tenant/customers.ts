@@ -93,14 +93,17 @@ export async function listCustomersPaged(
   page: number,
   pageSize = PAGE_SIZE,
   search = "",
+  branchId = "all",
 ): Promise<{ rows: Customer[]; total: number }> {
   const { from, to } = pageToRange(page, pageSize)
 
   if (!search.trim()) {
     // No search — full paginated list
-    const { data, error, count } = await supabase
+    let query = supabase
       .from("customers")
       .select(CUSTOMER_SELECT, { count: "exact" })
+    if (branchId !== "all") query = query.eq("branch_id", branchId)
+    const { data, error, count } = await query
       .order("created_at", { ascending: false })
       .range(from, to)
     if (error) throw error
@@ -111,14 +114,18 @@ export async function listCustomersPaged(
   const ids = await matchingCustomerIds(search)
   if (ids.length === 0) return { rows: [], total: 0 }
 
-  const { data, error } = await supabase
+  // count is exact here rather than ids.length, since the branch filter narrows
+  // the id set further.
+  let query = supabase
     .from("customers")
-    .select(CUSTOMER_SELECT)
+    .select(CUSTOMER_SELECT, { count: "exact" })
     .in("id", ids)
+  if (branchId !== "all") query = query.eq("branch_id", branchId)
+  const { data, error, count } = await query
     .order("created_at", { ascending: false })
     .range(from, to)
   if (error) throw error
-  return { rows: ((data ?? []) as unknown as RawCustomer[]).map(mapCustomer), total: ids.length }
+  return { rows: ((data ?? []) as unknown as RawCustomer[]).map(mapCustomer), total: count ?? 0 }
 }
 
 export async function getCustomer(id: string): Promise<Customer | null> {

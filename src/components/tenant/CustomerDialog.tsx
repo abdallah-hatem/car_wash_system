@@ -12,9 +12,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PhoneInput } from "@/components/ui/phone-input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useAuth } from "@/auth/AuthProvider"
 import { useBranch } from "@/lib/tenant/branch-context"
-import { useCustomerMutations } from "@/lib/tenant/queries"
+import { useCustomerMutations, useBranches } from "@/lib/tenant/queries"
 import type { Customer } from "@/lib/tenant/customers"
 import { validateCustomer } from "@/lib/tenant/validators"
 import { isValidEgyptianMobile, formatPhoneForStore } from "@/lib/tenant/phone"
@@ -24,30 +31,44 @@ interface Props {
   onOpenChange: (open: boolean) => void
   customer?: Customer | null
   onSaved?: () => void
+  /**
+   * Branch pre-selected for a new customer. Callers pass the branch the user is
+   * currently looking at; falls back to the shared branch context when absent.
+   */
+  defaultBranchId?: string | null
 }
 
-export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Props) {
+export function CustomerDialog({ open, onOpenChange, customer, onSaved, defaultBranchId }: Props) {
   const { t } = useTranslation()
   const { claims } = useAuth()
   const { branchId } = useBranch()
+  const { data: branches = [] } = useBranches()
   const mutations = useCustomerMutations()
+
+  const initialBranch = defaultBranchId ?? branchId ?? ""
 
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
+  const [branch, setBranch] = useState("")
   const [fieldError, setFieldError] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
       setName(customer?.name ?? "")
       setPhone(customer?.phone ?? "")
+      setBranch(customer?.branch_id ?? initialBranch)
       setFieldError(null)
     }
+    // initialBranch is only read when the dialog opens; re-running on context
+    // changes would clobber a choice the user already made.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, customer])
 
   function handleOpenChange(next: boolean) {
     if (!next) {
       setName("")
       setPhone("")
+      setBranch("")
       setFieldError(null)
     }
     onOpenChange(next)
@@ -79,7 +100,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Props)
       if (customer) {
         await mutations.update.mutateAsync({ id: customer.id, input: { name, phone: normalizedPhone } })
       } else {
-        await mutations.create.mutateAsync({ tenantId: claims.tenantId!, input: { name, phone: normalizedPhone, branch_id: branchId } })
+        await mutations.create.mutateAsync({ tenantId: claims.tenantId!, input: { name, phone: normalizedPhone, branch_id: branch || null } })
       }
       handleOpenChange(false)
       onSaved?.()
@@ -125,6 +146,22 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Props)
                 </>
               }
             />
+
+            {!customer && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="customer-branch">{t("customers.branch")}</Label>
+                <Select value={branch} onValueChange={setBranch} disabled={submitting}>
+                  <SelectTrigger id="customer-branch" className="min-h-[44px]">
+                    <SelectValue placeholder={t("customers.selectBranch")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branches.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {fieldError && (
               <p role="alert" className="text-sm text-destructive">
