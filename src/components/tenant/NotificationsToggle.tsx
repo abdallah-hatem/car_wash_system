@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Bell, BellOff, BellRing } from "lucide-react"
+import { Bell, BellOff, BellRing, Smartphone } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { InstallDialog } from "@/components/pwa/InstallDialog"
 import {
   currentPushState,
   disablePush,
@@ -23,6 +24,7 @@ export function NotificationsToggle() {
   const { t, i18n } = useTranslation()
   const [state, setState] = useState<PushState>("unsubscribed")
   const [busy, setBusy] = useState(false)
+  const [installOpen, setInstallOpen] = useState(false)
 
   const refresh = useCallback(() => {
     void currentPushState().then(setState)
@@ -32,20 +34,26 @@ export function NotificationsToggle() {
     refresh()
   }, [refresh])
 
-  // Unsupported: show a disabled bell with a hint (don't hide it entirely).
+  // Unsupported (typically iOS Safari before "Add to Home Screen"). This used
+  // to be a disabled bell whose tooltip said to install the app and offered no
+  // way to find out how. It now opens the illustrated guide, which on iOS is
+  // the only route to notifications at all.
   if (!pushSupported() || state === "unsupported") {
     return (
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        disabled
-        className="min-h-[44px] min-w-[44px] shrink-0"
-        aria-label={t("notify.unsupported")}
-        title={t("notify.unsupported")}
-      >
-        <BellOff className="h-5 w-5" aria-hidden="true" />
-      </Button>
+      <>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => setInstallOpen(true)}
+          className="min-h-[44px] min-w-[44px] shrink-0"
+          aria-label={t("install.title")}
+          title={t("notify.unsupported")}
+        >
+          <Smartphone className="h-5 w-5" aria-hidden="true" />
+        </Button>
+        <InstallDialog open={installOpen} onOpenChange={setInstallOpen} />
+      </>
     )
   }
 

@@ -397,6 +397,28 @@
     "updateAvailable": "A new version is available",
     "reload": "Reload"
   },
+  "install": {
+    "title": "Install WashFlow on this phone",
+    "why": "Runs full screen and can send you notifications.",
+    "choosePlatform": "Choose your phone",
+    "iphone": "iPhone",
+    "android": "Android",
+    "addToHomeScreen": "Add to Home Screen",
+    "installApp": "Install app",
+    "thenWhat": "Once installed, open WashFlow from your home screen and turn on notifications from the bell.",
+    "steps": {
+      "ios": {
+        "share": "Tap the Share button in the Safari toolbar",
+        "find": "Scroll down and choose “Add to Home Screen”",
+        "add": "Tap Add — WashFlow appears on your home screen"
+      },
+      "android": {
+        "menu": "Tap the three-dot menu in Chrome",
+        "install": "Choose “Install app” or “Add to Home screen”",
+        "confirm": "Confirm — WashFlow appears on your home screen"
+      }
+    }
+  },
   "notify": {
     "enable": "Enable notifications",
     "disable": "Disable notifications",
